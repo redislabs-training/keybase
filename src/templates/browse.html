@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+    <div class="field has-addons">
+        <div class="control is-expanded">
+          <input class="input" type="text" placeholder="Search the knowledge base">
+        </div>
+        <div class="control">
+          <a class="button is-info">
+            Search
+          </a>
+        </div>
+      </div>
+
+      <script type="text/javascript">
+        $(".button").click(function() {
+            window.location.replace("browse?q=" + encodeURIComponent($("input").val()));
+        })
+
+        $(function() {
+            $(".input").autocomplete({
+                source:function(request, response) {
+                    $.getJSON("{{url_for('app.autocomplete')}}",{
+                        q: encodeURIComponent(request.term), 
+                    }, function(data) {
+                        response(data.matching_results); 
+                    });
+                },
+                minLength: 4,
+                select: function(event, ui) {
+                    console.log(ui.item.id); 
+                    window.location.replace("view?id=" + ui.item.id);
+                }
+            });
+        })
+      </script>
+      
+    {% if keydocument is defined %}
+    {% for key, name, creation in keydocument %}
+        <a style="display:block;" class="is-size-5" href="{{ url_for('app.view',id=key) }}">
+            {{name}}
+        </a>
+        <span class="is-size-7 has-text-weight-light has-text-grey">created: {{creation}}</span>
+        <div style="border-top: .05rem solid #dbdbdb;"></div>
+    {% endfor %}
+    {% else %}
+        No result found, refine your search
+    {% endif %}
+{% endblock %}
+
+

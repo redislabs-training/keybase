@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+
+<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+
+<div id="container">
+	<input class="input" id="name" type="text" placeholder="Document name">
+	<button id="save" class="button is-small" type="button">save</button> 
+	<button id="close" class="button is-small" type="button">close</button> 
+	<div id="editor"></div>
+</div>
+
+<script>
+      const editor = new toastui.Editor({
+        el: document.querySelector('#editor'),
+        initialEditType: 'wysiwyg',
+        width: '500px',
+        initialValue: decodeURIComponent("{{content}}")
+      });
+
+	  $( "input" ).val(decodeURIComponent("{{name}}"));
+
+	  var saveBtn = document.querySelector('#save');
+	  var closeBtn = document.querySelector('#close');
+	  saveBtn.addEventListener("mousedown", function(e) {
+		if ($("#name").val().length<10){
+            $.notify("Document name is too short", "error");
+            return;
+          }
+	      $.ajax({
+	        type: "GET",
+	        url: '/update',
+	        data : {id:"{{id}}", content:encodeURIComponent(editor.getMarkdown()), name:encodeURIComponent($("#name").val())},
+	        success: function(data) {
+	        console.log(data);
+            $.notify("Document updated", "success");
+	        }});
+	  }, true);
+
+	  closeBtn.addEventListener("mousedown", function(e) {
+		window.location.replace("{{ url_for('app.view',id=id) }}");
+	  }, true);
+</script>
+{% endblock %}

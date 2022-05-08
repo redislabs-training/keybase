@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+
+<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+
+<div id="container">
+	<input class="input" id="name" type="text" placeholder="Document name">
+    <button id="save" class="button is-small" type="button">save</button> 
+    <div id="editor"></div>
+</div>
+
+<script>
+    // https://nhn.github.io/tui.editor/latest/ToastUIEditorCore
+      const editor = new toastui.Editor({
+        el: document.querySelector('#editor'),
+        initialEditType: 'wysiwyg',
+        width: '500px',
+        initialValue: ""
+      });
+
+	  var saveBtn = document.querySelector('#save');
+	  saveBtn.addEventListener("mousedown", function(e) {
+          if ($("#name").val().length<10){
+            $.notify("Document name is too short", "error");
+            return;
+          }
+	      $.ajax({
+	        type: "GET",
+	        url: '/save',
+	        data : {content:encodeURIComponent(editor.getMarkdown()), name:encodeURIComponent($("#name").val())},
+	        success: function(data) {
+	        console.log(data.id);
+            $.notify("Document created", "success");
+            window.location.replace("edit?id=" + data.id);
+	        }});
+	  }, true);
+</script>
+{% endblock %}

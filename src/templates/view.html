@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+
+<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+
+<div id="container">
+    <p id="name"></p>
+    <a style="display:inline;" href="{{ url_for('app.edit',id=id) }}">edit</a>
+    <a style="display:inline;" id="delete" href="{{ url_for('app.delete',id=id) }}">delete</a>
+	<div id="editor"></div>
+</div>
+
+<script>  
+    $( "#name" ).text(decodeURIComponent("{{document.name}}"));  
+      const viewer = toastui.Editor.factory({
+        el: document.querySelector('#editor'),
+        viewer: true,
+        height: '500px',
+        linkAttributes: {
+            target: '_blank',
+            contenteditable: 'false',
+            rel: 'noopener noreferrer'
+        },
+        initialValue: decodeURIComponent("{{document.content}}")
+        });
+/*
+    var deleteBtn = document.querySelector('#delete');
+	deleteBtn.addEventListener("mousedown", function(e) {
+        alert("clicked");
+    }
+    */
+
+    $("#delete").click(function() {
+        if (confirm("Confirm the deletion of the document!") == true) {
+            return true;
+        } else {
+            return false;
+    }})
+
+</script>
+{% endblock %}
