@@ -18,6 +18,12 @@
             window.location.replace("browse?q=" + encodeURIComponent($("input").val()));
         })
 
+        $(".input").on('keyup', function (e) {
+            if (e.key === 'Enter' || e.keyCode === 13) {
+                window.location.replace("browse?q=" + encodeURIComponent($("input").val()));
+            }
+        });
+
         $(function() {
             $(".input").autocomplete({
                 source:function(request, response) {
