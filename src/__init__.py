@@ -43,10 +43,6 @@ def create_app():
     from .app import app as main_blueprint
     app.register_blueprint(main_blueprint)
 
-    # blueprint for api
-    from .api import api as api_blueprint
-    app.register_blueprint(api_blueprint)
-
     return app
 
 

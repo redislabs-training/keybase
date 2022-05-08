@@ -66,6 +66,10 @@ def browse():
             rs = conn.ft("document_idx").search(Query(request.args.get('q')).return_field("name").return_field("creation").sort_by("creation", asc=False).paging(0, 10))
         else:
             rs = conn.ft("document_idx").search(Query("*").return_field("name").return_field("creation").sort_by("creation", asc=False).paging(0, 10))
+        
+        if not len(rs.docs):
+            return render_template('browse.html', title=TITLE, desc=DESC)
+        
         keys = []
         names = []
         creations = []
