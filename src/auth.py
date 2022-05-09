@@ -7,6 +7,7 @@ import redis
 from redis import RedisError
 from . import config
 import time
+import hashlib
 from flask_simplelogin import is_logged_in
 
 auth = Blueprint('auth', __name__)
@@ -32,7 +33,7 @@ def login_post():
         return redirect(url_for('app.browse'))
 
     username = request.form.get('username')
-    password = request.form.get('password')
+    password = hashlib.sha256(request.form.get('password').encode()).hexdigest()
     remember = True if request.form.get('remember') else False
 
     psw = conn.hget("keybase:user:{}".format(id), "password")
@@ -45,7 +46,7 @@ def login_post():
         return redirect(url_for('auth.login')) # if the user doesn't exist or password is wrong, reload the page
 
     # if the above check passes, then we know the user has the right credentials
-    session['logged'] = true
+    session['logged'] = True
     session['username'] = request.form.get('username')
     return redirect(url_for('main.profile'))
 
@@ -63,7 +64,7 @@ def signup_post():
 
     email = request.form.get('email')
     name = request.form.get('name')
-    password = request.form.get('password')
+    password = hashlib.sha256(request.form.get('password').encode()).hexdigest()
 
     # Check mail, username and password
     # ...

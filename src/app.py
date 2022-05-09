@@ -171,13 +171,3 @@ def new():
     TITLE="New Document"
     DESC="New Document"
     return render_template('new.html', title=TITLE, desc=DESC)
-
-
-
-
-# Main    
-#if __name__ == "__main__":
-#	login_manager = LoginManager()
-#	app.debug = True
-#	app.secret_key = 'vsfjnsrbnsvòojfnvòsojdfnvosf'
-#	app.run(host="0.0.0.0", port=5000)
