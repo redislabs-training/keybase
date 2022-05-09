@@ -13,7 +13,7 @@ Then, install the requirements:
 pip3 install -r requirements.txt
 ```
 
-Configure the Redis database credentials in `REDIS_CFG`. Finally, create the index.
+Configure the Redis database credentials in `config.py`. Finally, create the index.
 
 ```
 FT.CREATE document_idx PREFIX 1 "keybase:kb" SCHEMA name TEXT content TEXT creation NUMERIC SORTABLE update NUMERIC SORTABLE

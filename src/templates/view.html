@@ -5,13 +5,18 @@
 
 <div id="container">
     <p id="name"></p>
-    <a style="display:inline;" href="{{ url_for('app.edit',id=id) }}">edit</a>
-    <a style="display:inline;" id="delete" href="{{ url_for('app.delete',id=id) }}">delete</a>
-	<div id="editor"></div>
+    <p>
+        <a style="display:inline;" href="{{ url_for('app.edit',id=id) }}">edit</a>
+        <a style="display:inline;;" id="delete" href="{{ url_for('app.delete',id=id) }}">delete</a>
+    </p>
+    <div style="float:left;">
+        <div id="editor" style="width:550px; text-align: justify; text-justify: inter-word;"></div>
+    </div>
+    <div id="recommendation" style="padding-left:20px; float:left; width:200px;">Recommendations</div>
 </div>
 
 <script>  
-    $( "#name" ).text(decodeURIComponent("{{document.name}}"));  
+    $( "#name" ).text(decodeURIComponent("{{document[0]}}"));  
       const viewer = toastui.Editor.factory({
         el: document.querySelector('#editor'),
         viewer: true,
@@ -21,14 +26,8 @@
             contenteditable: 'false',
             rel: 'noopener noreferrer'
         },
-        initialValue: decodeURIComponent("{{document.content}}")
+        initialValue: decodeURIComponent("{{document[1]}}")
         });
-/*
-    var deleteBtn = document.querySelector('#delete');
-	deleteBtn.addEventListener("mousedown", function(e) {
-        alert("clicked");
-    }
-    */
 
     $("#delete").click(function() {
         if (confirm("Confirm the deletion of the document!") == true) {

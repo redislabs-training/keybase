@@ -1,21 +1,14 @@
-from flask import Flask
-from flask import redirect
-from flask import render_template
-from flask import request
-from flask import jsonify
-from flask import session
 import redis
-#from redis.commands.search.field import VectorField
+from redis.commands.search.field import VectorField
 from redis.commands.search.query import Query
+from redis import RedisError
 import numpy as np
-#from sentence_transformers import SentenceTransformer
 import uuid
 import urllib.parse
 from datetime import datetime
 import time
-from redis import RedisError
 from . import config
-from flask import Blueprint, render_template, redirect, url_for
+from flask import Flask, Blueprint, render_template, redirect, url_for, request, jsonify, session
 from flask_login import login_required, current_user
 from flask_simplelogin import login_required
 
@@ -28,7 +21,6 @@ app = Blueprint('app', __name__)
 
 pool = redis.ConnectionPool(host=host, port=port, password=pwd, db=0, decode_responses=True)
 conn = redis.Redis(connection_pool=pool)
-#redis = redis.Redis(host=host, port=port, password=pwd, charset="utf-8", decode_responses=True)
 
 # Helpers
 def isempty(input):
@@ -113,7 +105,7 @@ def save():
 def update():
     # Make sure the request.args.get('id') exists, otherwise do not update
     unixtime = int(time.time())
-    #model = SentenceTransformer('sentence-transformers/all-distilroberta-v1')
+
     doc = { "content":urllib.parse.unquote(request.args.get('content')), 
             "name":urllib.parse.unquote(request.args.get('name')),
             "update": unixtime}
@@ -160,9 +152,9 @@ def view():
     TITLE="Read Document"
     DESC="Read Document"
     #if id is None:
-    document = conn.hgetall("keybase:kb:{}".format(id))
-    document['name'] = urllib.parse.quote(document['name'])
-    document['content'] = urllib.parse.quote(document['content'])
+    document = conn.hmget("keybase:kb:{}".format(id), ['name', 'content'])
+    document[0] = urllib.parse.quote(document[0])
+    document[1] = urllib.parse.quote(document[1])
     return render_template('view.html', title=TITLE,id=id, desc=DESC, document=document)
 
 @app.route('/new')
