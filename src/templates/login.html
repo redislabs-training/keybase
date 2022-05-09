@@ -11,50 +11,25 @@
             </div>
         {% endif %}
         {% endwith %}   
-        <!--     
-        <form method="POST" action="/login">
-            <div class="field">
-                <div class="control">
-                    <input class="input is-large" type="email" name="username" placeholder="Your Email" autofocus="">
-                </div>
-            </div>
 
-            <div class="field">
-                <div class="control">
-                    <input class="input is-large" type="password" name="password" placeholder="Your Password">
-                </div>
-            </div>
-            <div class="field">
-                <label class="checkbox">
-                    <input type="checkbox">
-                    Remember me
-                </label>
-            </div>
-            <button class="button is-block is-info is-large is-fullwidth">Login</button>
-        </form>-->
        <form action="{{ url_for('simplelogin.login') }}" method="post">
             <div class="form-group">
             {{ form.csrf_token }}
-            <!--
-            <div class="form-control">{{ form.username(placeholder="Username") }}</div><br>
-            <div class="form-control"> {{ form.password(placeholder="Password") }}</div><br>
-            -->
             <div class="field">
                 <div class="control">
-                    <input id="username" class="input is-large" name="username" placeholder="Username" required="" type="text" autofocus="">
+                    <input id="username" class="input" name="username" placeholder="Username" required="" type="text" autofocus="">
                 </div>
             </div>
-
             <div class="field">
                 <div class="control">
-                    <input id="password" class="input is-large" name="password" placeholder="Password" type="password" autocomplete="off">
+                    <input id="password" class="input" name="password" placeholder="Password" type="password" autocomplete="off">
                 </div>
             </div>
 
             {% if next %}<input type="hidden" name="next" value="{{next}}">{% endif %}
             </form>
            <!--<input type="submit" value="Send">-->
-           <button class="button is-block is-info is-large is-fullwidth">Login</button>
+           <button class="button is-block is-info is-fullwidth">Login</button>
        </form>
     </div>
 </div>

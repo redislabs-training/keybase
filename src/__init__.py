@@ -47,7 +47,7 @@ def create_app():
 
 
 def check_my_users(user):
-    psw = conn.hget("user:{}".format(user["username"].lower()), "password")
+    psw = conn.hget("keybase:user:{}".format(user["username"].lower()), "password")
 
     if (psw == None):
         flash('Please check your login details and try again.')

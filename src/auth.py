@@ -35,7 +35,7 @@ def login_post():
     password = request.form.get('password')
     remember = True if request.form.get('remember') else False
 
-    psw = conn.hget("user:{}".format(id), "password")
+    psw = conn.hget("keybase:user:{}".format(id), "password")
 
     if (psw == Null):
         flash('Please check your login details and try again.')
@@ -69,7 +69,7 @@ def signup_post():
     # ...
 
     # Check username does not exist
-    user = conn.hgetall("user:{}".format(name))
+    user = conn.hgetall("keybase:user:{}".format(name))
     if (user):
         flash('Username already exists')
         return redirect(url_for('auth.signup'))
@@ -82,7 +82,7 @@ def signup_post():
 
     # Now add the user, lowercase
     pipeline = conn.pipeline(True)
-    pipeline.hmset("user:{}".format(name.lower()), {
+    pipeline.hmset("keybase:user:{}".format(name.lower()), {
         'mail': email,
         'password': password,
         'signup': time.time()})

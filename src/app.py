@@ -99,8 +99,8 @@ def save():
     id = uuid.uuid1()
     unixtime = int(time.time())
     timestring = datetime.utcnow().strftime("%m/%d/%Y, %H:%M:%S")
-    doc = {"content":request.args.get('content'), 
-            "name":request.args.get('name'),
+    doc = {"content":urllib.parse.unquote(request.args.get('content')), 
+            "name":urllib.parse.unquote(request.args.get('name')),
             "creation":unixtime,
             "update":unixtime}
     conn.hmset("keybase:kb:{}".format(id), doc)
@@ -114,8 +114,8 @@ def update():
     # Make sure the request.args.get('id') exists, otherwise do not update
     unixtime = int(time.time())
     #model = SentenceTransformer('sentence-transformers/all-distilroberta-v1')
-    doc = { "content":request.args.get('content'), 
-            "name":request.args.get('name'),
+    doc = { "content":urllib.parse.unquote(request.args.get('content')), 
+            "name":urllib.parse.unquote(request.args.get('name')),
             "update": unixtime}
     conn.hmset("keybase:kb:{}".format(request.args.get('id')), doc)
     return jsonify(message="Document updated")
@@ -142,6 +142,8 @@ def edit():
     DESC="Read Document"
     #if id is None:
     document = conn.hgetall("keybase:kb:{}".format(id))
+    document['name'] = urllib.parse.quote(document['name'])
+    document['content'] = urllib.parse.quote(document['content'])
     return render_template('edit.html', title=TITLE, desc=DESC, id=id, name=document['name'], content=document['content'])
 
 @app.route('/delete', methods=['GET'])
@@ -159,6 +161,8 @@ def view():
     DESC="Read Document"
     #if id is None:
     document = conn.hgetall("keybase:kb:{}".format(id))
+    document['name'] = urllib.parse.quote(document['name'])
+    document['content'] = urllib.parse.quote(document['content'])
     return render_template('view.html', title=TITLE,id=id, desc=DESC, document=document)
 
 @app.route('/new')
