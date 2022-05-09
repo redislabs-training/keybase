@@ -14,30 +14,10 @@
     <link rel="canonical" href="https://bulma.io/documentation/components/navbar/">
     <link rel="alternate" type="application/rss+xml" title="Bulma: Free, open source, and modern CSS framework based on Flexbox" href="https://bulma.io/atom.xml">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
-<!--    <script src="https://vizuaalog.github.io/BulmaJS/assets/js/bulmajs/0.8/bulma.js"></script>-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
     <link href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css" rel="Stylesheet"></link>
     <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js" ></script>
 
-    <style>
-        canvas {
-            padding-left: 0;
-            padding-right: 0;
-            /*
-            margin-left: auto;
-            margin-right: auto;
-            display: block;
-            */
-            border: 1px solid #CCC;
-        }        
-        /*
-        .has-text-centered {
-            text-align: center !important;
-        }
-        */
-
-        /*.navbar{min-height: 0px;}*/
-    </style>
     <style type="text/css">
       p#name {font-size: 1.4em;}
       #container { position: relative; }
@@ -56,7 +36,6 @@
                 {% else %}
                 <a href="{{ url_for('app.index') }}" class="navbar-item">
                 {% endif %}
-                    <!--https://looka.com/editor/72543120-->
                   <img src="{{ url_for('static',filename='images/keybase.png') }}">
                 </a>
 
