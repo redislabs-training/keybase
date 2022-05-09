@@ -9,7 +9,7 @@
     <title>keybase</title>
     <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
     <link rel="stylesheet" href="https://bulma.io/vendor/fontawesome-free-5.15.2-web/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.css">
+    <!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.css">-->
     <link rel="stylesheet" href="https://bulma.io/css/bulma-docs.min.css?v=202108281054">
     <link rel="canonical" href="https://bulma.io/documentation/components/navbar/">
     <link rel="alternate" type="application/rss+xml" title="Bulma: Free, open source, and modern CSS framework based on Flexbox" href="https://bulma.io/atom.xml">
@@ -17,13 +17,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
     <link href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css" rel="Stylesheet"></link>
     <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js" ></script>
-
-    <style type="text/css">
-      p#name {font-size: 1.4em;}
-      #container { position: relative; }
-      #my-canvas { border: 1px solid #000; }
-      #imageTemp { position: absolute; top: 1px; left: 1px; }
-    </style>    
 </head>
 
 <body>
@@ -55,10 +48,10 @@
                     <a href="{{ url_for('app.new') }}" class="navbar-item">
                         New
                     </a>
-                    {% endif %}
                     <a href="{{ url_for('app.about') }}" class="navbar-item">
-                      About
-                    </a>
+                        About
+                      </a>
+                    {% endif %}
                   </div>
                 </div>
 
