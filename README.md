@@ -1,4 +1,4 @@
-# keybase
+# <img src="src/static/images/keybase.png" height="50px">
 
 keybase is a Redis based knowledge base. In order to prepare your Python setup, create a virtual environment:
 
