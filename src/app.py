@@ -64,6 +64,10 @@ def bg_embedding_vector(key):
 def browse():
     TITLE="List documents"
     DESC="Listing documents"
+    keys = []
+    names = []
+    creations = []
+    keydocument = None
 
     try:
         if (request.args.get('q')):
@@ -71,17 +75,13 @@ def browse():
         else:
             rs = conn.ft("document_idx").search(Query("*").return_field("name").return_field("creation").sort_by("creation", asc=False).paging(0, 10))
         
-        if not len(rs.docs):
-            return render_template('browse.html', title=TITLE, desc=DESC)
-        
-        keys = []
-        names = []
-        creations = []
-        for key in rs.docs:
-            keys.append(key.id.split(':')[-1])
-            names.append(urllib.parse.unquote(key.name))
-            creations.append(datetime.utcfromtimestamp(int(key.creation)).strftime('%Y-%m-%d %H:%M:%S'))
-        return render_template('browse.html', title=TITLE, desc=DESC, keydocument=zip(keys,names,creations))
+        if len(rs.docs): 
+            for key in rs.docs:
+                keys.append(key.id.split(':')[-1])
+                names.append(urllib.parse.unquote(key.name))
+                creations.append(datetime.utcfromtimestamp(int(key.creation)).strftime('%Y-%m-%d %H:%M:%S'))
+            keydocument=zip(keys,names,creations)
+        return render_template('browse.html', title=TITLE, desc=DESC, keydocument=keydocument)
     except RedisError as err:
         print(err)
         return render_template('browse.html', title=TITLE, desc=DESC, error=err)
@@ -177,9 +177,12 @@ def view():
     DESC="Read Document"
     keys = []
     names = []
+    suggestlist = None
     #if id is None:
 
     document = conn.hmget("keybase:kb:{}".format(request.args.get('id')), ['name', 'content', 'content_embedding'])
+    document[0] = urllib.parse.quote(document[0])
+    document[1] = urllib.parse.quote(document[1])
 
     # Fetching suggestions only if the vector embedding is available
     if (document[2] != None):
@@ -192,10 +195,9 @@ def view():
             suggest = conn.hmget("keybase:kb:{}".format(suggestionid), ['name'])
             keys.append(suggestionid)
             names.append(suggest[0].decode('utf-8'))
+        suggestlist=zip(keys, names)
 
-    document[0] = urllib.parse.quote(document[0])
-    document[1] = urllib.parse.quote(document[1])
-    return render_template('view.html', title=TITLE,id=request.args.get('id'), desc=DESC, document=document, suggestlist=zip(keys, names))
+    return render_template('view.html', title=TITLE,id=request.args.get('id'), desc=DESC, document=document, suggestlist=suggestlist)
 
 @app.route('/new')
 @login_required

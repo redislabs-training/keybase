@@ -9,11 +9,15 @@
     <div style="margin-left:20px; margin-top:10px; float:right; width:300px;">
         <div class="widget">
             <h4 id="name" class="title is-6" style="margin-bottom:0em;">Recommendations</h4>
-            {% for key, name in suggestlist %}
-            <a style="display:block;" class="is-size-7" href="{{ url_for('app.view',id=key) }}">
-                {{name}}
-            </a>
-            {% endfor %}
+            {% if suggestlist is not none %}
+                {% for key, name in suggestlist %}
+                <a style="display:block;" class="is-size-7" href="{{ url_for('app.view',id=key) }}">
+                    {{name}}
+                </a>
+                {% endfor %}
+            {% else %}
+                <p class="is-size-7">creating recommendations...</p>
+            {% endif %}
         </div>
         <div class="widget">
             <h4 id="name" class="title is-6" style="margin-bottom:0em;">Actions</h4>

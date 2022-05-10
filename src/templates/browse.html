@@ -42,7 +42,7 @@
         })
       </script>
       
-    {% if keydocument is defined %}
+    {% if keydocument is not none %}
     {% for key, name, creation in keydocument %}
         <a style="display:block;" class="is-size-5" href="{{ url_for('app.view',id=key) }}">
             {{name}}
