@@ -8,6 +8,9 @@ import urllib.parse
 from datetime import datetime
 import time
 from . import config
+import threading
+from multiprocessing import Process
+from flask import Response, stream_with_context
 from flask import Flask, Blueprint, render_template, redirect, url_for, request, jsonify, session
 from flask_login import login_required, current_user
 from flask_simplelogin import login_required
@@ -47,6 +50,15 @@ def autocomplete():
                         'id': doc.id.split(':')[-1]})
     return jsonify(matching_results=results)
 
+
+def bg_embedding_vector(key):
+    content = conn.hget("keybase:kb:{}".format(key), "content")
+    print("Computing vector embedding for " + key)
+    model = SentenceTransformer('sentence-transformers/all-distilroberta-v1')
+    embedding = model.encode(content.decode('utf-8')).astype(np.float32).tobytes()
+    conn.hset("keybase:kb:{}".format(key), "content_embedding", embedding)
+    print("Done vector embedding for " + key)
+
 @app.route('/browse', methods=['GET'])
 @login_required
 def browse():
@@ -54,7 +66,6 @@ def browse():
     DESC="Listing documents"
 
     try:
-        #rs = conn.scan_iter(match="keybase:kb:*", count=None, _type="HASH")
         if (request.args.get('q')):
             rs = conn.ft("document_idx").search(Query(request.args.get('q')).return_field("name").return_field("creation").sort_by("creation", asc=False).paging(0, 10))
         else:
@@ -93,18 +104,19 @@ def save():
     unixtime = int(time.time())
     timestring = datetime.utcnow().strftime("%m/%d/%Y, %H:%M:%S")
 
-    model = SentenceTransformer('sentence-transformers/all-distilroberta-v1')
-    embedding = model.encode(urllib.parse.unquote(request.args.get('content'))).astype(np.float32).tobytes()
-
     doc = {"content":urllib.parse.unquote(request.args.get('content')), 
-            "content_embedding":embedding,
             "name":urllib.parse.unquote(request.args.get('name')),
             "creation":unixtime,
             "update":unixtime}
     conn.hmset("keybase:kb:{}".format(id), doc)
-    #return render_template('edit.html', title=TITLE, desc=DESC, id=id, name=request.args.get('name'), content=request.args.get('content'))
+
+    # Update the vector embedding in the background
+    sscanThread = threading.Thread(target=bg_embedding_vector, args=(str(id),)) 
+    sscanThread.daemon = True
+    sscanThread.start()
+
     return jsonify(message="Document created", id=id)
-    #return redirect(url_for('app.edit', id=id))
+
 
 @app.route('/update', methods=['GET'])
 @login_required
@@ -112,14 +124,16 @@ def update():
     # Make sure the request.args.get('id') exists, otherwise do not update
     unixtime = int(time.time())
 
-    model = SentenceTransformer('sentence-transformers/all-distilroberta-v1')
-    embedding = model.encode(urllib.parse.unquote(request.args.get('content'))).astype(np.float32).tobytes()
-
     doc = { "content":urllib.parse.unquote(request.args.get('content')),
-            "content_embedding":embedding,
             "name":urllib.parse.unquote(request.args.get('name')),
             "update": unixtime}
     conn.hmset("keybase:kb:{}".format(request.args.get('id')), doc)
+
+    # Update the vector embedding in the background
+    sscanThread = threading.Thread(target=bg_embedding_vector, args=(request.args.get('id'),)) 
+    sscanThread.daemon = True
+    sscanThread.start()
+
     return jsonify(message="Document updated")
 
 @app.route('/load', methods=['GET'])
@@ -161,21 +175,24 @@ def view():
     id = request.args.get('id')
     TITLE="Read Document"
     DESC="Read Document"
+    keys = []
+    names = []
     #if id is None:
 
     document = conn.hmget("keybase:kb:{}".format(id), ['name', 'content', 'content_embedding'])
 
-    q = Query("*=>[KNN 5 @content_embedding $vec]").return_field("__content_embedding_score")
-    res = conn.ft("suggest_idx").search(q, query_params={"vec": document[2]})
-
-    keys = []
-    names = []
-    for doc in res.docs:
-        id = doc.id.split(':')[-1]
-        suggest = conn.hmget("keybase:kb:{}".format(id), ['name'])
-        keys.append(id)
-        names.append(suggest[0].decode('utf-8'))
-        print(suggest[0])
+    # Fetching suggestions only if the vector embedding is available
+    if (document[2] != None):
+        q = Query("*=>[KNN 6 @content_embedding $vec]").sort_by("__content_embedding_score")
+        res = conn.ft("suggest_idx").search(q, query_params={"vec": document[2]})
+        for doc in res.docs:
+            if (doc.id.split(':')[-1] == id):
+                continue
+            id = doc.id.split(':')[-1]
+            suggest = conn.hmget("keybase:kb:{}".format(id), ['name'])
+            keys.append(id)
+            names.append(suggest[0].decode('utf-8'))
+            print(suggest[0])
 
     document[0] = urllib.parse.quote(document[0])
     document[1] = urllib.parse.quote(document[1])
