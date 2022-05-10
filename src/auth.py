@@ -87,7 +87,7 @@ def signup_post():
         'mail': email,
         'password': password,
         'signup': time.time()})
-    pipeline.zadd("mails", {email: 0})
+    pipeline.zadd("keybase:mails", {email: 0})
     pipeline.execute()
 
     return redirect(url_for('auth.login'))
