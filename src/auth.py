@@ -76,7 +76,7 @@ def signup_post():
         return redirect(url_for('auth.signup'))
 
     # Check username does not exist
-    mail = conn.zrank("mails", email)
+    mail = conn.zrank("keybase:mails", email)
     if (mail == 0):
         flash('Email already exists')
         return redirect(url_for('auth.signup'))
