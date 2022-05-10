@@ -11,6 +11,7 @@ from . import config
 from flask import Flask, Blueprint, render_template, redirect, url_for, request, jsonify, session
 from flask_login import login_required, current_user
 from flask_simplelogin import login_required
+from sentence_transformers import SentenceTransformer
 
 # Database Connection
 host = config.REDIS_CFG["host"]
@@ -19,7 +20,7 @@ pwd = config.REDIS_CFG["password"]
 
 app = Blueprint('app', __name__)
 
-pool = redis.ConnectionPool(host=host, port=port, password=pwd, db=0, decode_responses=True)
+pool = redis.ConnectionPool(host=host, port=port, password=pwd, db=0, decode_responses=False)
 conn = redis.Redis(connection_pool=pool)
 
 # Helpers
@@ -91,7 +92,12 @@ def save():
     id = uuid.uuid1()
     unixtime = int(time.time())
     timestring = datetime.utcnow().strftime("%m/%d/%Y, %H:%M:%S")
+
+    model = SentenceTransformer('sentence-transformers/all-distilroberta-v1')
+    embedding = model.encode(urllib.parse.unquote(request.args.get('content'))).astype(np.float32).tobytes()
+
     doc = {"content":urllib.parse.unquote(request.args.get('content')), 
+            "content_embedding":embedding,
             "name":urllib.parse.unquote(request.args.get('name')),
             "creation":unixtime,
             "update":unixtime}
@@ -106,7 +112,11 @@ def update():
     # Make sure the request.args.get('id') exists, otherwise do not update
     unixtime = int(time.time())
 
-    doc = { "content":urllib.parse.unquote(request.args.get('content')), 
+    model = SentenceTransformer('sentence-transformers/all-distilroberta-v1')
+    embedding = model.encode(urllib.parse.unquote(request.args.get('content'))).astype(np.float32).tobytes()
+
+    doc = { "content":urllib.parse.unquote(request.args.get('content')),
+            "content_embedding":embedding,
             "name":urllib.parse.unquote(request.args.get('name')),
             "update": unixtime}
     conn.hmset("keybase:kb:{}".format(request.args.get('id')), doc)
@@ -133,10 +143,10 @@ def edit():
     TITLE="Read Document"
     DESC="Read Document"
     #if id is None:
-    document = conn.hgetall("keybase:kb:{}".format(id))
-    document['name'] = urllib.parse.quote(document['name'])
-    document['content'] = urllib.parse.quote(document['content'])
-    return render_template('edit.html', title=TITLE, desc=DESC, id=id, name=document['name'], content=document['content'])
+    document = conn.hmget("keybase:kb:{}".format(id), ['name', 'content'])
+    document[0] = urllib.parse.quote(document[0])
+    document[1] = urllib.parse.quote(document[1])
+    return render_template('edit.html', title=TITLE, desc=DESC, id=id, name=document[0], content=document[1])
 
 @app.route('/delete', methods=['GET'])
 @login_required
@@ -152,10 +162,24 @@ def view():
     TITLE="Read Document"
     DESC="Read Document"
     #if id is None:
-    document = conn.hmget("keybase:kb:{}".format(id), ['name', 'content'])
+
+    document = conn.hmget("keybase:kb:{}".format(id), ['name', 'content', 'content_embedding'])
+
+    q = Query("*=>[KNN 5 @content_embedding $vec]").return_field("__content_embedding_score")
+    res = conn.ft("suggest_idx").search(q, query_params={"vec": document[2]})
+
+    keys = []
+    names = []
+    for doc in res.docs:
+        id = doc.id.split(':')[-1]
+        suggest = conn.hmget("keybase:kb:{}".format(id), ['name'])
+        keys.append(id)
+        names.append(suggest[0].decode('utf-8'))
+        print(suggest[0])
+
     document[0] = urllib.parse.quote(document[0])
     document[1] = urllib.parse.quote(document[1])
-    return render_template('view.html', title=TITLE,id=id, desc=DESC, document=document)
+    return render_template('view.html', title=TITLE,id=id, desc=DESC, document=document, suggestlist=zip(keys, names))
 
 @app.route('/new')
 @login_required
