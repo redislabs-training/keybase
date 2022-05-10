@@ -179,24 +179,23 @@ def view():
     names = []
     #if id is None:
 
-    document = conn.hmget("keybase:kb:{}".format(id), ['name', 'content', 'content_embedding'])
+    document = conn.hmget("keybase:kb:{}".format(request.args.get('id')), ['name', 'content', 'content_embedding'])
 
     # Fetching suggestions only if the vector embedding is available
     if (document[2] != None):
         q = Query("*=>[KNN 6 @content_embedding $vec]").sort_by("__content_embedding_score")
         res = conn.ft("suggest_idx").search(q, query_params={"vec": document[2]})
         for doc in res.docs:
-            if (doc.id.split(':')[-1] == id):
+            if (doc.id.split(':')[-1] == request.args.get('id')):
                 continue
-            id = doc.id.split(':')[-1]
-            suggest = conn.hmget("keybase:kb:{}".format(id), ['name'])
-            keys.append(id)
+            suggestionid = doc.id.split(':')[-1]
+            suggest = conn.hmget("keybase:kb:{}".format(suggestionid), ['name'])
+            keys.append(suggestionid)
             names.append(suggest[0].decode('utf-8'))
-            print(suggest[0])
 
     document[0] = urllib.parse.quote(document[0])
     document[1] = urllib.parse.quote(document[1])
-    return render_template('view.html', title=TITLE,id=id, desc=DESC, document=document, suggestlist=zip(keys, names))
+    return render_template('view.html', title=TITLE,id=request.args.get('id'), desc=DESC, document=document, suggestlist=zip(keys, names))
 
 @app.route('/new')
 @login_required

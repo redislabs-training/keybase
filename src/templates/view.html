@@ -9,17 +9,16 @@
         <a style="display:inline;" href="{{ url_for('app.edit',id=id) }}">edit</a>
         <a style="display:inline;;" id="delete" href="{{ url_for('app.delete',id=id) }}">delete</a>
     </p>
-    <div style="float:left;">
-        <div id="editor" style="width:600px;text-align: justify; text-justify: inter-word;"></div>
-    </div>
-    <div id="recommendation" style="padding-left:20px; float:left; width:300px;">
+
+    <div id="recommendation" style="margin-left:20px; float:right; width:300px;">
         <h4 id="name" class="title is-6" style="margin-bottom:0em;">Recommendations</h4>
         {% for key, name in suggestlist %}
         <a style="display:block;" class="is-size-7" href="{{ url_for('app.view',id=key) }}">
             {{name}}
         </a>
         {% endfor %}
-    </div
+    </div>
+    <div id="editor" style="text-align: justify; text-justify: inter-word; margin-right:320px;"></div>
 </div>
 
 <script>  
