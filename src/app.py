@@ -184,7 +184,7 @@ def view():
     # Fetching suggestions only if the vector embedding is available
     if (document[2] != None):
         q = Query("*=>[KNN 6 @content_embedding $vec]").sort_by("__content_embedding_score")
-        res = conn.ft("suggest_idx").search(q, query_params={"vec": document[2]})
+        res = conn.ft("document_idx").search(q, query_params={"vec": document[2]})
         for doc in res.docs:
             if (doc.id.split(':')[-1] == request.args.get('id')):
                 continue
