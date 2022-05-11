@@ -59,7 +59,10 @@ def signup():
 @auth.route('/update', methods=['POST'])
 def update():
     if is_logged_in():
-        if ((not len(request.form.get('newpassword'))) or (not len(request.form.get('repeatpassword')))):
+        currentpsw = conn.hget("keybase:user:{}".format(session['username']), "password")
+        if (currentpsw != hashlib.sha256(request.form.get('currentpassword').encode()).hexdigest()):
+            flash('Your current password is incorrect', 'error')
+        elif ((not len(request.form.get('newpassword'))) or (not len(request.form.get('repeatpassword')))):
             flash('Empty password', 'error')
         elif (request.form.get('newpassword') != request.form.get('repeatpassword')):
             flash('Passwords are different', 'error')

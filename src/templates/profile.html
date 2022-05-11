@@ -20,26 +20,24 @@
   {% endif %}
   {% endwith %}
 
-  <form action="{{ url_for('auth.update') }}" method="post">
-    <div class="field is-horizontal">
-      <div class="field-label is-normal">
-        <label class="label">Change password</label>
-      </div>
-      <div class="field-body">
-        <div class="field">
-          <div class="control">
-            <input class="input" name="newpassword" type="password" placeholder="New password">
-          </div>
-        </div>
-        <div class="field">
-          <div class="control">
-            <input class="input" name="repeatpassword" type="password" placeholder="Repeat password">
-          </div>
-        </div>
+  <form action="{{ url_for('auth.update') }}" style="width:50%;" method="post">
+    <label class="label">Change password</label>
+    <div class="field">
+      <div class="control">
+        <input class="input" name="currentpassword" type="password" placeholder="Current password">
       </div>
     </div>
-
-    <div class="field is-horizontal">
+    <div class="field">
+        <div class="control">
+          <input class="input" name="newpassword" type="password" placeholder="New password">
+        </div>
+    </div>
+     <div class="field">
+        <div class="control">
+          <input class="input" name="repeatpassword" type="password" placeholder="Repeat password">
+        </div>
+    </div>
+    <div class="field">
       <div class="field-label">
         <!-- Left empty for spacing -->
       </div>
