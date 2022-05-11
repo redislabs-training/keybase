@@ -1,5 +1,59 @@
 {% extends "base.html" %}
 
 {% block content %}
-  Welcome, {{username}}!
+  <h1 id="name" class="title is-4">Welcome, {{username}}!</h1>
+  {% with messages = get_flashed_messages(category_filter=["message"]) %}
+  {% if messages %}
+      <div class="notification">
+          {% for message in messages %}
+          {{ messages[0]}}
+        {% endfor %}
+      </div>
+  {% endif %}
+  {% endwith %}   
+
+  {% with errors = get_flashed_messages(category_filter=["error"]) %}
+  {% if errors %}
+      <div class="notification is-danger">
+          {{ errors[0] }}
+      </div>
+  {% endif %}
+  {% endwith %}
+
+  <form action="{{ url_for('auth.update') }}" method="post">
+    <div class="field is-horizontal">
+      <div class="field-label is-normal">
+        <label class="label">Change password</label>
+      </div>
+      <div class="field-body">
+        <div class="field">
+          <div class="control">
+            <input class="input" name="newpassword" type="password" placeholder="New password">
+          </div>
+        </div>
+        <div class="field">
+          <div class="control">
+            <input class="input" name="repeatpassword" type="password" placeholder="Repeat password">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field is-horizontal">
+      <div class="field-label">
+        <!-- Left empty for spacing -->
+      </div>
+      <div class="field-body">
+        <div class="field">
+          <div class="control">
+            <button class="button is-primary is-link">
+              Update
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </form>
 {% endblock %}
+

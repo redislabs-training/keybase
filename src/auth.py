@@ -1,7 +1,7 @@
 from flask import Blueprint
 from flask import Blueprint, render_template, redirect, url_for
 from flask import request
-from flask import flash
+from flask import flash, session
 from flask import current_app
 import redis
 from redis import RedisError
@@ -25,7 +25,6 @@ def login():
         return redirect(url_for('app.browse'))
     else:
         return render_template('login.html')
-    #return redirect(url_for('main.profile'))
 
 @auth.route('/login', methods=['POST'])
 def login_post():
@@ -38,7 +37,7 @@ def login_post():
 
     psw = conn.hget("keybase:user:{}".format(id), "password")
 
-    if (psw == Null):
+    if (psw == None):
         flash('Please check your login details and try again.')
         return redirect(url_for('auth.login')) # if the user doesn't exist or password is wrong, reload the page
     elif (password != psw):
@@ -56,6 +55,24 @@ def signup():
         return redirect(url_for('app.browse'))
     else:
         return render_template('signup.html')
+
+@auth.route('/update', methods=['POST'])
+def update():
+    if is_logged_in():
+        if ((not len(request.form.get('newpassword'))) or (not len(request.form.get('repeatpassword')))):
+            flash('Empty password', 'error')
+        elif (request.form.get('newpassword') != request.form.get('repeatpassword')):
+            flash('Passwords are different', 'error')
+        elif (len(request.form.get('newpassword')) < 8):
+            flash('Password is too short (>8)', 'error')
+        else:
+            newpassword = hashlib.sha256(request.form.get('newpassword').encode()).hexdigest()
+            conn.hset("keybase:user:{}".format(session['username']), "password", newpassword)
+            flash('Passwords changed', 'message')
+        return redirect(url_for('app.profile'))
+    else:
+        print("or not")
+        return redirect(url_for('app.index'))
 
 @auth.route('/signup', methods=['POST'])
 def signup_post():

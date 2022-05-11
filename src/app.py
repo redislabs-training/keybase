@@ -9,6 +9,7 @@ from datetime import datetime
 import time
 from . import config
 import threading
+import flask
 from flask import Response, stream_with_context
 from flask import Flask, Blueprint, render_template, redirect, url_for, request, jsonify, session
 from flask_login import login_required, current_user
@@ -67,6 +68,9 @@ def browse():
     names = []
     creations = []
     keydocument = None
+
+    # Clear all the flashed messages
+    flask.get_flashed_messages()
 
     try:
         if (request.args.get('q')):
@@ -134,13 +138,6 @@ def update():
     sscanThread.start()
 
     return jsonify(message="Document updated")
-
-@app.route('/load', methods=['GET'])
-@login_required
-def load():
-    imageId = request.args.get('id')
-    bytes = conn.get(session['username']+":image:"+imageId)
-    return bytes
 
 @app.route('/about', methods=['GET'])
 @login_required
