@@ -7,6 +7,7 @@ from flask_simplelogin import SimpleLogin
 import redis
 from . import config
 import hashlib
+from flask_sslify import SSLify
 
 # Database Connection
 host = config.REDIS_CFG["host"]
@@ -20,7 +21,8 @@ global globalredispool
 
 def create_app():
     app = Flask(__name__, template_folder="templates")
-
+    sslify = SSLify(app)
+    
     app.debug = True
     app.secret_key = 'vsfjnsrbnsvòojfnvòsojdfnvosf'
     app.config['SIMPLELOGIN_LOGIN_URL'] = '/login'
