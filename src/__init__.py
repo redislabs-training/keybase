@@ -17,6 +17,7 @@ conn = redis.Redis(connection_pool=pool)
 
 global globalredispool
 
+
 def create_app():
     app = Flask(__name__, template_folder="templates")
 

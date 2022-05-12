@@ -32,6 +32,12 @@ Then, configure the Redis database credentials in `config.py`. Finally, create t
 FT.CREATE document_idx ON HASH PREFIX 1 "keybase:kb" SCHEMA name TEXT content TEXT creation NUMERIC SORTABLE update NUMERIC SORTABLE content_embedding VECTOR FLAT 6 TYPE FLOAT32 DIM 768 DISTANCE_METRIC COSINE
 ```
 
+Finally, consider that Vector Similarity syntax will need the following syntax dialect. Then set it:
+
+```
+FT.CONFIG SET DEFAULT_DIALECT 2
+```
+
 Time to start the platform:
 
 ```
