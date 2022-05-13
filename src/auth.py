@@ -94,6 +94,16 @@ def signup_post():
     # Check mail, username and password
     # ...
 
+    # Check username not too short
+    if (len(name)<7):
+        flash('Username is too short')
+        return redirect(url_for('auth.signup'))
+
+    # Check password not too short
+    if (len(request.form.get('password'))<8):
+        flash('Password is too short')
+        return redirect(url_for('auth.signup'))
+
     # Check username does not exist
     user = conn.hgetall("keybase:user:{}".format(name))
     if (user):
@@ -111,7 +121,7 @@ def signup_post():
     pipeline.hmset("keybase:user:{}".format(name.lower()), {
         'mail': email,
         'password': password,
-        'enabled': 0,
+        'status': "disabled",
         'signup': time.time()})
     pipeline.zadd("keybase:mails", {email: 0})
     pipeline.execute()
