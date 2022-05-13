@@ -61,15 +61,24 @@
 
                 <div class="navbar-end">
                 {% if is_logged_in() %}
-                    <a href="{{ url_for('admin.list') }}" class="navbar-item">
-                        Admin
-                    </a>
-                    <a href="{{ url_for('app.profile') }}" class="navbar-item">
-                        Profile
-                    </a>
-                    <a href="{{ url_for('auth.logout') }}" class="navbar-item">
-                        Logout
-                    </a>
+                    <div class="navbar-item has-dropdown is-hoverable">
+                        <a class="navbar-link">
+                            {{session['username']}}
+                        </a>
+                        <div class="navbar-dropdown">
+                            <a href="{{ url_for('admin.list') }}" class="navbar-item">
+                                Admin
+                            </a>
+                            <hr class="navbar-divider">
+                            <a href="{{ url_for('app.profile') }}" class="navbar-item">
+                                Profile
+                            </a>
+                            <hr class="navbar-divider">
+                            <a href="{{ url_for('auth.logout') }}" class="navbar-item">
+                                Logout
+                            </a>
+                        </div>
+                    </div>
                 {% else %}
                     <div class="navbar-item">
                         <div class="buttons">
