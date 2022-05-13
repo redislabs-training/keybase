@@ -46,13 +46,17 @@ def create_app():
 
     return app
 
-
 def check_my_users(user):
-    psw = conn.hget("keybase:user:{}".format(user["username"].lower()), "password")
+    credentials = conn.hmget("keybase:user:{}".format(user["username"].lower()), ['password', 'status'])
+    psw = credentials[0]
+    status = credentials[1]
 
     if (psw == None):
         flash('Please check your login details and try again.')
         return False
+    elif (status != "enabled"):
+        flash('Your account is disabled')
+        return False # if the user is not enabled, reload the page
     elif (hashlib.sha256(user["password"].encode()).hexdigest() != psw):
         flash('Please check your password.')
         return False
@@ -60,4 +64,3 @@ def check_my_users(user):
     # if the above check passes, then we know the user has the right credentials
     session['username'] = user["username"].lower()
     return True
-

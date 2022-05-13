@@ -34,13 +34,19 @@ def login_post():
     password = hashlib.sha256(request.form.get('password').encode()).hexdigest()
     remember = True if request.form.get('remember') else False
 
-    psw = conn.hget("keybase:user:{}".format(id), "password")
+    #psw = conn.hget("keybase:user:{}".format(id), "password")
+    user = conn.hmget("keybase:user:{}".format(id), ['password', 'status'])
+    psw = user[0]
+    status = user[1]
 
     if (psw == None):
-        flash('Please check your login details and try again.')
+        flash('Please check your login details and try again')
         return redirect(url_for('auth.login')) # if the user doesn't exist or password is wrong, reload the page
+    elif (status != "enabled"):
+        flash('Your account is disabled')
+        return redirect(url_for('auth.login')) # if the user is not enabled, reload the page
     elif (password != psw):
-        flash('Please check your password.')
+        flash('Please check your password')
         return redirect(url_for('auth.login')) # if the user doesn't exist or password is wrong, reload the page
 
     # if the above check passes, then we know the user has the right credentials
@@ -105,6 +111,7 @@ def signup_post():
     pipeline.hmset("keybase:user:{}".format(name.lower()), {
         'mail': email,
         'password': password,
+        'enabled': 0,
         'signup': time.time()})
     pipeline.zadd("keybase:mails", {email: 0})
     pipeline.execute()
