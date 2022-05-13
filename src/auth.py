@@ -15,7 +15,7 @@ auth = Blueprint('auth', __name__)
 host = config.REDIS_CFG["host"]
 port = config.REDIS_CFG["port"]
 pwd = config.REDIS_CFG["password"]
-pool = redis.ConnectionPool(host=host, port=port, db=0, decode_responses=True)
+pool = redis.ConnectionPool(host=host, port=port, password=pwd, db=0, decode_responses=True)
 conn = redis.Redis(connection_pool=pool)
 
 @auth.route('/login')
