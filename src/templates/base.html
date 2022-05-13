@@ -61,6 +61,9 @@
 
                 <div class="navbar-end">
                 {% if is_logged_in() %}
+                    <a href="{{ url_for('admin.list') }}" class="navbar-item">
+                        Admin
+                    </a>
                     <a href="{{ url_for('app.profile') }}" class="navbar-item">
                         Profile
                     </a>

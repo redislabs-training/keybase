@@ -22,7 +22,7 @@ global globalredispool
 def create_app():
     app = Flask(__name__, template_folder="templates")
     sslify = SSLify(app)
-    
+
     app.debug = True
     app.secret_key = 'vsfjnsrbnsvòojfnvòsojdfnvosf'
     app.config['SIMPLELOGIN_LOGIN_URL'] = '/login'
@@ -39,6 +39,10 @@ def create_app():
     # blueprint for non-auth parts of app
     from .app import app as main_blueprint
     app.register_blueprint(main_blueprint)
+
+    # blueprint for admin parts
+    from .admin import admin as admin_blueprint
+    app.register_blueprint(admin_blueprint)
 
     return app
 

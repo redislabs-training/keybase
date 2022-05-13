@@ -43,3 +43,17 @@ Time to start the platform:
 ```
 ./start.sh
 ```
+
+## Troubleshooting
+
+If after installing `sentence_transformers` you fail to start the application and get:
+
+```
+ModuleNotFoundError: No module named 'sentence_transformers'
+```
+
+Or, you fail to install it and `pip install sentence_transformers` fails with "Killed", you may be running out of RAM memory. If that is the case, try to install `sentence_transformers` using:
+
+```
+pip install sentence_transformers --no-cache-dir
+```
