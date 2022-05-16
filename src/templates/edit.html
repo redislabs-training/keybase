@@ -4,9 +4,17 @@
 <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
 
 <div id="container">
-	<input class="input" id="name" type="text" placeholder="Document name">
-	<button id="save" class="button is-small" type="button">save</button> 
-	<button id="close" class="button is-small" type="button">close</button> 
+
+	<div class="field is-grouped">
+		<p class="control is-expanded">
+			<input class="input" id="name" type="text" placeholder="Document name">
+		</p>
+		<p class="control">
+			<button id="save" class="button is-info is-light" type="button">save</button> 
+			<button id="close" class="button is-info is-light" type="button">close</button> 
+			<button id="delete" class="button is-danger is-light" type="button">delete</button> 
+		</p>
+	  </div>
 	<div id="editor"></div>
 </div>
 

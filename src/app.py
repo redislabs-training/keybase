@@ -40,6 +40,7 @@ def isempty(input):
 	return result
 
 @app.route('/autocomplete', methods=['GET'])
+@login_required
 def autocomplete():
     search = urllib.parse.unquote(request.args.get('q'))
     rs = conn.ft("document_idx").search(Query(search).paging(0, 10))
@@ -119,7 +120,7 @@ def save():
     sscanThread.start()
 
     return jsonify(message="Document created", id=id)
-
+    
 
 @app.route('/update', methods=['GET'])
 @login_required

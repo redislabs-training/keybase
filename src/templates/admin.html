@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1 id="name" class="title is-4">Admin</h1>
+
+  <div class="columns">
+    <div class="column">Download a backup of the knowledge base</div>
+    <div class="column"><button id="backup" class="button">Backup</button> </div>
+  </div>
+
+  <div class="columns">
+    <div class="column">Restore the knowledge base from backup</div>
+    <div class="column"> 
+
+    <div class="file is-normal">
+      <label class="file-label">
+        <input id="restore" class="file-input" type="file" name="resume">
+        <span class="file-cta">
+          <span class="file-label">
+            Restore
+          </span>
+        </span>
+      </label>
+    </div>
+  </div>
+
+  </div>
+
+  <script>
+  var backupBtn = document.querySelector('#backup');
+  backupBtn.addEventListener("mousedown", function(e) {
+      $.ajax({
+        type: "GET",
+        url: "{{ url_for('admin.backup')}}",
+        data : {},
+        success: function(data) {
+          console.log(data.backup)
+          download("backup.txt", data.backup)
+          $.notify(data.message, "success");
+        }});
+  }, true);
+
+  $("#restore").click(function(){
+    var fd = new FormData();
+    var files = $('#restore')[0].files;
+
+    // Check file selected or not
+    if(files.length > 0 ){
+    fd.append('file',files[0]);
+
+    $.ajax({
+    url: "{{ url_for('admin.restore')}}",
+    type: 'post',
+    data: fd,
+    contentType: false,
+    processData: false,
+    success: function(data) {
+          $.notify(data.message, "success");
+        }});
+    }else{
+      alert("Please select a file");
+    }
+  });
+
+  function download(filename, text) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+  }
+
+</script>
+
+{% endblock %}
+
