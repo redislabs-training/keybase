@@ -21,7 +21,7 @@ global globalredispool
 
 def create_app():
     app = Flask(__name__, template_folder="templates")
-    sslify = SSLify(app)
+    #sslify = SSLify(app)
 
     app.debug = True
     app.secret_key = 'vsfjnsrbnsvòojfnvòsojdfnvosf'

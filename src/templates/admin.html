@@ -40,7 +40,7 @@
         }});
   }, true);
 
-  $("#restore").click(function(){
+  $("#restore").change(function(){
     var fd = new FormData();
     var files = $('#restore')[0].files;
 
@@ -57,8 +57,27 @@
     success: function(data) {
           $.notify(data.message, "success");
         }});
-    }else{
-      alert("Please select a file");
+        
+
+/*
+    var file = this.files[0];
+    var FR = new FileReader();
+
+    FR.readAsText(file);
+    FR.onload = function(data) {
+    var myVar = data.target.result;
+    
+      $.ajax({
+        type: "GET",
+        url: "{{ url_for('admin.restore')}}",
+        data : {file: myVar},
+        success: function(data) {
+        console.log(data);
+          $.notify("Document updated", "success");
+        }});
+    }
+*/
+
     }
   });
 

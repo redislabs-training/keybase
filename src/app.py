@@ -16,6 +16,7 @@ from flask_login import login_required, current_user
 from flask_simplelogin import login_required
 from sentence_transformers import SentenceTransformer
 
+
 # Database Connection
 host = config.REDIS_CFG["host"]
 port = config.REDIS_CFG["port"]
@@ -128,6 +129,8 @@ def update():
     # Make sure the request.args.get('id') exists, otherwise do not update
     unixtime = int(time.time())
 
+    print("--->" + request.args.get('content'))
+    print("--->" + urllib.parse.unquote(request.args.get('content')))
     doc = { "content":urllib.parse.unquote(request.args.get('content')),
             "name":urllib.parse.unquote(request.args.get('name')),
             "update": unixtime}

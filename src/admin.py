@@ -5,10 +5,17 @@ from flask import current_app
 import redis
 from redis import RedisError
 from . import config
+import json
 import time
 import hashlib
 import urllib.parse
 from flask_simplelogin import is_logged_in, login_required
+from objdict import ObjDict
+import base64
+from ast import literal_eval
+import pickle
+import codecs
+import binascii
 
 admin = Blueprint('admin', __name__)
 
@@ -38,6 +45,9 @@ def tools():
     DESC="Admin functions"
     return render_template('admin.html', title=TITLE, desc=DESC)
 
+"""
+# Routines to backup and restore encoding data as UTF-8. Cannot encode binary vector embeddings, so to use vector similarity, I choose base64 encoding
+# These routines could be reused to produce statements such as HSET ..., in a much more readable format
 @admin.route('/backup', methods=['GET'])
 def backup():
     result = []
@@ -49,15 +59,57 @@ def backup():
         result.extend(keys)
         for key in keys:
             hash = conn.hgetall(key)
-            #hash = conn.hmget(key, ['name', 'content', 'content_embedding'])
-            command="HSET " + key.decode('utf-8')
+            data = ObjDict()
+            data['key'] = key.decode('utf-8')
+            data['type'] = "hash"
+            theValue = ObjDict()
             for (field, value) in hash.items():
                 if (field.decode('utf-8') == "content_embedding"):
-                    command += " " + '"{}"'.format(field.decode('utf-8')) + " " + str(value)[1:]
-                else:
-                    command += " " + '"{}"'.format(field.decode('utf-8')) + " " + '"{}"'.format(value.decode('utf-8').replace("\n", "\\n"))
-            print ("--------> " + command)
-            backup += command + "\n"
+                #    theValue[field.decode("utf-8")] = str(value)
+                    continue
+                theValue[field.decode("utf-8")] = value.decode("utf-8")
+            data['value'] = theValue
+            backup += json.dumps(data) + "\n"
+
+        if (cursor==0):
+            break
+
+    return jsonify(message="Backup created", backup=backup)
+
+
+@admin.route('/restore', methods=['POST'])
+def restore():
+    print("Starting to restore")
+    uploaded_file = request.files['file']
+    print(uploaded_file.filename)
+    #conn.execute_command("HSET minestra patata \"dieci l'anno\" carote \"sette quasi\" zucchine 8")
+    for line in uploaded_file:
+        data = json.loads(line.decode('utf-8'))
+        if (data['type'] == "hash"):
+            conn.hmset(data['key'], data['value'])
+
+    return jsonify(message="Restore done")
+"""
+
+@admin.route('/backup', methods=['GET'])
+def backup():
+    result = []
+    backup = ""
+    cursor=0
+
+    while True:
+        cursor, keys  = conn.scan(cursor, match='keybase*', count=20, _type="HASH")
+        result.extend(keys)
+        for key in keys:
+            hash = conn.hgetall(key)
+            data = {}
+            theValue = {}
+            data['key'] = key.decode("utf-8")
+            for (field, value) in hash.items():
+                theValue[base64.b64encode(field).decode('ascii')] = base64.b64encode(value).decode('ascii')
+
+            data['value'] = theValue
+            backup += json.dumps(data) + "\n"
 
         if (cursor==0):
             break
@@ -71,7 +123,12 @@ def restore():
     uploaded_file = request.files['file']
     print(uploaded_file.filename)
     for line in uploaded_file:
-        print("Next line: " + str(line))
+        data = json.loads(line)
+        hash = {}
+        print(data['key'])
+        for (field, value) in data['value'].items():
+            hash[base64.b64decode(field.encode('ascii'))] = base64.b64decode(value.encode('ascii'))
+        conn.hmset(data['key'], hash)
 
     return jsonify(message="Restore done")
 
