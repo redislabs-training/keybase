@@ -12,7 +12,7 @@ import threading
 import flask
 from flask import Response, stream_with_context
 from flask import Flask, Blueprint, render_template, redirect, url_for, request, jsonify, session
-from flask_login import login_required, current_user
+#from flask_login import login_required, current_user
 from flask_simplelogin import login_required
 from sentence_transformers import SentenceTransformer
 

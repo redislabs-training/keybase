@@ -12,7 +12,7 @@
 		<p class="control">
 			<button id="save" class="button is-info is-light" type="button">save</button> 
 			<button id="close" class="button is-info is-light" type="button">close</button> 
-			<button id="delete" class="button is-danger is-light" type="button">delete</button> 
+			<a id="delete" class="button is-danger is-light" href="{{ url_for('app.delete',id=id) }}">delete</a> 
 		</p>
 	  </div>
 	<div id="editor"></div>
@@ -49,5 +49,12 @@
 	  closeBtn.addEventListener("mousedown", function(e) {
 		window.location.replace("{{ url_for('app.view',id=id) }}");
 	  }, true);
+
+	  $("#delete").click(function() {
+        if (confirm("Confirm the deletion of the document!") == true) {
+            return true;
+        } else {
+            return false;
+    }})	  
 </script>
 {% endblock %}
