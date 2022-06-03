@@ -32,6 +32,9 @@ def create_app():
 
     simple_login = SimpleLogin(app, login_checker=check_my_users)
 
+    # do Redis initializations
+    init_db()
+
     # blueprint for auth routes in our app
     from .auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint)
@@ -45,6 +48,9 @@ def create_app():
     app.register_blueprint(admin_blueprint)
 
     return app
+
+def init_db():
+    conn.ft().config_set("DEFAULT_DIALECT", 2)
 
 def check_my_users(user):
     credentials = conn.hmget("keybase:user:{}".format(user["username"].lower()), ['password', 'status'])

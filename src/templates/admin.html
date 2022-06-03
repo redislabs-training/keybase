@@ -29,13 +29,16 @@
   <script>
   var backupBtn = document.querySelector('#backup');
   backupBtn.addEventListener("mousedown", function(e) {
+    const timeElapsed = Date.now();
+    const today = new Date(timeElapsed);
+    filename = "keybase_"+today.toISOString()+".txt";
       $.ajax({
         type: "GET",
         url: "{{ url_for('admin.backup')}}",
         data : {},
         success: function(data) {
           console.log(data.backup)
-          download("backup.txt", data.backup)
+          download(filename, data.backup)
           $.notify(data.message, "success");
         }});
   }, true);
