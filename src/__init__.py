@@ -9,6 +9,7 @@ from . import config
 import hashlib
 from flask_sslify import SSLify
 
+
 # Database Connection
 host = config.REDIS_CFG["host"]
 port = config.REDIS_CFG["port"]
@@ -50,7 +51,9 @@ def create_app():
     return app
 
 def init_db():
+    print("Initializing Redis...")
     conn.ft().config_set("DEFAULT_DIALECT", 2)
+
 
 def check_my_users(user):
     credentials = conn.hmget("keybase:user:{}".format(user["username"].lower()), ['password', 'status'])

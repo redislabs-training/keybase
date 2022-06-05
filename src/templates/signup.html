@@ -11,6 +11,7 @@
             </div>
         {% endif %}
         {% endwith %}
+        {% if method != "okta" %}
         <form method="POST" action="/signup">
             <div class="field">
                 <div class="control">
@@ -32,6 +33,10 @@
 
             <button class="button is-block is-info is-fullwidth">Sign Up</button>
         </form>
+        {% endif %}
+        {% if method == "okta" %}
+            okta authentication coming soon
+        {% endif %}
     </div>
 </div>
 {% endblock %}

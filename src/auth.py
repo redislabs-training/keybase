@@ -59,7 +59,7 @@ def signup():
     if is_logged_in():
         return redirect(url_for('app.browse'))
     else:
-        return render_template('signup.html')
+        return render_template('signup.html', method=config.SIGNUP_CFG)
 
 @auth.route('/update', methods=['POST'])
 def update():
@@ -81,9 +81,13 @@ def update():
     else:
         print("or not")
         return redirect(url_for('app.index'))
+    
 
 @auth.route('/signup', methods=['POST'])
 def signup_post():
+    if (config.SIGNUP_CFG == 'okta'):
+        return render_template('signup.html', method=config.SIGNUP_CFG)
+
     if is_logged_in():
         return redirect(url_for('app.browse'))
 

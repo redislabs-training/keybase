@@ -24,7 +24,7 @@ pwd = config.REDIS_CFG["password"]
 
 app = Blueprint('app', __name__)
 
-pool = redis.ConnectionPool(host=host, port=port, password=pwd, db=0, decode_responses=False)
+pool = redis.ConnectionPool(host=host, port=port, password=pwd, db=0, decode_responses=True)
 conn = redis.Redis(connection_pool=pool)
 
 # Helpers
@@ -180,10 +180,26 @@ def view():
     suggestlist = None
     #if id is None:
 
-    document = conn.hmget("keybase:kb:{}".format(request.args.get('id')), ['name', 'content', 'content_embedding'])
+    document = conn.hmget("keybase:kb:{}".format(request.args.get('id')), ['name', 'content'])
     document[0] = urllib.parse.quote(document[0])
     document[1] = urllib.parse.quote(document[1])
 
+    # Fetch recommendations using LUA and avoid sending vector embeddings back an forth
+    luascript = conn.register_script("local vector = redis.call('hmget',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','document_idx','*=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres")
+    pipe = conn.pipeline()
+    luascript(keys=["keybase:kb:{}".format(request.args.get('id'))], client=pipe)
+    r = pipe.execute()
+
+    # The first element in the returned list is the number of keys returned, start iterator from [1:]
+    # Then, iterate the results in pairs, because they key name is alternated with the returned fields
+    it = iter(r[0][1:])
+    for x in it:
+        keys.append(str(x.split(':')[-1]))
+        names.append(str(next(it)[3]))
+        #print (x.split(':')[-1], next(it)[3])
+    suggestlist=zip(keys, names)
+
+    """
     # Fetching suggestions only if the vector embedding is available
     if (document[2] != None):
         q = Query("*=>[KNN 6 @content_embedding $vec]").sort_by("__content_embedding_score")
@@ -196,7 +212,7 @@ def view():
             keys.append(suggestionid)
             names.append(suggest[0].decode('utf-8'))
         suggestlist=zip(keys, names)
-
+    """
     return render_template('view.html', title=TITLE,id=request.args.get('id'), desc=DESC, document=document, suggestlist=suggestlist)
 
 @app.route('/new')
