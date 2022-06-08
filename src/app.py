@@ -58,7 +58,7 @@ def bg_embedding_vector(key):
     content = conn.hget("keybase:kb:{}".format(key), "content")
     print("Computing vector embedding for " + key)
     model = SentenceTransformer('sentence-transformers/all-distilroberta-v1')
-    embedding = model.encode(content.decode('utf-8')).astype(np.float32).tobytes()
+    embedding = model.encode(content).astype(np.float32).tobytes()
     conn.hset("keybase:kb:{}".format(key), "content_embedding", embedding)
     print("Done vector embedding for " + key)
 
