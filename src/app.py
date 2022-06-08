@@ -203,14 +203,16 @@ def view():
     # Fetch recommendations using LUA and avoid sending vector embeddings back an forth
     # The first element in the returned list is the number of keys returned, start iterator from [1:]
     # Then, iterate the results in pairs, because they key name is alternated with the returned fields
-    keys_and_args = ["keybase:kb:{}".format(request.args.get('id'))]
-    res = conn.eval("local vector = redis.call('hmget',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','document_idx','*=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres", 1, *keys_and_args)
-    it = iter(res[1:])
-    for x in it:
-        keys.append(str(x.split(':')[-1]))
-        names.append(str(next(it)[3]))
-        #print (x.split(':')[-1], next(it)[3])
-    suggestlist=zip(keys, names)
+
+    if conn.hexists("keybase:kb:{}".format(request.args.get('id')), 'content_embedding'):
+        keys_and_args = ["keybase:kb:{}".format(request.args.get('id'))]
+        res = conn.eval("local vector = redis.call('hmget',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','document_idx','*=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres", 1, *keys_and_args)
+        it = iter(res[1:])
+        for x in it:
+            keys.append(str(x.split(':')[-1]))
+            names.append(str(next(it)[3]))
+            #print (x.split(':')[-1], next(it)[3])
+        suggestlist=zip(keys, names)
 
 
     """
