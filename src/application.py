@@ -14,10 +14,22 @@ from flask_sslify import SSLify
 host = config.REDIS_CFG["host"]
 port = config.REDIS_CFG["port"]
 pwd = config.REDIS_CFG["password"]
-pool = redis.ConnectionPool(host=host, port=port, password=pwd, db=0, decode_responses=True)
-conn = redis.Redis(connection_pool=pool)
+ssl_keyfile = config.REDIS_CFG["ssl_keyfile"]
+ssl_certfile = config.REDIS_CFG["ssl_certfile"]
+ssl_cert_reqs = config.REDIS_CFG["ssl_cert_reqs"]
+ssl_ca_certs = config.REDIS_CFG["ssl_ca_certs"]
 
-global globalredispool
+conn = redis.StrictRedis(host=host, 
+                            port=port, 
+                            password=pwd, 
+                            db=0,
+                            ssl=True,
+                            ssl_keyfile=ssl_keyfile,
+                            ssl_certfile=ssl_certfile,
+                            ssl_ca_certs=ssl_ca_certs,
+                            ssl_cert_reqs=ssl_cert_reqs, 
+                            decode_responses=True)
+
 
 def create_app():
     app = Flask(__name__, template_folder="templates")
@@ -51,7 +63,7 @@ def create_app():
 
 def init_db():
     print("Initializing Redis...")
-    conn.ft().config_set("DEFAULT_DIALECT", 2)
+    #conn.ft().config_set("DEFAULT_DIALECT", 2)
 
 
 def check_my_users(user):

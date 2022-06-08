@@ -16,16 +16,27 @@ from flask import Flask, Blueprint, render_template, redirect, url_for, request,
 from flask_simplelogin import login_required
 from sentence_transformers import SentenceTransformer
 
+app = Blueprint('app', __name__)
 
 # Database Connection
 host = config.REDIS_CFG["host"]
 port = config.REDIS_CFG["port"]
 pwd = config.REDIS_CFG["password"]
+ssl_keyfile = config.REDIS_CFG["ssl_keyfile"]
+ssl_certfile = config.REDIS_CFG["ssl_certfile"]
+ssl_cert_reqs = config.REDIS_CFG["ssl_cert_reqs"]
+ssl_ca_certs = config.REDIS_CFG["ssl_ca_certs"]
 
-app = Blueprint('app', __name__)
-
-pool = redis.ConnectionPool(host=host, port=port, password=pwd, db=0, decode_responses=True)
-conn = redis.Redis(connection_pool=pool)
+conn = redis.StrictRedis(host=host, 
+                            port=port, 
+                            password=pwd, 
+                            db=0,
+                            ssl=True,
+                            ssl_keyfile=ssl_keyfile,
+                            ssl_certfile=ssl_certfile,
+                            ssl_ca_certs=ssl_ca_certs,
+                            ssl_cert_reqs=ssl_cert_reqs, 
+                            decode_responses=True)
 
 # Helpers
 def isempty(input):
@@ -113,13 +124,14 @@ def save():
     doc = {"content":urllib.parse.unquote(request.args.get('content')), 
             "name":urllib.parse.unquote(request.args.get('name')),
             "creation":unixtime,
+            "processable":1,
             "update":unixtime}
     conn.hmset("keybase:kb:{}".format(id), doc)
 
     # Update the vector embedding in the background
-    sscanThread = threading.Thread(target=bg_embedding_vector, args=(str(id),)) 
-    sscanThread.daemon = True
-    sscanThread.start()
+    #sscanThread = threading.Thread(target=bg_embedding_vector, args=(str(id),)) 
+    #sscanThread.daemon = True
+    #sscanThread.start()
 
     return jsonify(message="Document created", id=id)
     
@@ -134,13 +146,14 @@ def update():
     print("--->" + urllib.parse.unquote(request.args.get('content')))
     doc = { "content":urllib.parse.unquote(request.args.get('content')),
             "name":urllib.parse.unquote(request.args.get('name')),
+            "processable":1,
             "update": unixtime}
     conn.hmset("keybase:kb:{}".format(request.args.get('id')), doc)
 
     # Update the vector embedding in the background
-    sscanThread = threading.Thread(target=bg_embedding_vector, args=(request.args.get('id'),)) 
-    sscanThread.daemon = True
-    sscanThread.start()
+    #sscanThread = threading.Thread(target=bg_embedding_vector, args=(request.args.get('id'),)) 
+    #sscanThread.daemon = True
+    #sscanThread.start()
 
     return jsonify(message="Document updated")
 
