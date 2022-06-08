@@ -43,13 +43,14 @@ def isempty(input):
 @app.route('/autocomplete', methods=['GET'])
 @login_required
 def autocomplete():
-    search = urllib.parse.unquote(request.args.get('q'))
-    rs = conn.ft("document_idx").search(Query(search).paging(0, 10))
+    rs = conn.ft("document_idx").search(Query(urllib.parse.unquote(request.args.get('q'))).return_field("name").sort_by("creation", asc=False).paging(0, 10))
     results = []
+
     for doc in rs.docs:
         results.append({'value': urllib.parse.unquote(doc.name),
                         'label': urllib.parse.unquote(doc.name), 
                         'id': doc.id.split(':')[-1]})
+
     return jsonify(matching_results=results)
 
 
@@ -185,19 +186,32 @@ def view():
     document[1] = urllib.parse.quote(document[1])
 
     # Fetch recommendations using LUA and avoid sending vector embeddings back an forth
-    luascript = conn.register_script("local vector = redis.call('hmget',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','document_idx','*=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres")
-    pipe = conn.pipeline()
-    luascript(keys=["keybase:kb:{}".format(request.args.get('id'))], client=pipe)
-    r = pipe.execute()
+    #luascript = conn.register_script("local vector = redis.call('hmget',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','document_idx','*=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres")
+    #pipe = conn.pipeline()
+    #luascript(keys=["keybase:kb:{}".format(request.args.get('id'))], client=pipe)
+    #r = pipe.execute()
 
     # The first element in the returned list is the number of keys returned, start iterator from [1:]
     # Then, iterate the results in pairs, because they key name is alternated with the returned fields
-    it = iter(r[0][1:])
+    #it = iter(r[0][1:])
+    #for x in it:
+    #    keys.append(str(x.split(':')[-1]))
+    #    names.append(str(next(it)[3]))
+        #print (x.split(':')[-1], next(it)[3])
+    #suggestlist=zip(keys, names)
+
+    # Fetch recommendations using LUA and avoid sending vector embeddings back an forth
+    # The first element in the returned list is the number of keys returned, start iterator from [1:]
+    # Then, iterate the results in pairs, because they key name is alternated with the returned fields
+    keys_and_args = ["keybase:kb:{}".format(request.args.get('id'))]
+    res = conn.eval("local vector = redis.call('hmget',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','document_idx','*=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres", 1, *keys_and_args)
+    it = iter(res[1:])
     for x in it:
         keys.append(str(x.split(':')[-1]))
         names.append(str(next(it)[3]))
         #print (x.split(':')[-1], next(it)[3])
     suggestlist=zip(keys, names)
+
 
     """
     # Fetching suggestions only if the vector embedding is available
