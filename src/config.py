@@ -1,6 +1,7 @@
 REDIS_CFG = {   "host" : "",
-                "port" : 6379,
+                "port" : 6380,
                 "password" : "",
+                "ssl" : False,
                 "ssl_keyfile" : '', 
                 "ssl_certfile" : '', 
                 "ssl_cert_reqs" : '', 

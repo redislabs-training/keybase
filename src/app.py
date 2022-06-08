@@ -22,6 +22,7 @@ app = Blueprint('app', __name__)
 host = config.REDIS_CFG["host"]
 port = config.REDIS_CFG["port"]
 pwd = config.REDIS_CFG["password"]
+ssl = config.REDIS_CFG["ssl"]
 ssl_keyfile = config.REDIS_CFG["ssl_keyfile"]
 ssl_certfile = config.REDIS_CFG["ssl_certfile"]
 ssl_cert_reqs = config.REDIS_CFG["ssl_cert_reqs"]
@@ -31,7 +32,7 @@ conn = redis.StrictRedis(host=host,
                             port=port, 
                             password=pwd, 
                             db=0,
-                            ssl=True,
+                            ssl=ssl,
                             ssl_keyfile=ssl_keyfile,
                             ssl_certfile=ssl_certfile,
                             ssl_ca_certs=ssl_ca_certs,
