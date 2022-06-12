@@ -28,7 +28,7 @@
         <div class="hero-head">
             <nav class="navbar" role="navigation" aria-label="main navigation">
               <div class="navbar-brand">
-                {% if is_logged_in() %}
+                {% if not current_user.is_authenticated %}
                 <a href="{{ url_for('app.browse') }}" class="navbar-item">
                 {% else %}
                 <a href="{{ url_for('app.index') }}" class="navbar-item">
@@ -44,14 +44,16 @@
               </div>
 
               <div id="navbarBasicExample" class="navbar-menu">
-                <div class="navbar-start">
-                    {% if is_logged_in() %}
+                <div class="navbar-start"> <!--is_logged_in()-->
+                    {% if current_user.is_authenticated %}
                     <a href="{{ url_for('app.browse') }}" class="navbar-item">
                         Documents
                     </a>
+                    {% if current_user.is_editor() %}
                     <a href="{{ url_for('app.new') }}" class="navbar-item">
                         New
                     </a>
+                    {% endif %}
                     <a href="{{ url_for('app.about') }}" class="navbar-item">
                         About
                       </a>
@@ -60,21 +62,23 @@
                 </div>
 
                 <div class="navbar-end">
-                {% if is_logged_in() %}
+                {% if current_user.is_authenticated %}
                     <div class="navbar-item has-dropdown is-hoverable">
                         <a class="navbar-link">
                             {{session['username']}}
                         </a>
                         <div class="navbar-dropdown">
+                            {% if current_user.is_editor() %}
                             <a href="{{ url_for('admin.tools') }}" class="navbar-item">
                                 Admin
                             </a>
                             <hr class="navbar-divider">
-                            <a href="{{ url_for('app.profile') }}" class="navbar-item">
-                                Profile
+                            {% endif %}
+                            <a href="{{ url_for('app.bookmarks') }}" class="navbar-item">
+                                Bookmarks
                             </a>
                             <hr class="navbar-divider">
-                            <a href="{{ url_for('auth.logout') }}" class="navbar-item">
+                            <a href="{{ url_for('logout') }}" class="navbar-item">
                                 Logout
                             </a>
                         </div>
@@ -82,11 +86,8 @@
                 {% else %}
                     <div class="navbar-item">
                         <div class="buttons">
-                            <a href="{{ url_for('auth.signup') }}" class="button is-info">
-                                <strong>Sign up</strong>
-                            </a>
-                            <a href="{{ url_for('auth.login') }}" class="button is-light">
-                                Login
+                            <a href="{{ url_for('login') }}" class="button is-light">
+                                Okta Login
                             </a>
                         </div>
                     </div>

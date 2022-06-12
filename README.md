@@ -1,6 +1,6 @@
 # <img src="src/static/images/keybase.png" height="50px">
 
-keybase is a Redis based knowledge base, substantially a markdown editor to store and search documents.
+keybase is a Redis based knowledge base, substantially a markdown editor to store and search documents using Okta authentication.
 
 ## Preparation
 
@@ -29,7 +29,7 @@ docker run -p 6379:6379 redislabs/redisearch:2.4.3
 Then, configure the Redis database credentials in `config.py`. Finally, create the index (documents are stored in Hashes).
 
 ```
-FT.CREATE document_idx ON HASH PREFIX 1 "keybase:kb" SCHEMA name TEXT content TEXT creation NUMERIC SORTABLE update NUMERIC SORTABLE content_embedding VECTOR FLAT 6 TYPE FLOAT32 DIM 768 DISTANCE_METRIC COSINE
+FT.CREATE document_idx ON HASH PREFIX 1 "keybase:kb" SCHEMA name TEXT content TEXT creation NUMERIC SORTABLE update NUMERIC SORTABLE processable TAG content_embedding VECTOR FLAT 6 TYPE FLOAT32 DIM 768 DISTANCE_METRIC COSINE
 ```
 
 Finally, consider that Vector Similarity syntax will need the following syntax dialect. Then set it:
@@ -42,6 +42,20 @@ Time to start the platform:
 
 ```
 ./start.sh
+```
+
+## Okta Authentication
+
+Authentication relies on Okta. Users are cached into the Redis database in Hashes using the prefix:
+
+```
+keybase:okta:
+```
+
+and indexed using:
+
+```
+FT.CREATE user_idx ON HASH PREFIX 1 "keybase:okta" SCHEMA name TEXT group TEXT
 ```
 
 ## Troubleshooting

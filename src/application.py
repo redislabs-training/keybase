@@ -1,52 +1,28 @@
-from flask import Flask
-from flask import session
-from flask import flash
-from flask import Blueprint
-from flask import g
-from flask_simplelogin import SimpleLogin
-import redis
-from . import config
+#from . import config
+from config import get_db, okta
 import hashlib
-from flask_sslify import SSLify
+from flask_oidc import OpenIDConnect
+from okta.client import Client as UsersClient
 
+import secrets
+import requests
+import base64
+from user import User, Role
 
-# Database Connection
-host = config.REDIS_CFG["host"]
-port = config.REDIS_CFG["port"]
-pwd = config.REDIS_CFG["password"]
-ssl = config.REDIS_CFG["ssl"]
-ssl_keyfile = config.REDIS_CFG["ssl_keyfile"]
-ssl_certfile = config.REDIS_CFG["ssl_certfile"]
-ssl_cert_reqs = config.REDIS_CFG["ssl_cert_reqs"]
-ssl_ca_certs = config.REDIS_CFG["ssl_ca_certs"]
-
-conn = redis.StrictRedis(host=host, 
-                            port=port, 
-                            password=pwd, 
-                            db=0,
-                            ssl=ssl,
-                            ssl_keyfile=ssl_keyfile,
-                            ssl_certfile=ssl_certfile,
-                            ssl_ca_certs=ssl_ca_certs,
-                            ssl_cert_reqs=ssl_cert_reqs, 
-                            decode_responses=True)
-
+from flask import Flask, flash, Blueprint, g, render_template, redirect, request, session, url_for
+from flask_cors import CORS
+from flask_login import (LoginManager,current_user,login_required,login_user,logout_user,)
 
 def create_app():
     app = Flask(__name__, template_folder="templates")
-    #sslify = SSLify(app)
+    app.config.update({'SECRET_KEY': secrets.token_hex(64)})
+    CORS(app)
 
-    app.debug = True
-    app.secret_key = 'vsfjnsrbnsvòojfnvòsojdfnvosf'
-    app.config['SIMPLELOGIN_LOGIN_URL'] = '/login'
-    #app.config['SIMPLELOGIN_LOGOUT_URL'] = '/logout'
-    app.config['SIMPLELOGIN_HOME_URL'] = '/browse'
-    app.config.from_pyfile('config.py')    
-
-    simple_login = SimpleLogin(app, login_checker=check_my_users)
+    login_manager = LoginManager()
+    login_manager.init_app(app)
 
     # do Redis initializations
-    init_db()
+    #init_db()
 
     # blueprint for auth routes in our app
     from .auth import auth as auth_blueprint
@@ -60,8 +36,138 @@ def create_app():
     from .admin import admin as admin_blueprint
     app.register_blueprint(admin_blueprint)
 
+    @app.route("/login")
+    def login():
+        # store app state and code verifier in session
+        session['app_state'] = secrets.token_urlsafe(64)
+        session['code_verifier'] = secrets.token_urlsafe(64)
+
+        # calculate code challenge
+        hashed = hashlib.sha256(session['code_verifier'].encode('ascii')).digest()
+        encoded = base64.urlsafe_b64encode(hashed)
+        code_challenge = encoded.decode('ascii').strip('=')
+
+        # get request params
+        query_params = {'client_id': okta["client_id"],
+                        'redirect_uri': okta["redirect_uri"],
+                        'scope': "openid email profile",
+                        'state': session['app_state'],
+                        'code_challenge': code_challenge,
+                        'code_challenge_method': 'S256',
+                        'response_type': 'code',
+                        'response_mode': 'query'}
+
+        # build request_uri
+        request_uri = "{base_url}?{query_params}".format(
+            base_url=okta["auth_uri"],
+            query_params=requests.compat.urlencode(query_params)
+        )
+
+        return redirect(request_uri)
+
+    @app.before_request
+    def check_valid_login():
+        endpoint_group = ('/bookmark', '/tools', '/logout')
+        if request.endpoint in endpoint_group and not current_user.is_authenticated:
+                return render_template('/', next=request.endpoint)
+
+
+    @app.route("/authorization-code/callback")
+    def callback():
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        code = request.args.get("code")
+        app_state = request.args.get("state")
+
+        try:
+            if app_state != session['app_state']:
+                return "The app state does not match"
+            if not code:
+                return "The code was not returned or is not accessible", 403
+        except KeyError:
+            print("KeyError error: app_state missing")
+            return redirect(url_for('app.index'))
+
+        query_params = {'grant_type': 'authorization_code',
+                        'code': code,
+                        'redirect_uri': request.base_url,
+                        'code_verifier': session['code_verifier'],
+                        }
+        query_params = requests.compat.urlencode(query_params)
+        exchange = requests.post(
+            okta["token_uri"],
+            headers=headers,
+            data=query_params,
+            auth=(okta["client_id"], okta["client_secret"]),
+        ).json()
+
+        # Get tokens and validate
+        if not exchange.get("token_type"):
+                return "Unsupported token type. Should be 'Bearer'.", 403
+        access_token = exchange["access_token"]
+
+        # Authorization flow successful, get userinfo and login user
+        userinfo_response = requests.get(okta["userinfo_uri"], 
+                                        headers={'Authorization': f'Bearer {access_token}'}).json()
+
+        unique_id = userinfo_response["sub"]
+        user_email = userinfo_response["email"]
+        user_given_name = userinfo_response["given_name"]
+        user_name = userinfo_response["name"]
+
+        #user = User(
+        #    id_=unique_id, given_name=user_given_name, name=user_name, email=user_email
+        #)
+
+        user = None
+        if not User.exists(unique_id):
+            user = User.create(unique_id, user_given_name, user_name, user_email, Role.VIEWER)
+        else:
+            user = User.update(unique_id, user_given_name, user_name, user_email)
+
+        # Now create the session
+        login_user(user)
+        session['username'] = user_name
+        """"
+        if not get_db().exists("keybase:okta:{}".format(unique_id)):
+            get_db().hmset("keybase:okta:{}".format(unique_id), {
+                'group': "viewer",
+                'signup': time.time(),
+                'login': time.time()})
+        else:
+            get_db().hmset("keybase:okta:{}".format(unique_id), {'login': time.time()})
+        """
+        return redirect(url_for("app.browse"))
+
+    @app.route("/logout", methods=["GET", "POST"])
+    def logout():
+        logout_user()
+        return redirect(url_for('app.index'))
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.get(user_id)
+
+    @login_manager.unauthorized_handler
+    def unauthorized_callback():
+        return redirect(url_for('app.index'))
+
     return app
 
+
+def getUserGroups():
+    # Get groups
+    # https://developer.okta.com/docs/guides/create-an-api-token/main/
+    # Tokens are valid for 30 days from creation or last use
+    api_token = okta["api_token"]
+    usergroups_response = requests.get(okta["groups_uri"].format(unique_id), 
+                                        headers={'Accept':'application/json',
+                                                'Content-Type':'application/json',
+                                                'Authorization': f'SSWS {api_token}'}).json()
+
+    print(usergroups_response)
+
+
+"""
 def init_db():
     print("Initializing Redis...")
     #conn.ft().config_set("DEFAULT_DIALECT", 2)
@@ -85,3 +191,6 @@ def check_my_users(user):
     # if the above check passes, then we know the user has the right credentials
     session['username'] = user["username"].lower()
     return True
+"""
+
+

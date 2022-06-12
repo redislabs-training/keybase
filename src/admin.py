@@ -4,15 +4,23 @@ from flask import flash, session, jsonify
 from flask import current_app
 import redis
 from redis import RedisError
+from redis.commands.search.query import Query
 from . import config
 import json
 import time
 import urllib.parse
-from flask_simplelogin import is_logged_in, login_required
 import base64
+from flask_login import (LoginManager,current_user,login_required,login_user,logout_user,)
+from user import requires_access_level, Role
+from config import get_db
 
 
 admin = Blueprint('admin', __name__)
+
+@admin.before_request
+def check_valid_login():
+    if not current_user.is_authenticated:
+        return render_template('index.html')
 
 # Database Connection
 host = config.REDIS_CFG["host"]
@@ -33,25 +41,35 @@ conn = redis.StrictRedis(host=host,
                             ssl_certfile=ssl_certfile,
                             ssl_ca_certs=ssl_ca_certs,
                             ssl_cert_reqs=ssl_cert_reqs, 
-                            decode_responses=True)
+                            decode_responses=False)
 
-@admin.before_request
-def handle_user_loading_here_or_something():
-    if not is_logged_in():
-        print("NOT logged in")
-        TITLE="About keybase"
-        DESC="About keybase"
-        return render_template('index.html', title=TITLE, desc=DESC)
-
+"""
 @admin.route('/')
+@login_required
 def index():
     return render_template('admin.html')
+"""
 
 @admin.route('/tools')
+@login_required
+@requires_access_level(Role.ADMIN)
 def tools():
     TITLE="Admin functions"
     DESC="Admin functions"
-    return render_template('admin.html', title=TITLE, desc=DESC)
+    key = []
+    name = []
+    group = []
+    email = []
+
+    rs = get_db().ft("user_idx").search(Query("*").return_field("name").return_field("group").return_field("email"))
+    for doc in rs.docs:
+        key.append(doc.id.split(':')[-1])
+        name.append(doc.name)
+        group.append(doc.group)
+        email.append(doc.email)
+
+    users=zip(key,name,group,email)
+    return render_template('admin.html', title=TITLE, desc=DESC, users=users)
 
 """
 # Routines to backup and restore encoding data as UTF-8. Cannot encode binary vector embeddings, so to use vector similarity, I choose base64 encoding
@@ -100,6 +118,8 @@ def restore():
 """
 
 @admin.route('/backup', methods=['GET'])
+@login_required
+@requires_access_level(Role.ADMIN)
 def backup():
     result = []
     backup = ""
@@ -126,6 +146,8 @@ def backup():
 
 
 @admin.route('/restore', methods=['POST'])
+@login_required
+@requires_access_level(Role.ADMIN)
 def restore():
     print("Starting to restore")
     uploaded_file = request.files['file']
@@ -141,9 +163,11 @@ def restore():
     return jsonify(message="Restore done")
 
 
-@admin.route('/list')
-def list():
-    print("Loading the list of users")
-    TITLE="List users"
-    DESC="List users"
-    return render_template('admin.html', title=TITLE, desc=DESC)
+@admin.route('/group', methods=['POST'])
+@login_required
+@requires_access_level(Role.ADMIN)
+def group():
+    # TODO Check the user exists and the role is valid
+    print("Setting role of " + request.form['id'] + " to " + request.form['group'])
+    get_db().hmset("keybase:okta:{}".format(request.form['id']), {"group" : request.form['group']})
+    return jsonify(message="Role updated")

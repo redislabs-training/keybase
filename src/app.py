@@ -1,4 +1,3 @@
-import redis
 from redis.commands.search.field import VectorField
 from redis.commands.search.query import Query
 from redis import RedisError
@@ -12,32 +11,13 @@ import threading
 import flask
 from flask import Response, stream_with_context
 from flask import Flask, Blueprint, render_template, redirect, url_for, request, jsonify, session
-#from flask_login import login_required, current_user
-from flask_simplelogin import login_required
+from flask_login import (LoginManager,current_user,login_required,login_user,logout_user,)
 from sentence_transformers import SentenceTransformer
+from user import requires_access_level, Role
+from config import get_db
+
 
 app = Blueprint('app', __name__)
-
-# Database Connection
-host = config.REDIS_CFG["host"]
-port = config.REDIS_CFG["port"]
-pwd = config.REDIS_CFG["password"]
-ssl = config.REDIS_CFG["ssl"]
-ssl_keyfile = config.REDIS_CFG["ssl_keyfile"]
-ssl_certfile = config.REDIS_CFG["ssl_certfile"]
-ssl_cert_reqs = config.REDIS_CFG["ssl_cert_reqs"]
-ssl_ca_certs = config.REDIS_CFG["ssl_ca_certs"]
-
-conn = redis.StrictRedis(host=host, 
-                            port=port, 
-                            password=pwd, 
-                            db=0,
-                            ssl=ssl,
-                            ssl_keyfile=ssl_keyfile,
-                            ssl_certfile=ssl_certfile,
-                            ssl_ca_certs=ssl_ca_certs,
-                            ssl_cert_reqs=ssl_cert_reqs, 
-                            decode_responses=True)
 
 # Helpers
 def isempty(input):
@@ -55,7 +35,7 @@ def isempty(input):
 @app.route('/autocomplete', methods=['GET'])
 @login_required
 def autocomplete():
-    rs = conn.ft("document_idx").search(Query(urllib.parse.unquote(request.args.get('q'))).return_field("name").sort_by("creation", asc=False).paging(0, 10))
+    rs = get_db().ft("document_idx").search(Query(urllib.parse.unquote(request.args.get('q'))).return_field("name").sort_by("creation", asc=False).paging(0, 10))
     results = []
 
     for doc in rs.docs:
@@ -67,12 +47,13 @@ def autocomplete():
 
 
 def bg_embedding_vector(key):
-    content = conn.hget("keybase:kb:{}".format(key), "content")
+    content = get_db().hget("keybase:kb:{}".format(key), "content")
     print("Computing vector embedding for " + key)
     model = SentenceTransformer('sentence-transformers/all-distilroberta-v1')
     embedding = model.encode(content).astype(np.float32).tobytes()
-    conn.hset("keybase:kb:{}".format(key), "content_embedding", embedding)
+    get_db().hset("keybase:kb:{}".format(key), "content_embedding", embedding)
     print("Done vector embedding for " + key)
+
 
 @app.route('/browse', methods=['GET'])
 @login_required
@@ -89,9 +70,9 @@ def browse():
 
     try:
         if (request.args.get('q')):
-            rs = conn.ft("document_idx").search(Query(request.args.get('q')).return_field("name").return_field("creation").sort_by("creation", asc=False).paging(0, 10))
+            rs = get_db().ft("document_idx").search(Query(request.args.get('q')).return_field("name").return_field("creation").sort_by("creation", asc=False).paging(0, 10))
         else:
-            rs = conn.ft("document_idx").search(Query("*").return_field("name").return_field("creation").sort_by("creation", asc=False).paging(0, 10))
+            rs = get_db().ft("document_idx").search(Query("*").return_field("name").return_field("creation").sort_by("creation", asc=False).paging(0, 10))
         
         if len(rs.docs): 
             for key in rs.docs:
@@ -106,15 +87,18 @@ def browse():
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    if not current_user.is_authenticated:
+        return render_template('index.html')
+    return redirect(url_for('app.browse'))
 
-@app.route('/profile')
+@app.route('/bookmarks')
 @login_required
-def profile():
-    return render_template('profile.html', username=session['username'])
+def bookmarks():
+    return render_template("bookmark.html", user=current_user)
 
 @app.route('/save', methods=['GET'])
 @login_required
+@requires_access_level(Role.EDITOR)
 def save():
     TITLE="Read Document"
     DESC="Read Document"
@@ -127,7 +111,7 @@ def save():
             "creation":unixtime,
             "processable":1,
             "update":unixtime}
-    conn.hmset("keybase:kb:{}".format(id), doc)
+    get_db().hmset("keybase:kb:{}".format(id), doc)
 
     # Update the vector embedding in the background
     #sscanThread = threading.Thread(target=bg_embedding_vector, args=(str(id),)) 
@@ -139,6 +123,7 @@ def save():
 
 @app.route('/update', methods=['GET'])
 @login_required
+@requires_access_level(Role.EDITOR)
 def update():
     # Make sure the request.args.get('id') exists, otherwise do not update
     unixtime = int(time.time())
@@ -149,7 +134,7 @@ def update():
             "name":urllib.parse.unquote(request.args.get('name')),
             "processable":1,
             "update": unixtime}
-    conn.hmset("keybase:kb:{}".format(request.args.get('id')), doc)
+    get_db().hmset("keybase:kb:{}".format(request.args.get('id')), doc)
 
     # Update the vector embedding in the background
     #sscanThread = threading.Thread(target=bg_embedding_vector, args=(request.args.get('id'),)) 
@@ -167,21 +152,23 @@ def about():
 
 @app.route('/edit', methods=['GET'])
 @login_required
+@requires_access_level(Role.EDITOR)
 def edit():
     id = request.args.get('id')
     TITLE="Read Document"
     DESC="Read Document"
     #if id is None:
-    document = conn.hmget("keybase:kb:{}".format(id), ['name', 'content'])
+    document = get_db().hmget("keybase:kb:{}".format(id), ['name', 'content'])
     document[0] = urllib.parse.quote(document[0])
     document[1] = urllib.parse.quote(document[1])
     return render_template('edit.html', title=TITLE, desc=DESC, id=id, name=document[0], content=document[1])
 
 @app.route('/delete', methods=['GET'])
 @login_required
+@requires_access_level(Role.EDITOR)
 def delete():
     id = request.args.get('id')
-    conn.delete("keybase:kb:{}".format(id))
+    get_db().delete("keybase:kb:{}".format(id))
     return redirect(url_for('app.browse'))
 
 @app.route('/view', methods=['GET'])
@@ -195,7 +182,7 @@ def view():
     suggestlist = None
     #if id is None:
 
-    document = conn.hmget("keybase:kb:{}".format(request.args.get('id')), ['name', 'content'])
+    document = get_db().hmget("keybase:kb:{}".format(request.args.get('id')), ['name', 'content'])
     document[0] = urllib.parse.quote(document[0])
     document[1] = urllib.parse.quote(document[1])
 
@@ -218,9 +205,9 @@ def view():
     # The first element in the returned list is the number of keys returned, start iterator from [1:]
     # Then, iterate the results in pairs, because they key name is alternated with the returned fields
 
-    if conn.hexists("keybase:kb:{}".format(request.args.get('id')), 'content_embedding'):
+    if get_db().hexists("keybase:kb:{}".format(request.args.get('id')), 'content_embedding'):
         keys_and_args = ["keybase:kb:{}".format(request.args.get('id'))]
-        res = conn.eval("local vector = redis.call('hmget',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','document_idx','*=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres", 1, *keys_and_args)
+        res = get_db().eval("local vector = redis.call('hmget',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','document_idx','*=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres", 1, *keys_and_args)
         it = iter(res[1:])
         for x in it:
             keys.append(str(x.split(':')[-1]))
@@ -247,6 +234,7 @@ def view():
 
 @app.route('/new')
 @login_required
+@requires_access_level(Role.EDITOR)
 def new():
     TITLE="New Document"
     DESC="New Document"

@@ -7,7 +7,6 @@ from redis import RedisError
 from . import config
 import time
 import hashlib
-from flask_simplelogin import is_logged_in
 
 auth = Blueprint('auth', __name__)
 
@@ -18,13 +17,16 @@ pwd = config.REDIS_CFG["password"]
 pool = redis.ConnectionPool(host=host, port=port, password=pwd, db=0, decode_responses=True)
 conn = redis.Redis(connection_pool=pool)
 
+"""
 @auth.route('/login')
 def login():
     if is_logged_in():
         return redirect(url_for('app.browse'))
     else:
         return render_template('login.html')
+"""
 
+"""
 @auth.route('/login', methods=['POST'])
 def login_post():
     if is_logged_in():
@@ -131,7 +133,4 @@ def signup_post():
     pipeline.execute()
 
     return redirect(url_for('auth.login'))
-
-@auth.route('/logout')
-def logout():
-    return 'Logout'
+"""

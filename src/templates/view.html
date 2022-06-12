@@ -19,12 +19,14 @@
                 <p class="is-size-7">creating recommendations...</p>
             {% endif %}
         </div>
+        {% if current_user.is_editor() %}
         <div class="widget">
             <h4 id="name" class="title is-6" style="margin-bottom:0em;">Actions</h4>
             <p>
                 <a class="is-size-7" style="display:inline;" href="{{ url_for('app.edit',id=id) }}">edit</a>
             </p>
         </div>
+        {% endif %}
     </div>
     <div id="editor" style="text-align: justify; text-justify: inter-word; margin-right:340px;"></div>
 </div>

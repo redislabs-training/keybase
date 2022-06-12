@@ -3,6 +3,7 @@
 {% block content %}
   <h1 id="name" class="title is-4">Admin</h1>
 
+  <h1 id="name" class="title is-5">Backup and Restore</h1>
   <div class="columns">
     <div class="column">Download a backup of the knowledge base</div>
     <div class="column"><button id="backup" class="button">Backup</button> </div>
@@ -25,6 +26,43 @@
   </div>
 
   </div>
+
+  <h1 id="name" class="title is-5">Users</h1>
+
+  {% if users is not none %}
+  {% for key, name, group, email in users %}
+  <div class="columns">
+    <div class="column">{{email}}</div>
+    <div class="column">
+
+      <div class="select is-normal">
+        <select id="{{key}}">
+          <option value="admin"{% if group=='admin' %} selected{% endif %}>Admin</option>
+          <option value="editor"{% if group=='editor' %} selected{% endif %}>Editor</option>
+          <option value="viewer"{% if group=='viewer' %} selected{% endif %}>Viewer</option>
+        </select>
+      </div>
+
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+      No users in the system
+  {% endif %}
+
+  <script>
+    $( "select" )
+      .change(function () {
+	      $.ajax({
+	        type: "POST",
+	        url: "{{ url_for('admin.group')}}",
+	        data : {id:$( this ).attr("id"), group:$(this).children("option:selected").val()},
+	        success: function(data) {
+	        console.log(data);
+            $.notify("Role updated", "success");
+	        }});
+      })
+    </script>
 
   <script>
   var backupBtn = document.querySelector('#backup');
