@@ -68,7 +68,7 @@
                             {{session['username']}}
                         </a>
                         <div class="navbar-dropdown">
-                            {% if current_user.is_editor() %}
+                            {% if current_user.is_admin() %}
                             <a href="{{ url_for('admin.tools') }}" class="navbar-item">
                                 Admin
                             </a>

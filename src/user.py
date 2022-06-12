@@ -65,6 +65,9 @@ class User(UserMixin):
     def is_editor(self):
         return self.access_level >= Role.EDITOR
 
+    def is_admin(self):
+        return self.access_level >= Role.ADMIN
+
     def is_allowed(self, access_level):
         return self.access_level >= access_level
 
