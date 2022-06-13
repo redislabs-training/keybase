@@ -91,10 +91,6 @@ def index():
         return render_template('index.html')
     return redirect(url_for('app.browse'))
 
-@app.route('/bookmarks')
-@login_required
-def bookmarks():
-    return render_template("bookmark.html", user=current_user)
 
 @app.route('/save', methods=['GET'])
 @login_required
@@ -120,6 +116,40 @@ def save():
 
     return jsonify(message="Document created", id=id)
     
+@app.route('/bookmark', methods=['POST'])
+@login_required
+def bookmark():
+    #TODO check that the document exists
+    bookmarked = get_db().hexists("keybase:bookmark:{}".format(current_user.id), request.form['docid'])
+    if (not bookmarked):
+        get_db().hmset("keybase:bookmark:{}".format(current_user.id), {request.form['docid'] : ""})
+        return jsonify(message="Bookmark created", hasbookmark=1)
+    else:
+        get_db().hdel("keybase:bookmark:{}".format(current_user.id), request.form['docid'])
+        return jsonify(message="Bookmark removed", hasbookmark=0)
+
+
+@app.route('/bookmarks')
+@login_required
+def bookmarks():
+    docs = []
+    names = []
+    creations = []
+    cursor=0
+
+    while True:
+        cursor, keys  = get_db().hscan("keybase:bookmark:{}".format(current_user.id), cursor, count=20)
+        for key in keys:
+            hash = get_db().hmget("keybase:kb:{}".format(key), ['name', 'creation'])
+            docs.append(key)
+            names.append(hash[0])
+            creations.append(datetime.utcfromtimestamp(int(hash[1])).strftime('%Y-%m-%d %H:%M:%S'))
+        if (cursor==0):
+            break
+    
+    bookmarks=zip(docs,names,creations)
+    return render_template("bookmark.html", bookmarks=bookmarks)
+
 
 @app.route('/update', methods=['GET'])
 @login_required
@@ -182,6 +212,8 @@ def view():
     suggestlist = None
     #if id is None:
 
+    bookmarked = get_db().hexists("keybase:bookmark:{}".format(current_user.id), id)
+
     document = get_db().hmget("keybase:kb:{}".format(request.args.get('id')), ['name', 'content'])
     document[0] = urllib.parse.quote(document[0])
     document[1] = urllib.parse.quote(document[1])
@@ -230,7 +262,7 @@ def view():
             names.append(suggest[0].decode('utf-8'))
         suggestlist=zip(keys, names)
     """
-    return render_template('view.html', title=TITLE,id=request.args.get('id'), desc=DESC, document=document, suggestlist=suggestlist)
+    return render_template('view.html', title=TITLE,id=request.args.get('id'), desc=DESC, docid=id, bookmarked=bookmarked, document=document, suggestlist=suggestlist)
 
 @app.route('/new')
 @login_required

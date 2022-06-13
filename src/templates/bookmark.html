@@ -1,8 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <div>
-    <h1 id="name" class="title is-4">Bookmarks</h1>
-  </div>
+
+  <h1 id="name" class="title is-4">Bookmarks</h1>
+
+  {% if bookmarks is not none %}
+  {% for key, name, creation in bookmarks %}
+      <a style="display:block;" class="is-size-5" href="{{ url_for('app.view',id=key) }}">
+          {{name}}
+      </a>
+      <span class="is-size-7 has-text-weight-light has-text-grey">created: {{creation}}</span>
+      <div style="border-top: .05rem solid #dbdbdb;"></div>
+  {% endfor %}
+  {% else %}
+      No result found, refine your search
+  {% endif %}
 {% endblock %}
 

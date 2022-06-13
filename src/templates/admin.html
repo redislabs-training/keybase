@@ -6,14 +6,14 @@
   <h1 id="name" class="title is-5">Backup and Restore</h1>
   <div class="columns">
     <div class="column">Download a backup of the knowledge base</div>
-    <div class="column"><button id="backup" class="button">Backup</button> </div>
+    <div class="column"><button id="backup" class="button is-small">Backup</button> </div>
   </div>
 
   <div class="columns">
     <div class="column">Restore the knowledge base from backup</div>
     <div class="column"> 
 
-    <div class="file is-normal">
+    <div class="file is-small">
       <label class="file-label">
         <input id="restore" class="file-input" type="file" name="resume">
         <span class="file-cta">
@@ -35,7 +35,7 @@
     <div class="column">{{email}}</div>
     <div class="column">
 
-      <div class="select is-normal">
+      <div class="select is-small">
         <select id="{{key}}">
           <option value="admin"{% if group=='admin' %} selected{% endif %}>Admin</option>
           <option value="editor"{% if group=='editor' %} selected{% endif %}>Editor</option>

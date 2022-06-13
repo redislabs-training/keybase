@@ -4,8 +4,18 @@
 <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
 
 <div>
-    <h1 id="name" class="title is-4" style="margin-bottom:0em;"></h1>
+    {% if not bookmarked %}
+    <a id="bookmark" class="is-size-7" style="display:inline;" href="{{ url_for('app.bookmark', docid=docid) }}">
+        <img id="bkmrk" width="10" src="{{ url_for('static',filename='images/bookmark-gray.png') }}">
+    </a>
+    {% endif %}
+    {% if bookmarked %}
+    <a id="bookmark" class="is-size-7" style="display:inline;" href="{{ url_for('app.bookmark', docid=docid) }}">
+        <img id="bkmrk" width="10" src="{{ url_for('static',filename='images/bookmark-red.png') }}">
+    </a>
+    {% endif %}
 
+    <h1 id="name" class="title is-4" style="margin-bottom:0em; display:inline;"></h1>
     <div style="margin-left:20px; margin-top:10px; float:right; width:300px;">
         <div class="widget">
             <h4 id="name" class="title is-6" style="margin-bottom:0em;">Recommendations</h4>
@@ -31,7 +41,22 @@
     <div id="editor" style="text-align: justify; text-justify: inter-word; margin-right:340px;"></div>
 </div>
 
-<script>  
+<script>
+    $("#bookmark").click(function(event){
+        event.preventDefault();
+        $.ajax({
+	        type: "POST",
+	        url: "{{ url_for('app.bookmark')}}",
+	        data : {docid:"{{docid}}"},
+	        success: function(data) {
+	        console.log(data);
+            $.notify(data["message"], "success");
+            if (data["hasbookmark"]){$('#bkmrk').attr('src', "{{ url_for('static',filename='images/bookmark-red.png') }}");}
+            if (!data["hasbookmark"]){$('#bkmrk').attr('src', "{{ url_for('static',filename='images/bookmark-gray.png') }}");}
+	        }});
+        return false; 
+    });
+
     $( "#name" ).text(decodeURIComponent("{{document[0]}}"));  
       const viewer = toastui.Editor.factory({
         el: document.querySelector('#editor'),
