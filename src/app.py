@@ -89,10 +89,11 @@ def browse():
 def index():
     if not current_user.is_authenticated:
         return render_template('index.html')
-    return redirect(url_for('app.browse'))
+    else:
+        return redirect(url_for('app.browse'))
 
 
-@app.route('/save', methods=['GET'])
+@app.route('/save', methods=['POST'])
 @login_required
 @requires_access_level(Role.EDITOR)
 def save():
@@ -102,8 +103,8 @@ def save():
     unixtime = int(time.time())
     timestring = datetime.utcnow().strftime("%m/%d/%Y, %H:%M:%S")
 
-    doc = {"content":urllib.parse.unquote(request.args.get('content')), 
-            "name":urllib.parse.unquote(request.args.get('name')),
+    doc = {"content":urllib.parse.unquote(request.form['content']), 
+            "name":urllib.parse.unquote(request.form['name']),
             "creation":unixtime,
             "processable":1,
             "update":unixtime}
@@ -135,6 +136,7 @@ def bookmarks():
     docs = []
     names = []
     creations = []
+    bookmarks = None
     cursor=0
 
     while True:
@@ -147,24 +149,23 @@ def bookmarks():
         if (cursor==0):
             break
     
-    bookmarks=zip(docs,names,creations)
+    if len(docs):
+        bookmarks=zip(docs,names,creations)
     return render_template("bookmark.html", bookmarks=bookmarks)
 
 
-@app.route('/update', methods=['GET'])
+@app.route('/update', methods=['POST'])
 @login_required
 @requires_access_level(Role.EDITOR)
 def update():
     # Make sure the request.args.get('id') exists, otherwise do not update
     unixtime = int(time.time())
 
-    print("--->" + request.args.get('content'))
-    print("--->" + urllib.parse.unquote(request.args.get('content')))
-    doc = { "content":urllib.parse.unquote(request.args.get('content')),
-            "name":urllib.parse.unquote(request.args.get('name')),
+    doc = { "content":urllib.parse.unquote(request.form['content']),
+            "name":urllib.parse.unquote(request.form['name']),
             "processable":1,
             "update": unixtime}
-    get_db().hmset("keybase:kb:{}".format(request.args.get('id')), doc)
+    get_db().hmset("keybase:kb:{}".format(request.form['id']), doc)
 
     # Update the vector embedding in the background
     #sscanThread = threading.Thread(target=bg_embedding_vector, args=(request.args.get('id'),)) 
@@ -215,6 +216,10 @@ def view():
     bookmarked = get_db().hexists("keybase:bookmark:{}".format(current_user.id), id)
 
     document = get_db().hmget("keybase:kb:{}".format(request.args.get('id')), ['name', 'content'])
+    
+    if document[0] == None:
+        return redirect(url_for('app.browse'))
+        
     document[0] = urllib.parse.quote(document[0])
     document[1] = urllib.parse.quote(document[1])
 

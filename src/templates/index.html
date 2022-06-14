@@ -1,23 +1,25 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1 class="title">
-    keybase
-</h1>
-<h2 class="subtitle">
-    The home of your Knowledge Base
-</h2>
-<p class="mb-2">A simple, Redis-based, Knowledge Base platform</p>
-<p class="mb-2 is-size-7">
-    <ul style="list-style-type: disc;">
-        <li>Full-text search, with autocomplete</li>
+<div style="width:360px;padding:20px;" class="signinbox">
+    <span class="centeredbox">
+        <img width="200px"src="{{ url_for('static',filename='images/keybasesmall.png') }}">
+        <p class="mb-0">Open Source Knowledge Base platform</p>
+    </span>
+
+    <ul style="list-style-type: disc; list-style-position:inside;" class="m-4 is-size-7">
         <li>Markdown WYSIWYG editor</li>
+        <li>Full-text searches</li>
         <li>Recommended documents</li>
         <li>Okta authentication</li>
+        <li>Uses Redis Stack</li>
     </ul> 
-</p>
 
-<p class="mb-2">
-    <a target="_blank" href=https://opensource.org/licenses/MIT>MIT licensed</a>
-</p>
+    <a class="centeredbox mt-4" href="{{ url_for('login') }}">
+        <img width="160px" src="{{ url_for('static',filename='images/okta.png') }}">
+    </a>
+    <p class="mt-0 has-text-centered is-size-7">
+        <a target="_blank" href=https://opensource.org/licenses/MIT>MIT licensed</a>
+    </p>
+</div>
 {% endblock %}

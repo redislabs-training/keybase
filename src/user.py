@@ -31,16 +31,16 @@ class User(UserMixin):
         return get_db().exists("keybase:okta:{}".format(user_id))
 
     @staticmethod
-    def create(user_id, given_name, name, email, access_level):
+    def create(user_id, given_name, name, email):
         get_db().hmset("keybase:okta:{}".format(user_id), {
             'name' : name,
             'given_name' : given_name,
             'email' : email,
-            'group': access_level,
+            'group': 'viewer',
             'signup': time.time(),
             'login': time.time()})
 
-        USERS_DB[user_id] = User(user_id, given_name, name, email, access_level)
+        USERS_DB[user_id] = User(user_id, given_name, name, email, Role.VIEWER)
         return USERS_DB[user_id]
 
     @staticmethod

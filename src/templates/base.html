@@ -20,6 +20,27 @@
 
     <style>
         .widget{padding-bottom:20px;}
+
+        body{
+            background-color: #f4f6f7;
+        }
+
+        .signinbox {
+            position: absolute;
+            border-radius: 0.8rem;
+            box-shadow: rgba(0, 0, 0, 0.06) 0px 0px 1.6rem;
+            background-color: rgb(255, 255, 255);
+            top: 50%;
+            left: 50%;
+            -moz-transform: translateX(-50%) translateY(-50%);
+            -webkit-transform: translateX(-50%) translateY(-50%);
+            transform: translateX(-50%) translateY(-50%);
+        }
+
+        .centeredbox {
+            text-align: center;
+            display: block;
+        }
     </style>
 </head>
 
@@ -28,13 +49,11 @@
         <div class="hero-head">
             <nav class="navbar" role="navigation" aria-label="main navigation">
               <div class="navbar-brand">
-                {% if not current_user.is_authenticated %}
+                {% if current_user.is_authenticated %}
                 <a href="{{ url_for('app.browse') }}" class="navbar-item">
-                {% else %}
-                <a href="{{ url_for('app.index') }}" class="navbar-item">
-                {% endif %}
-                  <img src="{{ url_for('static',filename='images/keybasesmall.png') }}">
+                    <img src="{{ url_for('static',filename='images/keybasesmall.png') }}">
                 </a>
+                {% endif %}
 
                 <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
                   <span aria-hidden="true"></span>
@@ -47,7 +66,7 @@
                 <div class="navbar-start"> <!--is_logged_in()-->
                     {% if current_user.is_authenticated %}
                     <a href="{{ url_for('app.browse') }}" class="navbar-item">
-                        Documents
+                        Search
                     </a>
                     {% if current_user.is_editor() %}
                     <a href="{{ url_for('app.new') }}" class="navbar-item">
@@ -80,14 +99,6 @@
                             <hr class="navbar-divider">
                             <a href="{{ url_for('logout') }}" class="navbar-item">
                                 Logout
-                            </a>
-                        </div>
-                    </div>
-                {% else %}
-                    <div class="navbar-item">
-                        <div class="buttons">
-                            <a href="{{ url_for('login') }}" class="button is-light">
-                                Okta Login
                             </a>
                         </div>
                     </div>

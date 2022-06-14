@@ -37,7 +37,7 @@
             return;
           }
 	      $.ajax({
-	        type: "GET",
+	        type: "POST",
 	        url: '/update',
 	        data : {id:"{{id}}", content:encodeURIComponent(editor.getMarkdown()), name:encodeURIComponent($("#name").val())},
 	        success: function(data) {

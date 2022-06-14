@@ -15,6 +15,8 @@ from flask_login import (LoginManager,current_user,login_required,login_user,log
 
 def create_app():
     app = Flask(__name__, template_folder="templates")
+
+    app.config["SESSION_TYPE"] = "filesystem"
     app.config.update({'SECRET_KEY': secrets.token_hex(64)})
     CORS(app)
 
@@ -41,6 +43,7 @@ def create_app():
         # store app state and code verifier in session
         session['app_state'] = secrets.token_urlsafe(64)
         session['code_verifier'] = secrets.token_urlsafe(64)
+        session.permanent = True
 
         # calculate code challenge
         hashed = hashlib.sha256(session['code_verifier'].encode('ascii')).digest()
@@ -71,12 +74,21 @@ def create_app():
         if request.endpoint in endpoint_group and not current_user.is_authenticated:
                 return render_template('/', next=request.endpoint)
 
+    @app.errorhandler(404)
+    def page_not_found(error):
+        return redirect(url_for('app.index'))
+
 
     @app.route("/authorization-code/callback")
     def callback():
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         code = request.args.get("code")
         app_state = request.args.get("state")
+
+        try:
+            print("Session token has been read")
+        except:
+            print("Cannot read session token")
 
         try:
             if app_state != session['app_state']:
@@ -114,28 +126,16 @@ def create_app():
         user_given_name = userinfo_response["given_name"]
         user_name = userinfo_response["name"]
 
-        #user = User(
-        #    id_=unique_id, given_name=user_given_name, name=user_name, email=user_email
-        #)
-
         user = None
         if not User.exists(unique_id):
-            user = User.create(unique_id, user_given_name, user_name, user_email, Role.VIEWER)
+            # default user is a viewer
+            user = User.create(unique_id, user_given_name, user_name, user_email)
         else:
             user = User.update(unique_id, user_given_name, user_name, user_email)
 
         # Now create the session
         login_user(user)
         session['username'] = user_name
-        """"
-        if not get_db().exists("keybase:okta:{}".format(unique_id)):
-            get_db().hmset("keybase:okta:{}".format(unique_id), {
-                'group': "viewer",
-                'signup': time.time(),
-                'login': time.time()})
-        else:
-            get_db().hmset("keybase:okta:{}".format(unique_id), {'login': time.time()})
-        """
         return redirect(url_for("app.browse"))
 
     @app.route("/logout", methods=["GET", "POST"])

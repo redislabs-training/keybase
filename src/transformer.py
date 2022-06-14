@@ -1,10 +1,24 @@
 import redis
 from sentence_transformers import SentenceTransformer
 from redis.commands.search.query import Query
+from config import get_db
+import numpy as np
+import sys
+from flask import Flask, current_app
 
-pool = redis.ConnectionPool(host='127.0.0.1', port=6380, password='', db=0, decode_responses=True)
-conn = redis.Redis(connection_pool=pool)
+app = Flask(__name__)
+with app.app_context():
+    rs = get_db().ft("document_idx").search(Query('@processable:{1}').return_field("content").return_field("processable"))
+    if not len(rs.docs):
+        print("No vector embedding to be processed!")
+        sys.exit()
 
-rs = conn.ft("document_idx").search(Query('@processable:{1}').return_field("name").return_field("processable"))
-for doc in rs.docs:
-    print(doc.id.split(':')[-1])
+    model = SentenceTransformer('sentence-transformers/all-distilroberta-v1')
+    for doc in rs.docs:
+        key = doc.id.split(':')[-1]
+        print("This document has no embedding: " + key)
+        embedding = model.encode(doc.content).astype(np.float32).tobytes()
+        doc = { "content_embedding" : embedding,
+                "processable":0}
+        get_db().hmset("keybase:kb:{}".format(key), doc)
+        print("....done vector embedding for " + key)
