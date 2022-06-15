@@ -24,11 +24,15 @@ def create_app():
     login_manager.init_app(app)
 
     # do Redis initializations
-    #init_db()
+    init_db()
 
-    # blueprint for auth routes in our app
-    from .auth import auth as auth_blueprint
-    app.register_blueprint(auth_blueprint)
+    # blueprint for bookmark routes in our app
+    from .bookmark import bookmrk as bookmark_blueprint
+    app.register_blueprint(bookmark_blueprint)
+
+    # blueprint for draft routes in our app
+    from .draft import draft as draft_blueprint
+    app.register_blueprint(draft_blueprint)
 
     # blueprint for non-auth parts of app
     from .app import app as main_blueprint
@@ -73,6 +77,7 @@ def create_app():
         endpoint_group = ('/bookmark', '/tools', '/logout')
         if request.endpoint in endpoint_group and not current_user.is_authenticated:
                 return render_template('/', next=request.endpoint)
+
 
     @app.errorhandler(404)
     def page_not_found(error):
@@ -167,10 +172,11 @@ def getUserGroups():
     print(usergroups_response)
 
 
-"""
 def init_db():
     print("Initializing Redis...")
     #conn.ft().config_set("DEFAULT_DIALECT", 2)
+
+"""
 
 
 def check_my_users(user):

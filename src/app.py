@@ -7,35 +7,26 @@ import urllib.parse
 from datetime import datetime
 import time
 from . import config
+import json
 import threading
 import flask
+import math
 from flask import Response, stream_with_context
 from flask import Flask, Blueprint, render_template, redirect, url_for, request, jsonify, session
 from flask_login import (LoginManager,current_user,login_required,login_user,logout_user,)
 from sentence_transformers import SentenceTransformer
 from user import requires_access_level, Role
 from config import get_db
+from flask_paginate import Pagination, get_page_args
 
 
 app = Blueprint('app', __name__)
 
-# Helpers
-def isempty(input):
-	result = False
-
-	# An argument is considered to be empty if any of the following condition matches
-	if str(input) == "None":
-		result = True
-	
-	if str(input) == "":
-		result = True
-	
-	return result
 
 @app.route('/autocomplete', methods=['GET'])
 @login_required
 def autocomplete():
-    rs = get_db().ft("document_idx").search(Query(urllib.parse.unquote(request.args.get('q'))).return_field("name").sort_by("creation", asc=False).paging(0, 10))
+    rs = get_db().ft("document_idx").search(Query(urllib.parse.unquote(request.args.get('q')) + " -@state:{draft}").return_field("name").sort_by("creation", asc=False).paging(0, 10))
     results = []
 
     for doc in rs.docs:
@@ -70,17 +61,23 @@ def browse():
 
     try:
         if (request.args.get('q')):
-            rs = get_db().ft("document_idx").search(Query(request.args.get('q')).return_field("name").return_field("creation").sort_by("creation", asc=False).paging(0, 10))
-        else:
-            rs = get_db().ft("document_idx").search(Query("*").return_field("name").return_field("creation").sort_by("creation", asc=False).paging(0, 10))
-        
+            page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
+            rs = get_db().ft("document_idx").search(Query(request.args.get('q') + " -@state:{draft}").return_field("name").return_field("creation").sort_by("creation", asc=False).paging(offset, per_page))
+            pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma', bulma_style='small', prev_label='Previous', next_label='Next page')
+        else: 
+            page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
+            rs = get_db().ft("document_idx").search(Query("-@state:{draft}").return_field("name").return_field("creation").sort_by("creation", asc=False).paging(offset, per_page))
+            pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma', bulma_style='small', prev_label='Previous', next_label='Next page')
+            print(rs)
+
         if len(rs.docs): 
             for key in rs.docs:
                 keys.append(key.id.split(':')[-1])
                 names.append(urllib.parse.unquote(key.name))
                 creations.append(datetime.utcfromtimestamp(int(key.creation)).strftime('%Y-%m-%d %H:%M:%S'))
             keydocument=zip(keys,names,creations)
-        return render_template('browse.html', title=TITLE, desc=DESC, keydocument=keydocument)
+
+        return render_template('browse.html', title=TITLE, desc=DESC, keydocument=keydocument, page=page, per_page=per_page, pagination=pagination)
     except RedisError as err:
         print(err)
         return render_template('browse.html', title=TITLE, desc=DESC, error=err)
@@ -97,8 +94,6 @@ def index():
 @login_required
 @requires_access_level(Role.EDITOR)
 def save():
-    TITLE="Read Document"
-    DESC="Read Document"
     id = uuid.uuid1()
     unixtime = int(time.time())
     timestring = datetime.utcnow().strftime("%m/%d/%Y, %H:%M:%S")
@@ -106,73 +101,54 @@ def save():
     doc = {"content":urllib.parse.unquote(request.form['content']), 
             "name":urllib.parse.unquote(request.form['name']),
             "creation":unixtime,
-            "processable":1,
+            "state":"draft",
+            "author":current_user.id,
+            "owner":current_user.id,
+            "processable":0,
             "update":unixtime}
     get_db().hmset("keybase:kb:{}".format(id), doc)
-
-    # Update the vector embedding in the background
-    #sscanThread = threading.Thread(target=bg_embedding_vector, args=(str(id),)) 
-    #sscanThread.daemon = True
-    #sscanThread.start()
-
     return jsonify(message="Document created", id=id)
-    
-@app.route('/bookmark', methods=['POST'])
+
+
+@app.route('/publish', methods=['POST'])
 @login_required
-def bookmark():
-    #TODO check that the document exists
-    bookmarked = get_db().hexists("keybase:bookmark:{}".format(current_user.id), request.form['docid'])
-    if (not bookmarked):
-        get_db().hmset("keybase:bookmark:{}".format(current_user.id), {request.form['docid'] : ""})
-        return jsonify(message="Bookmark created", hasbookmark=1)
-    else:
-        get_db().hdel("keybase:bookmark:{}".format(current_user.id), request.form['docid'])
-        return jsonify(message="Bookmark removed", hasbookmark=0)
+@requires_access_level(Role.ADMIN)
+def publish():
+    # Make sure the request.form['id'] exists, otherwise do not publish
+    if not get_db().exists("keybase:kb:{}".format(request.form['id'])):
+        return jsonify(message="Error publishing the document")
 
+    unixtime = int(time.time())
 
-@app.route('/bookmarks')
-@login_required
-def bookmarks():
-    docs = []
-    names = []
-    creations = []
-    bookmarks = None
-    cursor=0
-
-    while True:
-        cursor, keys  = get_db().hscan("keybase:bookmark:{}".format(current_user.id), cursor, count=20)
-        for key in keys:
-            hash = get_db().hmget("keybase:kb:{}".format(key), ['name', 'creation'])
-            docs.append(key)
-            names.append(hash[0])
-            creations.append(datetime.utcfromtimestamp(int(hash[1])).strftime('%Y-%m-%d %H:%M:%S'))
-        if (cursor==0):
-            break
-    
-    if len(docs):
-        bookmarks=zip(docs,names,creations)
-    return render_template("bookmark.html", bookmarks=bookmarks)
+    # First, save the document and change the state TAG to "public"
+    doc = { "content":urllib.parse.unquote(request.form['content']),
+            "name":urllib.parse.unquote(request.form['name']),
+            "state":"public",
+            "processable":1,
+            "update": unixtime}
+    get_db().hmset("keybase:kb:{}".format(request.form['id']), doc)
+    return jsonify(message="Document published")
 
 
 @app.route('/update', methods=['POST'])
 @login_required
 @requires_access_level(Role.EDITOR)
 def update():
-    # Make sure the request.args.get('id') exists, otherwise do not update
+    # Make sure the request.form['id'] exists, otherwise do not save
+    if not get_db().exists("keybase:kb:{}".format(request.form['id'])):
+        return jsonify(message="Error saving the document")
+
     unixtime = int(time.time())
 
     doc = { "content":urllib.parse.unquote(request.form['content']),
             "name":urllib.parse.unquote(request.form['name']),
-            "processable":1,
+            "state":"draft",
+            "owner":current_user.id,
+            "processable":0,
             "update": unixtime}
     get_db().hmset("keybase:kb:{}".format(request.form['id']), doc)
 
-    # Update the vector embedding in the background
-    #sscanThread = threading.Thread(target=bg_embedding_vector, args=(request.args.get('id'),)) 
-    #sscanThread.daemon = True
-    #sscanThread.start()
-
-    return jsonify(message="Document updated")
+    return jsonify(message="Document saved among drafts")
 
 @app.route('/about', methods=['GET'])
 @login_required
@@ -189,14 +165,14 @@ def edit():
     TITLE="Read Document"
     DESC="Read Document"
     #if id is None:
-    document = get_db().hmget("keybase:kb:{}".format(id), ['name', 'content'])
+    document = get_db().hmget("keybase:kb:{}".format(id), ['name', 'content', 'state'])
     document[0] = urllib.parse.quote(document[0])
     document[1] = urllib.parse.quote(document[1])
-    return render_template('edit.html', title=TITLE, desc=DESC, id=id, name=document[0], content=document[1])
+    return render_template('edit.html', title=TITLE, desc=DESC, id=id, name=document[0], content=document[1], state=document[2])
 
 @app.route('/delete', methods=['GET'])
 @login_required
-@requires_access_level(Role.EDITOR)
+@requires_access_level(Role.ADMIN)
 def delete():
     id = request.args.get('id')
     get_db().delete("keybase:kb:{}".format(id))
@@ -215,11 +191,17 @@ def view():
 
     bookmarked = get_db().hexists("keybase:bookmark:{}".format(current_user.id), id)
 
-    document = get_db().hmget("keybase:kb:{}".format(request.args.get('id')), ['name', 'content'])
+    document = get_db().hmget("keybase:kb:{}".format(request.args.get('id')), ['name', 'content', 'state', 'owner'])
     
     if document[0] == None:
         return redirect(url_for('app.browse'))
-        
+
+    # If it is a draft, role is editor: make sure the editor owns the draft. Editor can edit the draft
+    # If it is a draft, role is admin: can see, edit and publish
+    if (document[2] == 'draft' and document[3]!=current_user.id and not current_user.is_admin()):
+        print("This document is locked for editing, if not an admin, cannot read it")
+        return render_template('locked.html', name=document[0])
+
     document[0] = urllib.parse.quote(document[0])
     document[1] = urllib.parse.quote(document[1])
 
@@ -267,7 +249,7 @@ def view():
             names.append(suggest[0].decode('utf-8'))
         suggestlist=zip(keys, names)
     """
-    return render_template('view.html', title=TITLE,id=request.args.get('id'), desc=DESC, docid=id, bookmarked=bookmarked, document=document, suggestlist=suggestlist)
+    return render_template('view.html', title=TITLE, desc=DESC, docid=id, bookmarked=bookmarked, document=document, suggestlist=suggestlist)
 
 @app.route('/new')
 @login_required

@@ -1,6 +1,7 @@
 {% extends "base.html" %}
-{% block content %}
+{% set active_page = "new" %}
 
+{% block content %}
 <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
 
 <div id="container">
@@ -9,7 +10,7 @@
 			<input class="input" id="name" type="text" placeholder="Document name">
 		</p>
 		<p class="control">
-			<button id="save" class="button is-info is-light" type="button">create</button> 
+			<button id="save" class="button is-info is-light" type="button">create draft</button>
 		</p>
 	  </div>
     <div id="editor"></div>
@@ -33,12 +34,13 @@
           }
 	      $.ajax({
 	        type: "POST",
-	        url: '/save',
+	        url: "{{ url_for('app.save')}}",
 	        data : {content:encodeURIComponent(editor.getMarkdown()), name:encodeURIComponent($("#name").val())},
 	        success: function(data) {
 	        console.log(data.id);
-            $.notify("Document created", "success");
+            $.notify("Draft created", "success");
             window.location.replace("edit?id=" + data.id);
+			window.location.replace("{{ url_for('draft.drafts')}}");
 	        }});
 	  }, true);
 </script>

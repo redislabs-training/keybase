@@ -5,23 +5,24 @@
 
 <div>
     {% if not bookmarked %}
-    <a id="bookmark" class="is-size-7" style="display:inline;" href="{{ url_for('app.bookmark', docid=docid) }}">
+    <a id="bookmark" class="is-size-7" style="display:inline;" href="{{ url_for('bookmrk.bookmark', docid=docid) }}">
         <img id="bkmrk" width="10" src="{{ url_for('static',filename='images/bookmark-gray.png') }}">
     </a>
     {% endif %}
     {% if bookmarked %}
-    <a id="bookmark" class="is-size-7" style="display:inline;" href="{{ url_for('app.bookmark', docid=docid) }}">
+    <a id="bookmark" class="is-size-7" style="display:inline;" href="{{ url_for('bookmrk.bookmark', docid=docid) }}">
         <img id="bkmrk" width="10" src="{{ url_for('static',filename='images/bookmark-red.png') }}">
     </a>
     {% endif %}
 
     <h1 id="name" class="title is-4" style="margin-bottom:0em; display:inline;"></h1>
-    <div style="margin-left:20px; margin-top:10px; float:right; width:300px;">
+    {% if "draft" == document[2] %} <br><span class="draft">DRAFT</span> {% endif%}
+    <div style="margin-left:20px; margin-top:10px; float:right; width:330px;">
         <div class="widget">
             <h4 id="name" class="title is-6" style="margin-bottom:0em;">Recommendations</h4>
             {% if suggestlist is not none %}
                 {% for key, name in suggestlist %}
-                <a style="display:block;" class="is-size-7" href="{{ url_for('app.view',id=key) }}">
+                <a style="display:block;" class="is-size-6" href="{{ url_for('app.view',id=key) }}">
                     {{name}}
                 </a>
                 {% endfor %}
@@ -33,12 +34,12 @@
         <div class="widget">
             <h4 id="name" class="title is-6" style="margin-bottom:0em;">Actions</h4>
             <p>
-                <a class="is-size-7" style="display:inline;" href="{{ url_for('app.edit',id=id) }}">edit</a>
+                <a class="is-size-6" style="display:inline;" href="{{ url_for('app.edit',id=docid) }}">Edit</a>
             </p>
         </div>
         {% endif %}
     </div>
-    <div id="editor" style="text-align: justify; text-justify: inter-word; margin-right:340px;"></div>
+    <div id="editor" style="text-align:justify; text-justify: inter-word; margin-right:370px;"></div>
 </div>
 
 <script>
@@ -46,7 +47,7 @@
         event.preventDefault();
         $.ajax({
 	        type: "POST",
-	        url: "{{ url_for('app.bookmark')}}",
+	        url: "{{ url_for('bookmrk.bookmark')}}",
 	        data : {docid:"{{docid}}"},
 	        success: function(data) {
 	        console.log(data);

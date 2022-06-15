@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
+
 <div style="width:360px;padding:20px;" class="signinbox">
     <span class="centeredbox">
         <img width="200px"src="{{ url_for('static',filename='images/keybasesmall.png') }}">
@@ -22,4 +23,8 @@
         <a target="_blank" href=https://opensource.org/licenses/MIT>MIT licensed</a>
     </p>
 </div>
+
+<script>
+    document.body.style.backgroundColor = "#f4f6f7";
+</script>
 {% endblock %}

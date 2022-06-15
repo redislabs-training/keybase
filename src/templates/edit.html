@@ -12,7 +12,10 @@
 		<p class="control">
 			<button id="save" class="button is-info is-light" type="button">save</button> 
 			<button id="close" class="button is-info is-light" type="button">close</button> 
-			<a id="delete" class="button is-danger is-light" href="{{ url_for('app.delete',id=id) }}">delete</a> 
+			{% if current_user.is_admin() %}
+			<a id="publish" {% if not state == "draft" %} class="is-hidden" {% endif%} class="button is-warning is-light" href="{{ url_for('app.publish',id=id) }}">publish</a>
+			<a id="delete" class="button is-danger is-light" href="{{ url_for('app.delete',id=id) }}">delete</a>
+			{% endif %}
 		</p>
 	  </div>
 	<div id="editor"></div>
@@ -31,6 +34,7 @@
 
 	  var saveBtn = document.querySelector('#save');
 	  var closeBtn = document.querySelector('#close');
+
 	  saveBtn.addEventListener("mousedown", function(e) {
 		if ($("#name").val().length<10){
             $.notify("Document name is too short", "error");
@@ -38,13 +42,33 @@
           }
 	      $.ajax({
 	        type: "POST",
-	        url: '/update',
+	        url: "{{ url_for('app.update')}}",
 	        data : {id:"{{id}}", content:encodeURIComponent(editor.getMarkdown()), name:encodeURIComponent($("#name").val())},
 	        success: function(data) {
 	        console.log(data);
-            $.notify("Document updated", "success");
+            $.notify(data["message"], "success");
+			$( "#publish" ).removeClass("is-hidden")
 	        }});
 	  }, true);
+
+	  var publishBtn = document.querySelector('#publish');
+	  if (publishBtn){
+		publishBtn.addEventListener("mousedown", function(e) {
+			if ($("#name").val().length<10){
+				$.notify("Document name is too short", "error");
+				return;
+			}
+			$.ajax({
+				type: "POST",
+				url: "{{ url_for('app.publish')}}",
+				data : {id:"{{id}}", content:encodeURIComponent(editor.getMarkdown()), name:encodeURIComponent($("#name").val())},
+				success: function(data) {
+				console.log(data);
+				$.notify(data["message"], "success");
+				$( "#publish" ).addClass("is-hidden")
+				}});
+		}, true);
+	  }
 
 	  closeBtn.addEventListener("mousedown", function(e) {
 		window.location.replace("{{ url_for('app.view',id=id) }}");

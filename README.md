@@ -29,7 +29,7 @@ docker run -p 6379:6379 redislabs/redisearch:2.4.3
 Then, configure the Redis database credentials in `config.py`. Finally, create the index (documents are stored in Hashes).
 
 ```
-FT.CREATE document_idx ON HASH PREFIX 1 "keybase:kb" SCHEMA name TEXT content TEXT creation NUMERIC SORTABLE update NUMERIC SORTABLE processable TAG content_embedding VECTOR FLAT 6 TYPE FLOAT32 DIM 768 DISTANCE_METRIC COSINE
+FT.CREATE document_idx ON HASH PREFIX 1 "keybase:kb" SCHEMA name TEXT content TEXT creation NUMERIC SORTABLE update NUMERIC SORTABLE state TAG owner TEXT processable TAG tags TAG content_embedding VECTOR FLAT 6 TYPE FLOAT32 DIM 768 DISTANCE_METRIC COSINE
 ```
 
 Finally, consider that Vector Similarity syntax will need the following syntax dialect. Then set it:
@@ -42,6 +42,12 @@ Time to start the platform:
 
 ```
 ./start.sh
+```
+
+Or using WSGI and gunicorn:
+
+```
+gunicorn --workers 1 --bind 0.0.0.0:5000 "wsgi:create_app()"
 ```
 
 ## Okta Authentication
@@ -57,6 +63,14 @@ and indexed using:
 ```
 FT.CREATE user_idx ON HASH PREFIX 1 "keybase:okta" SCHEMA name TEXT group TEXT
 ```
+
+## Role Based Access Control
+
+Three roles are implemented at the moment:
+
+- Viewer: can only view and bookmark documents. When you first authenticate with Okta, you are a viewer. Only the admin can assign roles
+- Editor: can create a draft, edit a draft, edit a published document. But you cannot publish a document. When editing a published document, a new review will be created, while locking other editors from creating additional reviews. Only admins can publish reviews
+- Admin: can do everything. And in particular, publish documents and new versions
 
 ## Troubleshooting
 

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% set active_page = "draft" %}
+
+{% block content %}
+
+  <h1 id="name" class="title is-4">Drafts</h1>
+
+  {% if drafts is not none %}
+  {% for key, name, owner, update in drafts %}
+      <a style="display:block;" class="is-size-6" href="{{ url_for('app.view',id=key) }}">
+          {{name}}
+      </a>
+      <span class="tag is-info is-light">{{owner}}</span>
+      <span class="is-size-7 has-text-weight-light has-text-grey">last updated: {{update}}</span>
+      <div style="border-top: .05rem solid #dbdbdb;" class="mt-1"></div>
+  {% endfor %}
+  {% else %}
+      <p>You have no drafts saved</p>
+  {% endif %}
+{% endblock %}
+

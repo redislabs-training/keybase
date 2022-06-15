@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% set active_page = "browse" %}
 
 {% block content %}
     <div class="field has-addons">
@@ -44,12 +44,17 @@
       
     {% if keydocument is not none %}
     {% for key, name, creation in keydocument %}
-        <a style="display:block;" class="is-size-5" href="{{ url_for('app.view',id=key) }}">
+        <a style="display:block;" class="is-size-6" href="{{ url_for('app.view',id=key) }}">
             {{name}}
         </a>
         <span class="is-size-7 has-text-weight-light has-text-grey">created: {{creation}}</span>
         <div style="border-top: .05rem solid #dbdbdb;"></div>
     {% endfor %}
+
+    <div class="mt-4 mb-6">
+      {{ pagination.links }}
+    </div>
+
     {% else %}
         No result found, refine your search
     {% endif %}
