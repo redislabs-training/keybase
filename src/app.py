@@ -64,17 +64,20 @@ def browse():
             page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
             rs = get_db().ft("document_idx").search(Query(request.args.get('q') + " -@state:{draft}").return_field("name").return_field("creation").sort_by("creation", asc=False).paging(offset, per_page))
             pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma', bulma_style='small', prev_label='Previous', next_label='Next page')
+        elif (request.args.get('tag')):
+            page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
+            rs = get_db().ft("document_idx").search(Query("@tags:{"+request.args.get('tag')+"} -@state:{draft}").return_field("name").return_field("creation").sort_by("creation", asc=False).paging(offset, per_page))
+            pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma', bulma_style='small', prev_label='Previous', next_label='Next page')
         else: 
             page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
             rs = get_db().ft("document_idx").search(Query("-@state:{draft}").return_field("name").return_field("creation").sort_by("creation", asc=False).paging(offset, per_page))
             pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma', bulma_style='small', prev_label='Previous', next_label='Next page')
-            print(rs)
 
         if len(rs.docs): 
             for key in rs.docs:
                 keys.append(key.id.split(':')[-1])
                 names.append(urllib.parse.unquote(key.name))
-                creations.append(datetime.utcfromtimestamp(int(key.creation)).strftime('%Y-%m-%d %H:%M:%S'))
+                creations.append(datetime.utcfromtimestamp(int(key.creation)).strftime('%Y-%m-%d'))
             keydocument=zip(keys,names,creations)
 
         return render_template('browse.html', title=TITLE, desc=DESC, keydocument=keydocument, page=page, per_page=per_page, pagination=pagination)
@@ -129,6 +132,47 @@ def publish():
     get_db().hmset("keybase:kb:{}".format(request.form['id']), doc)
     return jsonify(message="Document published")
 
+@app.route('/addtag', methods=['POST'])
+@login_required
+@requires_access_level(Role.EDITOR)
+def addtag():
+    taglist = []
+    
+    # Make sure the tag exists and is valid
+    if not get_db().hexists("keybase:tags", request.form['tag']):
+        return jsonify(message="The tag does not exist", code="error")
+
+    # Get tags for this document
+    tags = get_db().hget("keybase:kb:{}".format(request.form['id']), "tags")
+    if (tags != None) and (len(tags) > 0):
+        taglist = tags.split(',')
+
+    # The document hasn't the tag, and it can be added
+    if not taglist.count(request.form['tag']) > 0:
+        taglist.append(request.form['tag'])
+        get_db().hset("keybase:kb:{}".format(request.form['id']), "tags", ",".join(taglist))
+        print(",".join(taglist))
+    else:
+        return jsonify(message="Document already tagged", code="warn")
+
+    return jsonify(message="The tag has been added", code="success")
+
+
+@app.route('/deltag', methods=['POST'])
+@login_required
+@requires_access_level(Role.EDITOR)
+def deltag():
+    taglist = []
+
+    # Get tags for this document
+    tags = get_db().hget("keybase:kb:{}".format(request.form['id']), "tags")
+    if tags != None:
+        taglist = tags.split(',')
+        taglist.remove(request.form['tag'])
+        get_db().hset("keybase:kb:{}".format(request.form['id']), "tags", ",".join(taglist))
+
+    return jsonify(message="The tag has been removed", code="success", tags=taglist)
+
 
 @app.route('/update', methods=['POST'])
 @login_required
@@ -148,7 +192,7 @@ def update():
             "update": unixtime}
     get_db().hmset("keybase:kb:{}".format(request.form['id']), doc)
 
-    return jsonify(message="Document saved among drafts")
+    return jsonify(message="Document saved as draft")
 
 @app.route('/about', methods=['GET'])
 @login_required
@@ -165,10 +209,10 @@ def edit():
     TITLE="Read Document"
     DESC="Read Document"
     #if id is None:
-    document = get_db().hmget("keybase:kb:{}".format(id), ['name', 'content', 'state'])
+    document = get_db().hmget("keybase:kb:{}".format(id), ['name', 'content', 'state', 'tags'])
     document[0] = urllib.parse.quote(document[0])
     document[1] = urllib.parse.quote(document[1])
-    return render_template('edit.html', title=TITLE, desc=DESC, id=id, name=document[0], content=document[1], state=document[2])
+    return render_template('edit.html', title=TITLE, desc=DESC, id=id, name=document[0], content=document[1], state=document[2], tags=document[3])
 
 @app.route('/delete', methods=['GET'])
 @login_required
@@ -191,7 +235,7 @@ def view():
 
     bookmarked = get_db().hexists("keybase:bookmark:{}".format(current_user.id), id)
 
-    document = get_db().hmget("keybase:kb:{}".format(request.args.get('id')), ['name', 'content', 'state', 'owner'])
+    document = get_db().hmget("keybase:kb:{}".format(request.args.get('id')), ['name', 'content', 'state', 'owner', 'tags'])
     
     if document[0] == None:
         return redirect(url_for('app.browse'))
@@ -251,10 +295,21 @@ def view():
     """
     return render_template('view.html', title=TITLE, desc=DESC, docid=id, bookmarked=bookmarked, document=document, suggestlist=suggestlist)
 
-@app.route('/new')
+@app.route('/new', methods=['GET'])
 @login_required
 @requires_access_level(Role.EDITOR)
 def new():
     TITLE="New Document"
     DESC="New Document"
-    return render_template('new.html', title=TITLE, desc=DESC)
+    template = ""
+
+    if request.args.get('doc') == 'case':
+        template=urllib.parse.quote("## Applies to:\n\n\n<br>\n## Executive Summary \n\n\n<br>\n<br>\n<br>\n## Introduction \n\n\n<br>\n<br>\n<br>\n## Analysis \n\n\n<br>\n<br>\n<br>\n## Alternatives and Decision Criteria \n\n\n<br>\n<br>\n<br>\n## Recommendations and Implementation Plan \n\n\n<br>\n<br>\n<br>\n## Conclusion \n\n\n<br>\n<br>\n<br>\n## References")
+    elif request.args.get('doc') == 'troubleshooting':
+        template=urllib.parse.quote("## Applies to:\n\n\n<br>\n## Symptoms \n\n\n<br>\n<br>\n<br>\n## Changes \n\n\n<br>\n<br>\n<br>\n## Cause \n\n\n<br>\n<br>\n<br>\n## Solution \n\n\n<br>\n<br>\n<br>\n## References")
+    elif request.args.get('doc') == 'design':
+        template=urllib.parse.quote("## Applies to:\n\n\n<br>\n## Purpose \n\n\n<br>\n<br>\n<br>\n## Scope \n\n\n<br>\n<br>\n<br>\n## Details \n\n\n<br>\n<br>\n<br>\n## References")
+    elif request.args.get('doc') == 'howto':
+        template=urllib.parse.quote("## Applies to:\n\n\n<br>\n## Goal \n\n\n<br>\n<br>\n<br>\n## Solution \n\n\n<br>\n<br>\n<br>\n## References")
+
+    return render_template('new.html', title=TITLE, desc=DESC, template=template)

@@ -9,7 +9,7 @@ REDIS_CFG = {   "host" : "",
                 "ssl_certfile" : '', 
                 "ssl_cert_reqs" : '', 
                 "ssl_ca_certs" : ''} 
-SIGNUP_CFG = 'okta'
+SIGNUP_CFG = 'debug'
 
 okta = {
     "client_id": "",

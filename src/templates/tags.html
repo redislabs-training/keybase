@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="tabs is-toggle is-centered">
+    <ul>
+      <li><a href="{{ url_for('admin.tools') }}">Users</a></li>
+      <li class="is-active"><a>Tags</a></li>
+      <li><a href="{{ url_for('admin.data') }}">Backup</a></li>
+    </ul>
+  </div>
+
+  <div class="columns">
+    <div class="column is-half">
+      <form method="post" action="{{ url_for('admin.tag') }}" class="navbar-form navbar-right">
+        <div class="field">
+          <label class="label">New tag</label>
+          <p class="control">
+            <input name="tag" class="input" type="text" placeholder="New tag">
+          </p>
+          <div class="field">
+            <label class="label">Description of the tag</label>
+            <div class="control">
+              <textarea name="description" class="textarea" placeholder="Textarea"></textarea>
+            </div>
+          </div>
+          <p class="control">
+            <button class="button is-link">Create</button>
+          </p>
+        </div>
+      </form>
+      
+    </div>
+    <div class="column">
+      <label class="label">All the tags</label>
+      {% for tag in tags %}
+      <span class="mb-1 tag is-link is-light">{{tag}}</span>
+      {% endfor %}
+    </div>
+  </div>
+
+
+
+  {% endblock %}

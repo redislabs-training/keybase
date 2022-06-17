@@ -72,6 +72,66 @@ def tools():
     users=zip(key,name,group,email)
     return render_template('admin.html', title=TITLE, desc=DESC, users=users)
 
+
+@admin.route('/tags')
+@login_required
+@requires_access_level(Role.ADMIN)
+def tags():
+    TITLE="Admin functions"
+    DESC="Admin functions"
+    tags = []
+
+    # Fetching list of tags
+    cursor, fields  = get_db().hscan("keybase:tags", 0, count=200)
+    for tag in fields:
+        tags.append(tag)
+
+    return render_template('tags.html', title=TITLE, desc=DESC, tags=tags)
+
+
+@admin.route('/tagsearch', methods=['GET'])
+@login_required
+@requires_access_level(Role.EDITOR)
+def tagsearch():
+    TITLE="Admin functions"
+    DESC="Admin functions"
+    tags = []
+
+    # Fetching list of tags
+    cursor, fields  = get_db().hscan("keybase:tags", 0, match="*" + request.args.get('q') + "*", count=200)
+    for tag in fields:
+        tags.append(tag)
+
+    return jsonify(matching_results=tags)
+
+
+@admin.route('/tag', methods=['POST'])
+@login_required
+@requires_access_level(Role.ADMIN)
+def tag():
+    TITLE="Admin functions"
+    DESC="Admin functions"
+
+    if get_db().hexists("keybase:tags", request.form['tag'].lower().replace(" ", "")):
+        return redirect(url_for('admin.tags'))
+
+    # Add lowercase tag and description
+    if len(request.form['tag'])>1:
+        tag = { request.form['tag'].lower().replace(" ", ""):request.form['description']}
+        get_db().hmset("keybase:tags", tag)
+
+    return redirect(url_for('admin.tags'))
+
+
+@admin.route('/data')
+@login_required
+@requires_access_level(Role.ADMIN)
+def data():
+    TITLE="Admin functions"
+    DESC="Admin functions"
+    
+    return render_template('data.html', title=TITLE, desc=DESC)
+
 """
 # Routines to backup and restore encoding data as UTF-8. Cannot encode binary vector embeddings, so to use vector similarity, I choose base64 encoding
 # These routines could be reused to produce statements such as HSET ..., in a much more readable format

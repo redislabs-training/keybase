@@ -11,18 +11,124 @@
 		</p>
 		<p class="control">
 			<button id="save" class="button is-info is-light" type="button">save</button> 
+			<button id="tags" class="button is-info is-light" type="button">tags</button> 
 			<button id="close" class="button is-info is-light" type="button">close</button> 
 			{% if current_user.is_admin() %}
-			<a id="publish" {% if not state == "draft" %} class="is-hidden" {% endif%} class="button is-warning is-light" href="{{ url_for('app.publish',id=id) }}">publish</a>
+			<a id="publish" class="{% if not state == "draft" %}is-hidden {% endif%} button is-warning is-light" href="{{ url_for('app.publish',id=id) }}">publish</a>
 			<a id="delete" class="button is-danger is-light" href="{{ url_for('app.delete',id=id) }}">delete</a>
 			{% endif %}
 		</p>
 	  </div>
 	<div id="editor"></div>
+
+	<div class="modal">
+		<div class="modal-background"></div>
+		<div class="modal-card">
+		  <header class="modal-card-head">
+			<p class="modal-card-title">Tags</p>
+			<button id="closemodal" class="delete" aria-label="close"></button>
+		  </header>
+		  <section class="modal-card-body">
+            <div id="existingtags" class="field is-grouped is-grouped-multiline">
+			{% if tags is not none and tags|length > 0 %}
+            {% set tags = tags.split(',') %}
+            {% for tag in tags %}
+				<div class="control">
+					<div class="tags has-addons">
+                	<span class="tagname tag is-link is-light">{{tag}}</span>
+                	<a class="tag is-delete"></a>
+					</div>
+				</div>
+            {% endfor %}
+				<p id="notags" class="is-size-6 is-hidden">This document has no tags</p>
+            {% else %}
+                <p id="notags" class="is-size-6">This document has no tags</p>
+            {% endif %}
+            </div>
+			<div id="taglist" class="block tags"></div>
+		  </section>
+		  <footer class="modal-card-foot">
+			<div class="field is-grouped">
+				<input id="tagsearch" class="is-small input is-info mb-4" type="text" placeholder="Search an existing tag">
+				<button id="addtag" class="ml-1 button is-info is-small" type="button">Add</button>
+			</div>
+		  </footer>
+		</div>
+	</div>
+
 </div>
 
 <script>
-      const editor = new toastui.Editor({
+	$("#tags").click(function(e){
+		$(".modal").addClass("is-active");
+	})
+
+	$("#closemodal").click(function(e){
+		$(".modal").removeClass("is-active");
+	})
+
+	$(function() {
+            $("#tagsearch").autocomplete({
+                source:function(request, response) {
+					console.log(request.term)
+                    $.getJSON("{{url_for('admin.tagsearch')}}",{
+                        q: encodeURIComponent(request.term), 
+                    }, function(data) {
+						console.log(data.matching_results)
+                        response(data.matching_results); 
+						//$('#taglist').empty();
+						//data.matching_results.forEach(function(tag) {
+						//	$('#taglist').append('<span class="tag is-link">'+tag+'</span>');
+						//})
+                    });
+                },
+                minLength: 3,
+                select: function(event, ui) {
+                    //console.log(ui.item.id); 
+                }
+            });
+        })
+
+		$("#addtag").click(function(e){
+		e.preventDefault();
+	    $.ajax({
+	    	type: "POST",
+	        url: "{{ url_for('app.addtag')}}",
+	        data : {id:"{{id}}", tag:$("#tagsearch").val()},
+	        success: function(data) {
+				if (data["code"] == "success"){
+					$( "#notags" ).addClass("is-hidden")
+					$('#existingtags').append('<div class="control"><div class="tags has-addons"><span class="tag is-link is-light">'+$("#tagsearch").val()+'</span><a class="tag is-delete"></a></div></div>');
+				}
+            	$.notify(data["message"], data["code"]);
+	        }
+		});
+		return false;
+	});
+
+	$("#existingtags").on("click", ".is-delete", function(){
+		var clicked = $(this);
+	    $.ajax({
+	    	type: "POST",
+	        url: "{{ url_for('app.deltag')}}",
+	        data : {id:"{{id}}", tag:clicked.siblings('span').text()},
+	        success: function(data) {
+				if (data["code"] == "success"){
+					clicked.closest('.control').remove();
+					if($('.tagname').length == 0){
+						$( "#notags" ).removeClass("is-hidden")
+					}
+				}
+            	$.notify(data["message"], data["code"]);
+	        }
+		});
+		return false;
+	});
+
+</script>
+
+<script>
+    const editor = new toastui.Editor({
         el: document.querySelector('#editor'),
         initialEditType: 'wysiwyg',
         width: '500px',
@@ -30,45 +136,48 @@
         initialValue: decodeURIComponent("{{content}}")
       });
 
-	  $( "input" ).val(decodeURIComponent("{{name}}"));
+	$( "#name" ).val(decodeURIComponent("{{name}}"));
 
-	  var saveBtn = document.querySelector('#save');
-	  var closeBtn = document.querySelector('#close');
+	var closeBtn = document.querySelector('#close');
 
-	  saveBtn.addEventListener("mousedown", function(e) {
+	$("#save").click(function(e){
+		e.preventDefault();
 		if ($("#name").val().length<10){
             $.notify("Document name is too short", "error");
             return;
-          }
-	      $.ajax({
-	        type: "POST",
+        }
+	    $.ajax({
+	    	type: "POST",
 	        url: "{{ url_for('app.update')}}",
 	        data : {id:"{{id}}", content:encodeURIComponent(editor.getMarkdown()), name:encodeURIComponent($("#name").val())},
 	        success: function(data) {
-	        console.log(data);
-            $.notify(data["message"], "success");
-			$( "#publish" ).removeClass("is-hidden")
-	        }});
-	  }, true);
+	        	console.log(data);
+            	$.notify(data["message"], "success");
+				$( "#publish" ).removeClass("is-hidden")
+	        }
+		});
+		return false;
+	});
 
-	  var publishBtn = document.querySelector('#publish');
-	  if (publishBtn){
-		publishBtn.addEventListener("mousedown", function(e) {
-			if ($("#name").val().length<10){
-				$.notify("Document name is too short", "error");
-				return;
-			}
-			$.ajax({
-				type: "POST",
-				url: "{{ url_for('app.publish')}}",
-				data : {id:"{{id}}", content:encodeURIComponent(editor.getMarkdown()), name:encodeURIComponent($("#name").val())},
-				success: function(data) {
+	$("#publish").click(function(e){
+		e.preventDefault();
+		if ($("#name").val().length<10){
+			$.notify("Document name is too short", "error");
+			return;
+		}
+		$.ajax({
+			type: "POST",
+			url: "{{ url_for('app.publish')}}",
+			data : {id:"{{id}}", content:encodeURIComponent(editor.getMarkdown()), name:encodeURIComponent($("#name").val())},
+			success: function(data) {
 				console.log(data);
 				$.notify(data["message"], "success");
 				$( "#publish" ).addClass("is-hidden")
-				}});
-		}, true);
-	  }
+			}
+		});
+		return false;
+	});
+	  
 
 	  closeBtn.addEventListener("mousedown", function(e) {
 		window.location.replace("{{ url_for('app.view',id=id) }}");
@@ -81,4 +190,6 @@
             return false;
     }})	  
 </script>
+
+
 {% endblock %}

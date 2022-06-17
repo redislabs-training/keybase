@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="tabs is-toggle is-centered">
+    <ul>
+      <li><a href="{{ url_for('admin.tools') }}">Users</a></li>
+      <li><a href="{{ url_for('admin.tags') }}">Tags</a></li>
+      <li class="is-active"><a>Backup</a></li>
+    </ul>
+  </div>
+
+  <div class="columns">
+    <div class="column">Download a backup of the knowledge base</div>
+    <div class="column"><button id="backup" class="button">Backup</button> </div>
+  </div>
+
+  <div class="columns">
+    <div class="column">Restore the knowledge base from backup</div>
+    <div class="column"> 
+
+    <div class="file">
+      <label class="file-label">
+        <input id="restore" class="file-input" type="file" name="resume">
+        <span class="file-cta">
+          <span class="file-label">
+            Restore
+          </span>
+        </span>
+      </label>
+    </div>
+  </div>
+
+  </div>
+
+  <script>
+    var backupBtn = document.querySelector('#backup');
+    backupBtn.addEventListener("mousedown", function(e) {
+      const timeElapsed = Date.now();
+      const today = new Date(timeElapsed);
+      filename = "keybase_"+today.toISOString()+".txt";
+        $.ajax({
+          type: "GET",
+          url: "{{ url_for('admin.backup')}}",
+          data : {},
+          success: function(data) {
+            console.log(data.backup)
+            download(filename, data.backup)
+            $.notify(data.message, "success");
+          }});
+    }, true);
+  
+    $("#restore").change(function(){
+      var fd = new FormData();
+      var files = $('#restore')[0].files;
+  
+      // Check file selected or not
+      if(files.length > 0 ){
+      fd.append('file',files[0]);
+  
+      $.ajax({
+      url: "{{ url_for('admin.restore')}}",
+      type: 'post',
+      data: fd,
+      contentType: false,
+      processData: false,
+      success: function(data) {
+            $.notify(data.message, "success");
+          }});
+      }
+    });
+  
+    function download(filename, text) {
+      var element = document.createElement('a');
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+      element.setAttribute('download', filename);
+  
+      element.style.display = 'none';
+      document.body.appendChild(element);
+  
+      element.click();
+  
+      document.body.removeChild(element);
+    }
+  
+  </script>
+  
+{% endblock %}
+

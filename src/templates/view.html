@@ -16,10 +16,9 @@
     {% endif %}
 
     <h1 id="name" class="title is-4" style="margin-bottom:0em; display:inline;"></h1>
-    {% if "draft" == document[2] %} <br><span class="draft">DRAFT</span> {% endif%}
     <div style="margin-left:20px; margin-top:10px; float:right; width:330px;">
-        <div class="widget">
-            <h4 id="name" class="title is-6" style="margin-bottom:0em;">Recommendations</h4>
+        <div class="widget box">
+            <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Recommendations</h4>
             {% if suggestlist is not none %}
                 {% for key, name in suggestlist %}
                 <a style="display:block;" class="is-size-6" href="{{ url_for('app.view',id=key) }}">
@@ -27,19 +26,43 @@
                 </a>
                 {% endfor %}
             {% else %}
-                <p class="is-size-7">creating recommendations...</p>
+                <p class="is-size-6">creating recommendations...</p>
+            {% endif %}
+        </div>
+        <div class="widget box">
+            <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Tags</h4>
+            {% if document[4] is not none and document[4]|length > 0 %}
+            <div class="tags">
+            {% set tags = document[4].split(',') %}
+            {% for tag in tags %}
+            <a class="tag is-link is-light" href="{{ url_for('app.browse',tag=tag) }}">{{tag}}</a>
+            {% endfor %}
+            </div>
+            {% else %}
+                <p class="is-size-6">no tags</p>
             {% endif %}
         </div>
         {% if current_user.is_editor() %}
-        <div class="widget">
-            <h4 id="name" class="title is-6" style="margin-bottom:0em;">Actions</h4>
+        <div class="widget box">
+            <h4 class="title is-6 mb-2" style="margin-bottom:0em;">Actions</h4>
             <p>
                 <a class="is-size-6" style="display:inline;" href="{{ url_for('app.edit',id=docid) }}">Edit</a>
             </p>
         </div>
         {% endif %}
+        {% if "draft" == document[2] %} 
+        <div class="widget box">
+            <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Info</h4>
+            <p class="draft is-size-6">
+                This document has been modified and is not listed among the published documents but only as a draft owned by the editor. 
+                The system administrator only can publish the document.
+            </p>
+        </div>
+        {% endif%}
     </div>
+
     <div id="editor" style="text-align:justify; text-justify: inter-word; margin-right:370px;"></div>
+
 </div>
 
 <script>
