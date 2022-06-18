@@ -167,7 +167,7 @@
                 {% if current_user.is_authenticated %}
                     <div class="navbar-item has-dropdown is-hoverable">
                         <a class="navbar-link">
-                            {{session['username']}}
+                            {{current_user.name}}
                         </a>
                         <div class="navbar-dropdown">
                             {% if current_user.is_admin() %}

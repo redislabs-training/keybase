@@ -74,9 +74,12 @@ def create_app():
 
     @app.before_request
     def check_valid_login():
-        endpoint_group = ('/bookmark', '/tools', '/logout')
-        if request.endpoint in endpoint_group and not current_user.is_authenticated:
-                return render_template('/', next=request.endpoint)
+        #endpoint_group = ('/bookmark', '/tools', '/logout')
+        #if request.endpoint in endpoint_group and not current_user.is_authenticated:
+        #        return render_template('/', next=request.endpoint)
+        endpoint_group = ('static', 'login', 'callback')
+        if not request.endpoint in endpoint_group and not current_user.is_authenticated:
+            return render_template('index.html', next=request.endpoint)
 
 
     @app.errorhandler(404)
@@ -140,7 +143,7 @@ def create_app():
 
         # Now create the session
         login_user(user)
-        session['username'] = user_name
+
         return redirect(url_for("app.browse"))
 
     @app.route("/logout", methods=["GET", "POST"])

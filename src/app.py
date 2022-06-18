@@ -201,11 +201,12 @@ def about():
     DESC="About keybase"
     return render_template('about.html', title=TITLE, desc=DESC)
 
-@app.route('/edit', methods=['GET'])
+#@app.route('/edit', methods=['GET'])
+@app.route('/edit/<id>')
 @login_required
 @requires_access_level(Role.EDITOR)
-def edit():
-    id = request.args.get('id')
+def edit(id):
+    #id = request.args.get('id')
     TITLE="Read Document"
     DESC="Read Document"
     #if id is None:
@@ -214,18 +215,20 @@ def edit():
     document[1] = urllib.parse.quote(document[1])
     return render_template('edit.html', title=TITLE, desc=DESC, id=id, name=document[0], content=document[1], state=document[2], tags=document[3])
 
-@app.route('/delete', methods=['GET'])
+#@app.route('/delete', methods=['GET'])
+@app.route('/delete/<id>')
 @login_required
 @requires_access_level(Role.ADMIN)
-def delete():
-    id = request.args.get('id')
+def delete(id):
+    #id = request.args.get('id')
     get_db().delete("keybase:kb:{}".format(id))
     return redirect(url_for('app.browse'))
 
-@app.route('/view', methods=['GET'])
+#@app.route('/view', methods=['GET'])
+@app.route('/doc/<id>')
 @login_required
-def view():
-    id = request.args.get('id')
+def doc(id):
+    #id = request.args.get('id')
     TITLE="Read Document"
     DESC="Read Document"
     keys = []
@@ -235,7 +238,7 @@ def view():
 
     bookmarked = get_db().hexists("keybase:bookmark:{}".format(current_user.id), id)
 
-    document = get_db().hmget("keybase:kb:{}".format(request.args.get('id')), ['name', 'content', 'state', 'owner', 'tags'])
+    document = get_db().hmget("keybase:kb:{}".format(id), ['name', 'content', 'state', 'owner', 'tags'])
     
     if document[0] == None:
         return redirect(url_for('app.browse'))
@@ -268,8 +271,8 @@ def view():
     # The first element in the returned list is the number of keys returned, start iterator from [1:]
     # Then, iterate the results in pairs, because they key name is alternated with the returned fields
 
-    if get_db().hexists("keybase:kb:{}".format(request.args.get('id')), 'content_embedding'):
-        keys_and_args = ["keybase:kb:{}".format(request.args.get('id'))]
+    if get_db().hexists("keybase:kb:{}".format(id), 'content_embedding'):
+        keys_and_args = ["keybase:kb:{}".format(id)]
         res = get_db().eval("local vector = redis.call('hmget',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','document_idx','*=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres", 1, *keys_and_args)
         it = iter(res[1:])
         for x in it:
@@ -295,21 +298,22 @@ def view():
     """
     return render_template('view.html', title=TITLE, desc=DESC, docid=id, bookmarked=bookmarked, document=document, suggestlist=suggestlist)
 
-@app.route('/new', methods=['GET'])
+#@app.route('/new', methods=['GET'])
+@app.route('/new/<doc>')
 @login_required
 @requires_access_level(Role.EDITOR)
-def new():
+def new(doc):
     TITLE="New Document"
     DESC="New Document"
     template = ""
 
-    if request.args.get('doc') == 'case':
+    if doc == 'case':
         template=urllib.parse.quote("## Applies to:\n\n\n<br>\n## Executive Summary \n\n\n<br>\n<br>\n<br>\n## Introduction \n\n\n<br>\n<br>\n<br>\n## Analysis \n\n\n<br>\n<br>\n<br>\n## Alternatives and Decision Criteria \n\n\n<br>\n<br>\n<br>\n## Recommendations and Implementation Plan \n\n\n<br>\n<br>\n<br>\n## Conclusion \n\n\n<br>\n<br>\n<br>\n## References")
-    elif request.args.get('doc') == 'troubleshooting':
+    elif doc == 'troubleshooting':
         template=urllib.parse.quote("## Applies to:\n\n\n<br>\n## Symptoms \n\n\n<br>\n<br>\n<br>\n## Changes \n\n\n<br>\n<br>\n<br>\n## Cause \n\n\n<br>\n<br>\n<br>\n## Solution \n\n\n<br>\n<br>\n<br>\n## References")
-    elif request.args.get('doc') == 'design':
+    elif doc == 'design':
         template=urllib.parse.quote("## Applies to:\n\n\n<br>\n## Purpose \n\n\n<br>\n<br>\n<br>\n## Scope \n\n\n<br>\n<br>\n<br>\n## Details \n\n\n<br>\n<br>\n<br>\n## References")
-    elif request.args.get('doc') == 'howto':
+    elif doc == 'howto':
         template=urllib.parse.quote("## Applies to:\n\n\n<br>\n## Goal \n\n\n<br>\n<br>\n<br>\n## Solution \n\n\n<br>\n<br>\n<br>\n## References")
 
     return render_template('new.html', title=TITLE, desc=DESC, template=template)
