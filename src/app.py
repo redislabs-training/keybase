@@ -26,7 +26,9 @@ app = Blueprint('app', __name__)
 @app.route('/autocomplete', methods=['GET'])
 @login_required
 def autocomplete():
-    rs = get_db().ft("document_idx").search(Query(urllib.parse.unquote(request.args.get('q')) + " -@state:{draft}").return_field("name").sort_by("creation", asc=False).paging(0, 10))
+    # Sanitize input for RediSearch
+    query = urllib.parse.unquote(request.args.get('q')).translate(str.maketrans('','',"\"@!{}()|-=>"))
+    rs = get_db().ft("document_idx").search(Query(query + " -@state:{draft}").return_field("name").sort_by("creation", asc=False).paging(0, 10))
     results = []
 
     for doc in rs.docs:
@@ -55,35 +57,45 @@ def browse():
     names = []
     creations = []
     keydocument = None
+    pagination = None
+    rs = None
 
     # Clear all the flashed messages
     flask.get_flashed_messages()
 
     try:
         if (request.args.get('q')):
+            # Sanitized input for RediSearch
+            query = urllib.parse.unquote(request.args.get('q')).translate(str.maketrans('','',"\"@!{}()|-=>"))
             page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
-            rs = get_db().ft("document_idx").search(Query(request.args.get('q') + " -@state:{draft}").return_field("name").return_field("creation").sort_by("creation", asc=False).paging(offset, per_page))
+            rs = get_db().ft("document_idx").search(Query(query + " -@state:{draft}").return_field("name").return_field("creation").sort_by("creation", asc=False).paging(offset, per_page))
             pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma', bulma_style='small', prev_label='Previous', next_label='Next page')
         elif (request.args.get('tag')):
-            page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
-            rs = get_db().ft("document_idx").search(Query("@tags:{"+request.args.get('tag')+"} -@state:{draft}").return_field("name").return_field("creation").sort_by("creation", asc=False).paging(offset, per_page))
-            pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma', bulma_style='small', prev_label='Previous', next_label='Next page')
+            # Sanitized tags for RediSearch: may be empty afterwards, a search like @tags:{""} fails
+            tag = request.args.get('tag').translate(str.maketrans('','',"\"@!{}()|-=>"))
+            if len(tag): 
+                page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
+                rs = get_db().ft("document_idx").search(Query("@tags:{"+tag+"} -@state:{draft}").return_field("name").return_field("creation").sort_by("creation", asc=False).paging(offset, per_page))
+                pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma', bulma_style='small', prev_label='Previous', next_label='Next page')
         else: 
             page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
             rs = get_db().ft("document_idx").search(Query("-@state:{draft}").return_field("name").return_field("creation").sort_by("creation", asc=False).paging(offset, per_page))
             pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma', bulma_style='small', prev_label='Previous', next_label='Next page')
 
-        if len(rs.docs): 
+        # If after sanitizing the input there is nothing to show, redirect to main
+        if (rs != None) and len(rs.docs): 
             for key in rs.docs:
                 keys.append(key.id.split(':')[-1])
                 names.append(urllib.parse.unquote(key.name))
                 creations.append(datetime.utcfromtimestamp(int(key.creation)).strftime('%Y-%m-%d'))
             keydocument=zip(keys,names,creations)
+        else:
+            return redirect(url_for("app.browse"))
 
         return render_template('browse.html', title=TITLE, desc=DESC, keydocument=keydocument, page=page, per_page=per_page, pagination=pagination)
     except RedisError as err:
         print(err)
-        return render_template('browse.html', title=TITLE, desc=DESC, error=err)
+        return redirect(url_for("app.browse"))
 
 @app.route('/')
 def index():

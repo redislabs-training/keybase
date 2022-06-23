@@ -33,7 +33,7 @@
                         response(data.matching_results); 
                     });
                 },
-                minLength: 4,
+                minLength: 3,
                 select: function(event, ui) {
                     console.log(ui.item.id); 
                     window.location.replace("doc/" + ui.item.id);
@@ -51,9 +51,11 @@
         <div style="border-top: .05rem solid #dbdbdb;"></div>
     {% endfor %}
 
+    {% if pagination is not none %}
     <div class="mt-4 mb-6">
       {{ pagination.links }}
     </div>
+    {% endif %}
 
     {% else %}
         No result found, refine your search
