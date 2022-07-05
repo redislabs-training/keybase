@@ -29,7 +29,7 @@ docker run -p 6379:6379 redislabs/redisearch:2.4.3
 Then, configure the Redis database credentials in `config.py`. Finally, create the index (documents are stored in Hashes).
 
 ```
-FT.CREATE document_idx ON HASH PREFIX 1 "keybase:kb" SCHEMA name TEXT content TEXT creation NUMERIC SORTABLE update NUMERIC SORTABLE state TAG owner TEXT processable TAG tags TAG content_embedding VECTOR FLAT 6 TYPE FLOAT32 DIM 768 DISTANCE_METRIC COSINE
+FT.CREATE document_idx ON HASH PREFIX 1 "keybase:kb" SCHEMA name TEXT content TEXT creation NUMERIC SORTABLE update NUMERIC SORTABLE state TAG owner TEXT processable TAG tags TAG content_embedding VECTOR HNSW 6 TYPE FLOAT32 DIM 768 DISTANCE_METRIC COSINE
 ```
 
 Finally, consider that Vector Similarity syntax will need the following syntax dialect. Then set it:

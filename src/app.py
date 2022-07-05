@@ -73,8 +73,8 @@ def browse():
         elif (request.args.get('tag')):
             # Sanitized tags for RediSearch: may be empty afterwards, a search like @tags:{""} fails
             tag = request.args.get('tag').translate(str.maketrans('','',"\"@!{}()|-=>"))
+            page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
             if len(tag): 
-                page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
                 rs = get_db().ft("document_idx").search(Query("@tags:{"+tag+"} -@state:{draft}").return_field("name").return_field("creation").sort_by("creation", asc=False).paging(offset, per_page))
                 pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma', bulma_style='small', prev_label='Previous', next_label='Next page')
         else: 
@@ -89,8 +89,8 @@ def browse():
                 names.append(urllib.parse.unquote(key.name))
                 creations.append(datetime.utcfromtimestamp(int(key.creation)).strftime('%Y-%m-%d'))
             keydocument=zip(keys,names,creations)
-        else:
-            return redirect(url_for("app.browse"))
+        #else:
+        #    return redirect(url_for("app.browse"))
 
         return render_template('browse.html', title=TITLE, desc=DESC, keydocument=keydocument, page=page, per_page=per_page, pagination=pagination)
     except RedisError as err:
