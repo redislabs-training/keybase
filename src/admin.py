@@ -62,7 +62,7 @@ def tools():
     group = []
     email = []
 
-    rs = get_db().ft("user_idx").search(Query("*").return_field("name").return_field("group").return_field("email"))
+    rs = get_db().ft("user_idx").search(Query("*").return_field("name").return_field("group").return_field("email").paging(0, 100))
     for doc in rs.docs:
         key.append(doc.id.split(':')[-1])
         name.append(doc.name)

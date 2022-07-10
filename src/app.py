@@ -89,8 +89,6 @@ def browse():
                 names.append(urllib.parse.unquote(key.name))
                 creations.append(datetime.utcfromtimestamp(int(key.creation)).strftime('%Y-%m-%d'))
             keydocument=zip(keys,names,creations)
-        #else:
-        #    return redirect(url_for("app.browse"))
 
         return render_template('browse.html', title=TITLE, desc=DESC, keydocument=keydocument, page=page, per_page=per_page, pagination=pagination)
     except RedisError as err:
@@ -327,5 +325,6 @@ def new(doc):
         template=urllib.parse.quote("## Applies to:\n\n\n<br>\n## Purpose \n\n\n<br>\n<br>\n<br>\n## Scope \n\n\n<br>\n<br>\n<br>\n## Details \n\n\n<br>\n<br>\n<br>\n## References")
     elif doc == 'howto':
         template=urllib.parse.quote("## Applies to:\n\n\n<br>\n## Goal \n\n\n<br>\n<br>\n<br>\n## Solution \n\n\n<br>\n<br>\n<br>\n## References")
-
+    elif doc == 'qa':
+        template=urllib.parse.quote("## Applies to:\n\n\n<br>\n## Question \n\n\n<br>\n<br>\n<br>\n## Answer \n\n\n<br>\n<br>\n<br>\n## References")
     return render_template('new.html', title=TITLE, desc=DESC, template=template)

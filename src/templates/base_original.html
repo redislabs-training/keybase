@@ -10,20 +10,19 @@
     <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
     <link rel="stylesheet" href="https://bulma.io/vendor/fontawesome-free-5.15.2-web/css/all.min.css">
     <link rel="stylesheet" href="https://bulma.io/css/bulma-docs.min.css?v=202108281054">
-    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css"></link>
     <link rel="canonical" href="https://keybase.redislabs-training.redislabs.com">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
+    <link href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css" rel="Stylesheet"></link>
     <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js" ></script>
-    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
 
     <style>
+
         .widget{padding-bottom:20px;}
 
         .box{border-radius: 3px;box-shadow: rgba(0, 0, 0, 0.06) 0px 0px 1.6rem;}
 
         .signinbox {
-            margin-top:200px;
             position: absolute;
             border-radius: 0.8rem;
             box-shadow: rgba(0, 0, 0, 0.06) 0px 0px 1.6rem;
@@ -110,8 +109,8 @@
 </head>
 
 <body>
-    <section> <!--is-primary-->
-
+    <section class="hero is-fullheight"> <!--is-primary-->
+        <div class="mb-3 hero-head">
             <nav class="navbar is-transparent" role="navigation" aria-label="main navigation">
                 <div class="navbar-brand">
                 {% if current_user.is_authenticated %}
@@ -196,11 +195,14 @@
                     </div>
               </div>
             </nav>
+        </div>
 
-            <div class="container" style="padding-left:20px; padding-right:20px;">
+        <div class="hero-body" style="align-items:normal; padding: 0rem 3rem;">
+            <div class="container">
                {% block content %}
                {% endblock %}
             </div>
+        </div>
     </section>
 
     <script>
@@ -211,6 +213,7 @@
             // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
             $(".navbar-burger").toggleClass("is-active");
             $(".navbar-menu").toggleClass("is-active");
+
         });
         });
     </script>
