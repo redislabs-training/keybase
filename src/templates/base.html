@@ -12,6 +12,9 @@
     <link rel="stylesheet" href="https://bulma.io/css/bulma-docs.min.css?v=202108281054">
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css"></link>
     <link rel="canonical" href="https://keybase.redislabs-training.redislabs.com">
+    <link rel="apple-touch-icon" href="{{ url_for('static',filename='images/logo.png') }}" />
+    <link rel="apple-touch-icon-precomposed" href="{{ url_for('static',filename='images/logo.png') }}" />
+    <link rel="apple-touch-startup-image" href="{{ url_for('static',filename='images/logo.png') }}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js" ></script>
@@ -118,7 +121,7 @@
                     <a href="{{ url_for('app.browse') }}" class="navbar-item">
                         <img src="{{ url_for('static',filename='images/keybasesmall.png') }}">
                     </a>
-                    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+                    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" style="margin:0 0 0 auto">
                         <span aria-hidden="true"></span>
                         <span aria-hidden="true"></span>
                         <span aria-hidden="true"></span>
@@ -141,19 +144,15 @@
                                 <a href="{{ url_for('app.new',doc='case') }}" class="navbar-item">
                                     Customer case
                                 </a>
-                                <hr class="navbar-divider">
                                 <a href="{{ url_for('app.new',doc='troubleshooting') }}" class="navbar-item">
                                     Troubleshooting guide
                                 </a>
-                                <hr class="navbar-divider">
                                 <a href="{{ url_for('app.new',doc='design') }}" class="navbar-item">
                                     Design article
                                 </a>
-                                <hr class="navbar-divider">
                                 <a href="{{ url_for('app.new',doc='howto') }}" class="navbar-item">
                                     How-to guide
                                 </a>
-                                <hr class="navbar-divider">
                                 <a href="{{ url_for('app.new',doc='qa') }}" class="navbar-item">
                                     Q&A
                                 </a>
@@ -181,7 +180,6 @@
                                 <a href="{{ url_for('admin.tools') }}" class="navbar-item">
                                     Admin
                                 </a>
-                                <hr class="navbar-divider">
                                 {% endif %}
                                 <a href="{{ url_for('bookmrk.bookmarks') }}" class="navbar-item">
                                     Bookmarks
