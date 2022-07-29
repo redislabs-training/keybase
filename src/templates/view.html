@@ -26,8 +26,8 @@
             <div class="widget box">
                 <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Recommendations</h4>
                 {% if suggestlist is not none %}
-                    {% for key, name in suggestlist %}
-                    <a style="display:block;" class="is-size-6" href="{{ url_for('app.doc',id=key) }}">
+                    {% for key, name, pretty in suggestlist %}
+                    <a style="display:block;" class="is-size-6" href="{{ url_for('app.doc',id=key,prettyurl=pretty) }}">
                         {{name}}
                     </a>
                     {% endfor %}

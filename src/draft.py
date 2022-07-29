@@ -16,6 +16,7 @@ from flask import Flask, Blueprint, render_template, redirect, url_for, request,
 from flask_login import (LoginManager,current_user,login_required,login_user,logout_user,)
 from user import requires_access_level, Role
 from config import get_db
+from utils import pretty_title
 
 draft = Blueprint('draft', __name__)
 
@@ -26,6 +27,7 @@ draft = Blueprint('draft', __name__)
 def drafts():
     keys = []
     names = []
+    pretty = []
     owner = []
     updates = []
     drafts = None
@@ -33,22 +35,17 @@ def drafts():
     # Search for own drafts if not admin
     if not current_user.is_admin():
         rs = get_db().ft("document_idx").search(Query('@state:{draft} @owner:('+current_user.id+')').return_field("name").return_field("update").return_field("owner").sort_by("update", asc=False))
-        if len(rs.docs): 
-            for key in rs.docs:
-                keys.append(key.id.split(':')[-1])
-                names.append(urllib.parse.unquote(key.name))
-                owner.append(get_db().hget("keybase:okta:{}".format(key.owner), "name"))
-                updates.append(datetime.utcfromtimestamp(int(key.update)).strftime('%Y-%m-%d %H:%M:%S'))
-            drafts=zip(keys,names,owner,updates)
     else:
-    # And if you are admin, everybody else's drafts
+    # And if you are admin, also everybody else's drafts
         rs = get_db().ft("document_idx").search(Query('@state:{draft}').return_field("name").return_field("update").return_field("owner").sort_by("update", asc=False))
-        if len(rs.docs): 
-            for key in rs.docs:
-                keys.append(key.id.split(':')[-1])
-                names.append(urllib.parse.unquote(key.name))
-                owner.append(get_db().hget("keybase:okta:{}".format(key.owner), "name"))
-                updates.append(datetime.utcfromtimestamp(int(key.update)).strftime('%Y-%m-%d %H:%M:%S'))
-            drafts=zip(keys,names,owner,updates)
+
+    if len(rs.docs): 
+        for key in rs.docs:
+            keys.append(key.id.split(':')[-1])
+            names.append(urllib.parse.unquote(key.name))
+            pretty.append(pretty_title(urllib.parse.unquote(key.name)))
+            owner.append(get_db().hget("keybase:okta:{}".format(key.owner), "name"))
+            updates.append(datetime.utcfromtimestamp(int(key.update)).strftime('%Y-%m-%d %H:%M:%S'))
+        drafts=zip(keys,names,pretty,owner,updates)
     
     return render_template("draft.html", drafts=drafts)

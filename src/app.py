@@ -1,23 +1,19 @@
-from redis.commands.search.field import VectorField
 from redis.commands.search.query import Query
 from redis import RedisError
-import numpy as np
-import uuid
 import urllib.parse
 from datetime import datetime
 import time
 from . import config
 import json
-import threading
-import flask
 import math
 from flask import Response, stream_with_context
 from flask import Flask, Blueprint, render_template, redirect, url_for, request, jsonify, session
-from flask_login import (LoginManager,current_user,login_required,login_user,logout_user,)
-from sentence_transformers import SentenceTransformer
+from flask_login import (LoginManager,current_user,login_required,login_user,logout_user)
 from user import requires_access_level, Role
 from config import get_db
 from flask_paginate import Pagination, get_page_args
+from utils import pretty_title
+import shortuuid
 
 
 app = Blueprint('app', __name__)
@@ -39,15 +35,6 @@ def autocomplete():
     return jsonify(matching_results=results)
 
 
-def bg_embedding_vector(key):
-    content = get_db().hget("keybase:kb:{}".format(key), "content")
-    print("Computing vector embedding for " + key)
-    model = SentenceTransformer('sentence-transformers/all-distilroberta-v1')
-    embedding = model.encode(content).astype(np.float32).tobytes()
-    get_db().hset("keybase:kb:{}".format(key), "content_embedding", embedding)
-    print("Done vector embedding for " + key)
-
-
 @app.route('/browse', methods=['GET'])
 @login_required
 def browse():
@@ -55,13 +42,12 @@ def browse():
     DESC="Listing documents"
     keys = []
     names = []
+    pretty = []
     creations = []
     keydocument = None
     pagination = None
     rs = None
 
-    # Clear all the flashed messages
-    flask.get_flashed_messages()
 
     try:
         if (request.args.get('q')):
@@ -87,8 +73,9 @@ def browse():
             for key in rs.docs:
                 keys.append(key.id.split(':')[-1])
                 names.append(urllib.parse.unquote(key.name))
+                pretty.append(pretty_title(urllib.parse.unquote(key.name)))
                 creations.append(datetime.utcfromtimestamp(int(key.creation)).strftime('%Y-%m-%d'))
-            keydocument=zip(keys,names,creations)
+            keydocument=zip(keys,names,pretty,creations)
 
         return render_template('browse.html', title=TITLE, desc=DESC, keydocument=keydocument, page=page, per_page=per_page, pagination=pagination)
     except RedisError as err:
@@ -107,7 +94,8 @@ def index():
 @login_required
 @requires_access_level(Role.EDITOR)
 def save():
-    id = uuid.uuid1()
+    shortuuid.set_alphabet("123456789abcdefghijkmnopqrstuvwxyz")
+    id = shortuuid.uuid()[:10]
     unixtime = int(time.time())
     timestring = datetime.utcnow().strftime("%m/%d/%Y, %H:%M:%S")
 
@@ -211,19 +199,23 @@ def about():
     DESC="About keybase"
     return render_template('about.html', title=TITLE, desc=DESC)
 
-#@app.route('/edit', methods=['GET'])
+
 @app.route('/edit/<id>')
 @login_required
 @requires_access_level(Role.EDITOR)
 def edit(id):
-    #id = request.args.get('id')
     TITLE="Read Document"
     DESC="Read Document"
     #if id is None:
     document = get_db().hmget("keybase:kb:{}".format(id), ['name', 'content', 'state', 'tags'])
+    
+    # Verify that there is a document associated to the id
+    if document[0] == None:
+        return redirect(url_for('app.browse'))
+    
     document[0] = urllib.parse.quote(document[0])
     document[1] = urllib.parse.quote(document[1])
-    return render_template('edit.html', title=TITLE, desc=DESC, id=id, name=document[0], content=document[1], state=document[2], tags=document[3])
+    return render_template('edit.html', title=TITLE, desc=DESC, id=id, name=document[0], pretty=pretty_title(urllib.parse.unquote(document[0])),content=document[1], state=document[2], tags=document[3])
 
 #@app.route('/delete', methods=['GET'])
 @app.route('/delete/<id>')
@@ -234,17 +226,20 @@ def delete(id):
     get_db().delete("keybase:kb:{}".format(id))
     return redirect(url_for('app.browse'))
 
-#@app.route('/view', methods=['GET'])
-@app.route('/doc/<id>')
+
+@app.route('/doc/<id>', defaults={'prettyurl': None})
+@app.route('/doc/<id>/<prettyurl>')
 @login_required
-def doc(id):
-    #id = request.args.get('id')
+def doc(id, prettyurl):
     TITLE="Read Document"
     DESC="Read Document"
     keys = []
     names = []
+    pretty = []
     suggestlist = None
     #if id is None:
+    print(id)
+    print(prettyurl)
 
     bookmarked = get_db().hexists("keybase:bookmark:{}".format(current_user.id), id)
 
@@ -287,9 +282,11 @@ def doc(id):
         it = iter(res[1:])
         for x in it:
             keys.append(str(x.split(':')[-1]))
-            names.append(str(next(it)[3]))
+            docName = str(next(it)[3])
+            names.append(docName)
+            pretty.append(pretty_title(docName))
             #print (x.split(':')[-1], next(it)[3])
-        suggestlist=zip(keys, names)
+        suggestlist=zip(keys, names, pretty)
 
 
     """

@@ -43,8 +43,8 @@
       </script>
       
     {% if keydocument is not none %}
-    {% for key, name, creation in keydocument %}
-        <a style="display:block;" class="is-size-6" href="{{ url_for('app.doc',id=key) }}">
+    {% for key, name, pretty, creation in keydocument %}
+        <a style="display:block;" class="is-size-6" href="{{ url_for('app.doc',id=key,prettyurl=pretty) }}">
             {{name}}
         </a>
         <span class="is-size-7 has-text-weight-light has-text-grey">created: {{creation}}</span>

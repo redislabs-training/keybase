@@ -180,7 +180,7 @@
 	  
 
 	  closeBtn.addEventListener("mousedown", function(e) {
-		window.location.replace("{{ url_for('app.doc',id=id) }}");
+		window.location.replace("{{ url_for('app.doc',id=id,prettyurl=pretty) }}");
 	  }, true);
 
 	  $("#delete").click(function() {
