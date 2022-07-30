@@ -9,6 +9,7 @@ import requests
 import base64
 from user import User, Role
 
+import flask
 from flask import Flask, flash, Blueprint, g, render_template, redirect, request, session, url_for
 from flask_cors import CORS
 from flask_login import (LoginManager,current_user,login_required,login_user,logout_user,)
@@ -72,11 +73,15 @@ def create_app():
 
         return redirect(request_uri)
 
+
     @app.before_request
     def check_valid_login():
-        #endpoint_group = ('/bookmark', '/tools', '/logout')
-        #if request.endpoint in endpoint_group and not current_user.is_authenticated:
-        #        return render_template('/', next=request.endpoint)
+        # save wanted url if not authenticated
+        if request.endpoint == "app.doc" and not current_user.is_authenticated:
+            print("post-login doc is " + request.path)
+            flash(request.path, 'wanted')
+
+        # endpoints used for authentication
         endpoint_group = ('static', 'login', 'callback')
         if not request.endpoint in endpoint_group and not current_user.is_authenticated:
             return render_template('index.html', next=request.endpoint)
@@ -143,6 +148,12 @@ def create_app():
 
         # Now create the session
         login_user(user)
+
+        # Check desired url
+        wanted = flask.get_flashed_messages(category_filter=["wanted"])
+        if len(wanted):
+            print("wanted is " + wanted[0])
+            return redirect(wanted[0])
 
         return redirect(url_for("app.browse"))
 

@@ -30,6 +30,7 @@ def autocomplete():
     for doc in rs.docs:
         results.append({'value': urllib.parse.unquote(doc.name),
                         'label': urllib.parse.unquote(doc.name), 
+                        'pretty': pretty_title(urllib.parse.unquote(doc.name)), 
                         'id': doc.id.split(':')[-1]})
 
     return jsonify(matching_results=results)
@@ -192,6 +193,7 @@ def update():
 
     return jsonify(message="Document saved as draft")
 
+
 @app.route('/about', methods=['GET'])
 @login_required
 def about():
@@ -237,12 +239,8 @@ def doc(id, prettyurl):
     names = []
     pretty = []
     suggestlist = None
-    #if id is None:
-    print(id)
-    print(prettyurl)
 
     bookmarked = get_db().hexists("keybase:bookmark:{}".format(current_user.id), id)
-
     document = get_db().hmget("keybase:kb:{}".format(id), ['name', 'content', 'state', 'owner', 'tags'])
     
     if document[0] == None:

@@ -36,7 +36,7 @@
                 minLength: 3,
                 select: function(event, ui) {
                     console.log(ui.item.id); 
-                    window.location.replace("doc/" + ui.item.id);
+                    window.location.replace("doc/" + ui.item.id + "/" + ui.item.pretty);
                 }
             });
         })
