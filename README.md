@@ -39,7 +39,7 @@ RediSearch 2.4 introduces the [Vector Similarity Search](https://redis.io/docs/s
 docker run -p 6379:6379 redislabs/redisearch:2.4.3
 ```
 
-1. Configure the Redis database credentials in `config.py`. 
+1. Configure the Redis database credentials in the `config.py` file.
 2. Create the index (documents are stored in Hashes).
 
 ```
@@ -65,6 +65,8 @@ Authentication relies on Okta. Users are cached into the Redis database in Hashe
 ```
 keybase:okta:
 ```
+
+Configure Okta's secret and token in the `config.py` file.
 
 You can test the Okta integration with a [Okta Developer Edition](https://developer.okta.com/signup/).
 
