@@ -1,6 +1,6 @@
 # <img src="src/static/images/keybase.png" height="50px">
 
-## What is keybase?
+## What is Keybase?
 
 Keybase is an Open Source Knowledge Base featuring smart searches and recommendations based on Redis Stack. Using this software:
 
@@ -33,7 +33,7 @@ pip3 install -r requirements.txt
 
 ### 2. The Redis database
 
-RediSearch 2.4 introduces the [Vector Similarity Search](https://redis.io/docs/stack/search/reference/vectors/) feature, which supports indexing and searching unstructured data (images, audio, videos, text etc.). Review the [release notes](https://github.com/RediSearch/RediSearch/releases/tag/v2.4.3). keybase takes advantage of this feature to index the documents and propose recommendations, in addition to the classical RediSearch features to perform full-text searches. You can test against a Docker Hub image, such as:
+RediSearch 2.4 introduces the [Vector Similarity Search](https://redis.io/docs/stack/search/reference/vectors/) feature, which supports indexing and searching unstructured data (images, audio, videos, text etc.). Review the [release notes](https://github.com/RediSearch/RediSearch/releases/tag/v2.4.3). Keybase takes advantage of this feature to index the documents and propose recommendations, in addition to the classical RediSearch features to perform full-text searches. You can test against a Docker Hub image, such as:
 
 ```
 docker run -p 6379:6379 redislabs/redisearch:2.4.3
@@ -78,19 +78,32 @@ Time to start the platform with:
 ./start.sh
 ```
 
-Or using WSGI and gunicorn:
+### 5. Indexing documents for similarity search
+
+The indexation of documents for Similarity Search is a intensive activity that must be scheduled offline. Schedule a periodic execution of the script `transformer.py` using `cron` or a similar utility. An execution every minute is sufficient to index new documents or update the index of those documents that received an update.
+
+
+### 6. Using Keybase in production
+
+Flask has a built-in web server, but it is not recommended for production usage. It is recommended to put Flask behind a web server which communicates with Flask using WSGI. 
+
+A valid option would be to deploy Keybase together with Nginx as the web server and Gunicorn, which implements the Web Server Gateway Interface. Therefore it is possible to test Gunicorn as follows. 
 
 ```
 gunicorn --workers 1 --bind 0.0.0.0:5000 "wsgi:create_app()"
 ```
 
-## Role Based Access Control
+Keybase can run on an arbitrary Redis Server configured with the RediSearch module. For a secure, reliable and data-proof solution, Redis Cloud is [recommended](https://redis.com/redis-enterprise-cloud/overview/).
 
-Three roles are implemented at the moment:
+
+## Administration
+
+Keybase implements role-based access control. Three roles are implemented at the moment:
 
 - Viewer: can only view and bookmark documents. When you first authenticate with Okta, you are a viewer. Only the admin can assign roles
 - Editor: can create a draft, edit a draft, edit a published document. But you cannot publish a document. When editing a published document, a new review will be created, while locking other editors from creating additional reviews. Only admins can publish reviews
-- Admin: can do everything. And in particular, publish documents and new versions
+- Admin: can do everything. And in particular, only the admin can publish documents, create new tags and import/export data
+
 
 ## Troubleshooting
 
