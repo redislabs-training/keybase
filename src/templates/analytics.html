@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% set active_page = "analytics" %}
+
+{% block content %}
+
+    <h1 id="name" class="title is-4">Analytics</h1>
+    <div style="margin: auto;max-width:80%">
+        <canvas id="myChart"></canvas>
+    </div>
+    <script>
+      var data_js = {{ json_data|tojson }};
+      const ctx = $('#myChart');
+      const myChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+              labels: JSON.parse(data_js).labels,
+              datasets: [{
+                  label: '# of Visits',
+                  data: JSON.parse(data_js).visits,
+                  fill: false,
+                  backgroundColor: 'rgba(203, 70, 56, 0.2)',
+                  borderColor: 'rgb(203, 70, 56)',
+                  borderWidth: 1
+              },
+              /*
+              {
+                  label: '# of Authentications',
+                  data: JSON.parse(data_js).authentications,
+                  fill: false,
+                  backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                  borderColor: 'rgb(54, 162, 235)',
+                  borderWidth: 1
+              }*/]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+              scales: {
+                  y: {
+                      beginAtZero: true
+                  }
+              }
+          }
+      });
+      </script>
+
+{% endblock %}
+

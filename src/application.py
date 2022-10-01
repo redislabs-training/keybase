@@ -1,7 +1,7 @@
 #from . import config
 from config import get_db, okta
 import hashlib
-from flask_oidc import OpenIDConnect
+#from flask_oidc import OpenIDConnect
 from okta.client import Client as UsersClient
 
 import secrets
@@ -38,6 +38,10 @@ def create_app():
     # blueprint for non-auth parts of app
     from .app import app as main_blueprint
     app.register_blueprint(main_blueprint)
+
+    # blueprint for analytics
+    from .analytics import analytic as analytic_blueprint
+    app.register_blueprint(analytic_blueprint)
 
     # blueprint for admin parts
     from .admin import admin as admin_blueprint
@@ -76,6 +80,10 @@ def create_app():
 
     @app.before_request
     def check_valid_login():
+        # Store visits in a time series visited pages
+        if current_user.is_authenticated and request.endpoint != "static":
+            get_db().ts().add("keybase:visits", "*", 1, duplicate_policy='first')
+
         # save wanted url if not authenticated
         if request.endpoint == "app.doc" and not current_user.is_authenticated:
             print("post-login doc is " + request.path)
@@ -148,6 +156,9 @@ def create_app():
 
         # Now create the session
         login_user(user)
+
+        # Store authentications in a time series
+        get_db().ts().add("keybase:authentications", "*", 1, duplicate_policy='first')
 
         # Check desired url
         wanted = flask.get_flashed_messages(category_filter=["wanted"])

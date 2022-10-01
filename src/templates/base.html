@@ -21,6 +21,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js" ></script>
     <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 </head>
 
 <body>
@@ -72,6 +73,11 @@
 
                         <a href="{{ url_for('draft.drafts') }}" class="navbar-item">
                             <span {% if "draft" == active_page %} class="has-background-info-light" style="padding:6px; border-radius:4px;"{% endif%}>Drafts</span>
+                        </a>
+                        {% endif %}
+                        {% if current_user.is_admin() %}
+                        <a href="{{ url_for('analytic.analytics') }}" class="navbar-item">
+                            <span {% if "analytics" == active_page %} class="has-background-info-light" style="padding:6px; border-radius:4px;"{% endif%}>Analytics</span>
                         </a>
                         {% endif %}
                         <a href="{{ url_for('app.about') }}" class="navbar-item">
