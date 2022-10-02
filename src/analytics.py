@@ -21,28 +21,32 @@ analytic = Blueprint('analytic', __name__)
 @login_required
 @requires_access_level(Role.ADMIN)
 def analytics():
+    bucket = 86400000
+    duration = 2592000000
     ts = round(time.time() * 1000)
     ts0 = ts - 2592000000
 
     # 86400000 ms in a day
     # 3600000 ms in an hour
-    visits_ts = get_db().ts().range("keybase:visits", from_time=ts0, to_time=ts, aggregation_type='sum', bucket_size_msec=86400000)
-    authentications_ts = get_db().ts().range("keybase:authentications", from_time=ts0, to_time=ts, aggregation_type='sum', bucket_size_msec=86400000)
-
-    labels = [datetime.utcfromtimestamp(int(x[0]/1000)).strftime('%b %d') for x in visits_ts]
+    visits_ts = get_db().ts().range("keybase:visits", from_time=ts0, to_time=ts, aggregation_type='sum', bucket_size_msec=bucket)
+    visits_labels = [datetime.utcfromtimestamp(int(x[0]/1000)).strftime('%b %d') for x in visits_ts]
     visits = [x[1] for x in visits_ts]
-    authentications = [x[1] for x in authentications_ts]
-    graph = {}
-    graph['labels'] = labels
-    graph['visits'] = visits
+    visits_graph = {}
+    visits_graph['labels'] = visits_labels
+    visits_graph['value'] = visits
+    visits_json = json.dumps(visits_graph)
 
-    # wait for RedisTimeSeries support to EMPTY: empty buckets are not plotted:
-    # if there are samples in a bucket for visits but not for auth, auth will not be reported 
-    # as zero, but skipped, which makes plotting together different charts incorrect.
-    # Uncomment when RedisTimeSeries 1.8 is out
-    # graph['authentications'] = authentications
-    json_data = json.dumps(graph)
-    return render_template('analytics.html', json_data=json_data)
+    # wait for RedisTimeSeries support to EMPTY in RedisTimeSeries 1.8
+    # then, different charts may be plotted together with a common x axis
+    authentications_ts = get_db().ts().range("keybase:authentications", from_time=ts0, to_time=ts, aggregation_type='sum', bucket_size_msec=bucket)
+    authentication_labels = [datetime.utcfromtimestamp(int(x[0]/1000)).strftime('%b %d') for x in authentications_ts]
+    authentications = [x[1] for x in authentications_ts]
+    authentications_graph = {}
+    authentications_graph['labels'] = authentication_labels
+    authentications_graph['value'] = authentications
+    authentications_json = json.dumps(authentications_graph)
+    
+    return render_template('analytics.html', visits_json=visits_json, authentications_json=authentications_json)
 
 
 @analytic.route('/visits')

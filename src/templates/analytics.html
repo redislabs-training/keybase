@@ -5,32 +5,51 @@
 
     <h1 id="name" class="title is-4">Analytics</h1>
     <div style="margin: auto;max-width:80%">
-        <canvas id="myChart"></canvas>
+        <canvas id="visits"></canvas>
+        <hr style="border-top: 2px solid #bbb;">
+        <canvas id="authentications"></canvas>
     </div>
     <script>
-      var data_js = {{ json_data|tojson }};
-      const ctx = $('#myChart');
+      var data_js = {{ visits_json|tojson }};
+      const ctx = $('#visits');
       const myChart = new Chart(ctx, {
           type: 'bar',
           data: {
               labels: JSON.parse(data_js).labels,
               datasets: [{
                   label: '# of Visits',
-                  data: JSON.parse(data_js).visits,
+                  data: JSON.parse(data_js).value,
                   fill: false,
                   backgroundColor: 'rgba(203, 70, 56, 0.2)',
                   borderColor: 'rgb(203, 70, 56)',
                   borderWidth: 1
-              },
-              /*
-              {
+              }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+              scales: {
+                  y: {
+                      beginAtZero: true
+                  }
+              }
+          }
+      });
+
+      var auths_js = {{ authentications_json|tojson }};
+      const ctx1 = $('#authentications');
+      const myChart1 = new Chart(ctx1, {
+          type: 'bar',
+          data: {
+              labels: JSON.parse(auths_js).labels,
+              datasets: [{
                   label: '# of Authentications',
-                  data: JSON.parse(data_js).authentications,
+                  data: JSON.parse(auths_js).value,
                   fill: false,
                   backgroundColor: 'rgba(54, 162, 235, 0.2)',
                   borderColor: 'rgb(54, 162, 235)',
                   borderWidth: 1
-              }*/]
+              }]
           },
           options: {
             responsive: true,
