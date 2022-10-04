@@ -8,12 +8,12 @@ import math
 from flask import Response, stream_with_context
 from flask import Flask, Blueprint, render_template, redirect, url_for, request, jsonify, session
 from flask_login import (LoginManager,current_user,login_required,login_user,logout_user)
-from user import requires_access_level, Role
-from config import get_db
-from common.utils import get_analytics
 from flask_paginate import Pagination, get_page_args
-from utils import pretty_title
 import shortuuid
+
+from user import requires_access_level, Role
+from common.config import get_db
+from common.utils import get_analytics, pretty_title
 
 
 app = Blueprint('app', __name__)

@@ -2,17 +2,17 @@ from flask import Blueprint, render_template, redirect, url_for
 from flask import request
 from flask import flash, session
 from flask import current_app
+from flask import Flask, Blueprint, render_template, redirect, url_for, request, jsonify, session
+from flask_login import (LoginManager,current_user,login_required,login_user,logout_user,)
 import redis
 from redis import RedisError
-from . import config
 from datetime import datetime
 import time
 import hashlib
 import json
-from flask import Flask, Blueprint, render_template, redirect, url_for, request, jsonify, session
-from flask_login import (LoginManager,current_user,login_required,login_user,logout_user,)
+
 from user import requires_access_level, Role
-from config import get_db
+from common.config import get_db
 from common.utils import pretty_title
 
 bookmrk = Blueprint('bookmrk', __name__)

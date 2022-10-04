@@ -4,7 +4,7 @@ from functools import wraps
 from flask import url_for, request, redirect, session
 from enum import IntEnum
 import time
-from config import get_db
+from common.config import get_db
 
 # Simulate user database
 USERS_DB = {}

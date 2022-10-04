@@ -4,7 +4,7 @@ from flask import flash, session
 from flask import current_app
 import redis
 from redis import RedisError
-from . import config
+from common.config import config
 import time
 import hashlib
 

@@ -2,18 +2,19 @@ from flask import Blueprint, render_template, redirect, url_for
 from flask import request
 from flask import flash, session, jsonify
 from flask import current_app
+from flask import Flask, Blueprint, render_template, redirect, url_for, request, jsonify, session
+from flask_login import (LoginManager,current_user,login_required,login_user,logout_user,)
 import redis
 from redis import RedisError
 from redis.commands.search.query import Query
-from . import config
 import json
 import time
 import urllib.parse
-from flask import Flask, Blueprint, render_template, redirect, url_for, request, jsonify, session
-from flask_login import (LoginManager,current_user,login_required,login_user,logout_user,)
-from user import requires_access_level, Role
-from config import get_db
 import base64
+
+from user import requires_access_level, Role
+from common.config import get_db, REDIS_CFG
+
 
 
 admin = Blueprint('admin', __name__)
@@ -24,14 +25,14 @@ def check_valid_login():
         return render_template('index.html')
 
 # Database Connection
-host = config.REDIS_CFG["host"]
-port = config.REDIS_CFG["port"]
-pwd = config.REDIS_CFG["password"]
-ssl = config.REDIS_CFG["ssl"]
-ssl_keyfile = config.REDIS_CFG["ssl_keyfile"]
-ssl_certfile = config.REDIS_CFG["ssl_certfile"]
-ssl_cert_reqs = config.REDIS_CFG["ssl_cert_reqs"]
-ssl_ca_certs = config.REDIS_CFG["ssl_ca_certs"]
+host = REDIS_CFG["host"]
+port = REDIS_CFG["port"]
+pwd = REDIS_CFG["password"]
+ssl = REDIS_CFG["ssl"]
+ssl_keyfile = REDIS_CFG["ssl_keyfile"]
+ssl_certfile = REDIS_CFG["ssl_certfile"]
+ssl_cert_reqs = REDIS_CFG["ssl_cert_reqs"]
+ssl_ca_certs = REDIS_CFG["ssl_ca_certs"]
 
 conn = redis.StrictRedis(host=host, 
                             port=port, 
@@ -44,12 +45,6 @@ conn = redis.StrictRedis(host=host,
                             ssl_cert_reqs=ssl_cert_reqs, 
                             decode_responses=False)
 
-"""
-@admin.route('/')
-@login_required
-def index():
-    return render_template('admin.html')
-"""
 
 @admin.route('/tools')
 @login_required

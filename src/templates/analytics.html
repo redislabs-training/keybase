@@ -6,11 +6,12 @@
     <h1 id="name" class="title is-4">Analytics</h1>
     <div style="margin: auto;max-width:80%">
         <canvas id="visits"></canvas>
-        <hr style="border-top: 2px solid #bbb;">
+        <hr style="border-top: 1px solid #bbb;">
         <canvas id="authentications"></canvas>
     </div>
     <script>
       var data_js = {{ visits_json|tojson }};
+      var auths_js = {{ authentications_json|tojson }};
       const ctx = $('#visits');
       const myChart = new Chart(ctx, {
           type: 'bar',
@@ -36,7 +37,7 @@
           }
       });
 
-      var auths_js = {{ authentications_json|tojson }};
+      
       const ctx1 = $('#authentications');
       const myChart1 = new Chart(ctx1, {
           type: 'bar',

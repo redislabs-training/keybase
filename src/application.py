@@ -1,18 +1,15 @@
-#from . import config
-from config import get_db, okta
 import hashlib
-#from flask_oidc import OpenIDConnect
 from okta.client import Client as UsersClient
-
 import secrets
 import requests
 import base64
-from user import User, Role
-
 import flask
 from flask import Flask, flash, Blueprint, g, render_template, redirect, request, session, url_for
 from flask_cors import CORS
 from flask_login import (LoginManager,current_user,login_required,login_user,logout_user,)
+
+from user import User, Role
+from common.config import get_db, okta
 
 def create_app():
     app = Flask(__name__, template_folder="templates")
@@ -28,23 +25,23 @@ def create_app():
     init_db()
 
     # blueprint for bookmark routes in our app
-    from .bookmark import bookmrk as bookmark_blueprint
+    from bookmark import bookmrk as bookmark_blueprint
     app.register_blueprint(bookmark_blueprint)
 
     # blueprint for draft routes in our app
-    from .draft import draft as draft_blueprint
+    from draft import draft as draft_blueprint
     app.register_blueprint(draft_blueprint)
 
     # blueprint for non-auth parts of app
-    from .app import app as main_blueprint
+    from app import app as main_blueprint
     app.register_blueprint(main_blueprint)
 
     # blueprint for analytics
-    from .analytics import analytic as analytic_blueprint
+    from analytics import analytic as analytic_blueprint
     app.register_blueprint(analytic_blueprint)
 
     # blueprint for admin parts
-    from .admin import admin as admin_blueprint
+    from admin import admin as admin_blueprint
     app.register_blueprint(admin_blueprint)
 
     @app.route("/login")
@@ -81,7 +78,7 @@ def create_app():
     @app.before_request
     def check_valid_login():
         # Store visits in a time series visited pages
-        if current_user.is_authenticated and request.endpoint != "static":
+        if current_user.is_authenticated and request.endpoint == "app.doc":
             get_db().ts().add("keybase:visits", "*", 1, duplicate_policy='first')
 
         # save wanted url if not authenticated
@@ -163,7 +160,6 @@ def create_app():
         # Check desired url
         wanted = flask.get_flashed_messages(category_filter=["wanted"])
         if len(wanted):
-            print("wanted is " + wanted[0])
             return redirect(wanted[0])
 
         return redirect(url_for("app.browse"))
