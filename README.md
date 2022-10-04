@@ -2,7 +2,7 @@
 
 ## What is Keybase?
 
-Keybase is an Open Source Knowledge Base featuring smart searches and recommendations based on Redis Stack. Using this software:
+Keybase is an Open Source Knowledge Base featuring smart searches and recommendations based on Redis Stack.
 
 - Create and edit documents using a WYSIWYG Markdown editor
 - Browse, search, and bookmark Knowledge Base articles
@@ -33,11 +33,13 @@ pip3 install -r requirements.txt
 
 ### 2. The Redis database
 
-RediSearch 2.4 introduces the [Vector Similarity Search](https://redis.io/docs/stack/search/reference/vectors/) feature, which supports indexing and searching unstructured data (images, audio, videos, text etc.). Review the [release notes](https://github.com/RediSearch/RediSearch/releases/tag/v2.4.3). Keybase takes advantage of this feature to index the documents and propose recommendations, in addition to the classical RediSearch features to perform full-text searches. You can test against a Docker Hub image, such as:
+**RediSearch** 2.4 introduces the [Vector Similarity Search](https://redis.io/docs/stack/search/reference/vectors/) feature, which supports indexing and searching unstructured data (images, audio, videos, text etc.). Review the [release notes](https://github.com/RediSearch/RediSearch/releases/tag/v2.4.3). Keybase takes advantage of this feature to index the documents and propose recommendations, in addition to the classical RediSearch features to perform full-text searches. Analytics are managed using the **RedisTimeSeries** module, for data collection, aggregation and analysis. You can setup a Redis Stack Docker image, which includes these modules, as follows:
 
 ```
-docker run -p 6379:6379 redislabs/redisearch:2.4.3
+docker run -p 6379:6379 redis/redis-stack
 ```
+
+> **Redis Stack Server** combines open source Redis with RediSearch, RedisJSON, RedisGraph, RedisTimeSeries, and RedisBloom. Redis Stack also includes RedisInsight, a visualization tool for understanding and optimizing Redis data.
 
 1. Configure the Redis database credentials in the `config.py` file.
 2. Create the index (documents are stored in Hashes).
@@ -120,4 +122,4 @@ pip install sentence_transformers --no-cache-dir
 ```
 
 ## Components
-Keybase is written in Python and uses the following third-party Open Source software: Redis Stack, Toast UI Web Editor, Flask Web framework, JQuery, JQueryUI, Notify.js, Bulma CSS framework. 
+Keybase is written in Python and uses the following third-party Open Source software: Redis Stack, Toast UI Web Editor, Flask Web framework, JQuery, JQueryUI, Notify.js, Bulma CSS framework and Chart.js.
