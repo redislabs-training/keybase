@@ -3,6 +3,10 @@ import time
 import json
 from datetime import datetime
 from config import get_db
+import re
+
+def pretty_title(title):
+    return re.sub('[^0-9a-zA-Z]+', '-', title).strip("-").lower()
 
 def get_analytics(timeseries, bucket, duration):
     ts = round(time.time() * 1000)
