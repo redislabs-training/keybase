@@ -3,7 +3,6 @@ from redis import RedisError
 import urllib.parse
 from datetime import datetime
 import time
-from . import config
 import json
 import math
 from flask import Response, stream_with_context
@@ -11,6 +10,7 @@ from flask import Flask, Blueprint, render_template, redirect, url_for, request,
 from flask_login import (LoginManager,current_user,login_required,login_user,logout_user)
 from user import requires_access_level, Role
 from config import get_db
+from common.utils import get_analytics
 from flask_paginate import Pagination, get_page_args
 from utils import pretty_title
 import shortuuid
@@ -255,6 +255,14 @@ def doc(id, prettyurl):
     document[0] = urllib.parse.quote(document[0])
     document[1] = urllib.parse.quote(document[1])
 
+    # The document can be rendered, count the visit 
+    get_db().ts().add("keybase:docview:{}".format(id), "*", 1, duplicate_policy='first')
+    
+    # Only the admin can see document visits
+    analytics=None
+    if current_user.is_admin():
+        analytics = get_analytics("keybase:docview:{}".format(id), 86400000, 2592000000)
+
     # Fetch recommendations using LUA and avoid sending vector embeddings back an forth
     #luascript = conn.register_script("local vector = redis.call('hmget',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','document_idx','*=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres")
     #pipe = conn.pipeline()
@@ -273,7 +281,7 @@ def doc(id, prettyurl):
     # Fetch recommendations using LUA and avoid sending vector embeddings back an forth
     # The first element in the returned list is the number of keys returned, start iterator from [1:]
     # Then, iterate the results in pairs, because they key name is alternated with the returned fields
-
+    
     if get_db().hexists("keybase:kb:{}".format(id), 'content_embedding'):
         keys_and_args = ["keybase:kb:{}".format(id)]
         res = get_db().eval("local vector = redis.call('hmget',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','document_idx','*=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres", 1, *keys_and_args)
@@ -301,7 +309,7 @@ def doc(id, prettyurl):
             names.append(suggest[0].decode('utf-8'))
         suggestlist=zip(keys, names)
     """
-    return render_template('view.html', title=TITLE, desc=DESC, docid=id, bookmarked=bookmarked, document=document, suggestlist=suggestlist)
+    return render_template('view.html', title=TITLE, desc=DESC, docid=id, bookmarked=bookmarked, document=document, suggestlist=suggestlist, analytics=analytics)
 
 #@app.route('/new', methods=['GET'])
 @app.route('/new/<doc>')

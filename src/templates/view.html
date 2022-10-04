@@ -48,6 +48,39 @@
                     <p class="is-size-6">no tags</p>
                 {% endif %}
             </div>
+            {% if current_user.is_admin() %}
+            <div class="widget box">
+                <h4 class="title is-6 mb-2" style="margin-bottom:0em;">Views</h4>
+                <canvas id="views"></canvas>
+                <script>
+                    var data_js = {{ analytics|tojson }};
+                    const ctx = $('#views');
+                    const myChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: JSON.parse(data_js).labels,
+                            datasets: [{
+                                label: '# of Visualizations',
+                                data: JSON.parse(data_js).value,
+                                fill: false,
+                                backgroundColor: 'rgba(54, 162, 235, 0.4)',
+                                borderColor: 'rgb(54, 162, 235)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                </script>
+            </div>
+            {% endif %}
             {% if current_user.is_editor() %}
             <div class="widget box">
                 <h4 class="title is-6 mb-2" style="margin-bottom:0em;">Actions</h4>
