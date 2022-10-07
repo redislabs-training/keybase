@@ -1,7 +1,7 @@
 import redis
 from sentence_transformers import SentenceTransformer
 from redis.commands.search.query import Query
-from config import get_db
+from common.config import get_db
 import numpy as np
 import sys
 from flask import Flask, current_app
