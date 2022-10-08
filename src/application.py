@@ -21,9 +21,6 @@ def create_app():
     login_manager = LoginManager()
     login_manager.init_app(app)
 
-    # do Redis initializations
-    init_db()
-
     # blueprint for bookmark routes in our app
     from bookmark import bookmrk as bookmark_blueprint
     app.register_blueprint(bookmark_blueprint)
@@ -89,7 +86,7 @@ def create_app():
         # endpoints used for authentication
         endpoint_group = ('static', 'login', 'callback')
         if not request.endpoint in endpoint_group and not current_user.is_authenticated:
-            return render_template('index.html', next=request.endpoint)
+            return render_template('signup.html', next=request.endpoint)
 
 
     @app.errorhandler(404)
@@ -191,11 +188,6 @@ def getUserGroups():
                                                 'Authorization': f'SSWS {api_token}'}).json()
 
     print(usergroups_response)
-
-
-def init_db():
-    print("Initializing Redis...")
-    #conn.ft().config_set("DEFAULT_DIALECT", 2)
 
 """
 
