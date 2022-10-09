@@ -34,13 +34,13 @@
           }
 	      $.ajax({
 	        type: "POST",
-	        url: "{{ url_for('app.save')}}",
+	        url: "{{ url_for('document_bp.save')}}",
 	        data : {content:encodeURIComponent(editor.getMarkdown()), name:encodeURIComponent($("#name").val())},
 	        success: function(data) {
 	        console.log(data.id);
             $.notify("Draft created", "success");
             window.location.replace("edit?id=" + data.id);
-			window.location.replace("{{ url_for('draft.drafts')}}");
+			window.location.replace("{{ url_for('drafts_bp.drafts')}}");
 	        }});
 	  }, true);
 </script>

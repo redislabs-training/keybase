@@ -35,15 +35,15 @@ def get_db():
     ssl_ca_certs = REDIS_CFG["ssl_ca_certs"]
 
     if not hasattr(g, 'redis'):
-        g.redis = redis.StrictRedis(host=host, 
-                                    port=port, 
-                                    password=pwd, 
+        g.redis = redis.StrictRedis(host=host,
+                                    port=port,
+                                    password=pwd,
                                     db=0,
                                     ssl=ssl,
                                     ssl_keyfile=ssl_keyfile,
                                     ssl_certfile=ssl_certfile,
                                     ssl_ca_certs=ssl_ca_certs,
-                                    ssl_cert_reqs=ssl_cert_reqs, 
+                                    ssl_cert_reqs=ssl_cert_reqs,
                                     decode_responses=True)
 
     return g.redis

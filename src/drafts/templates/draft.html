@@ -7,7 +7,7 @@
 
   {% if drafts is not none %}
   {% for key, name, pretty, owner, update in drafts %}
-      <a style="display:block;" class="is-size-6" href="{{ url_for('app.doc',id=key,prettyurl=pretty) }}">
+      <a style="display:block;" class="is-size-6" href="{{ url_for('document_bp.doc',id=key,prettyurl=pretty) }}">
           {{name}}
       </a>
       <span class="tag is-info is-light">{{owner}}</span>

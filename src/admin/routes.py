@@ -1,28 +1,22 @@
-from flask import Blueprint, render_template, redirect, url_for
-from flask import request
-from flask import flash, session, jsonify
-from flask import current_app
-from flask import Flask, Blueprint, render_template, redirect, url_for, request, jsonify, session
-from flask_login import (LoginManager,current_user,login_required,login_user,logout_user,)
+from flask import Blueprint, render_template, redirect, url_for, request, jsonify
+from flask_login import (current_user, login_required)
 import redis
-from redis import RedisError
 from redis.commands.search.query import Query
 import json
-import time
-import urllib.parse
 import base64
 
-from user import requires_access_level, Role
-from common.config import get_db, REDIS_CFG
+from src.user import requires_access_level, Role
+from src.common.config import get_db, REDIS_CFG
+
+admin_bp = Blueprint(   'admin_bp', __name__,
+                        template_folder='./templates')
 
 
-
-admin = Blueprint('admin', __name__)
-
-@admin.before_request
+@admin_bp.before_request
 def check_valid_login():
     if not current_user.is_authenticated:
         return render_template('index.html')
+
 
 # Database Connection
 host = REDIS_CFG["host"]
@@ -34,98 +28,100 @@ ssl_certfile = REDIS_CFG["ssl_certfile"]
 ssl_cert_reqs = REDIS_CFG["ssl_cert_reqs"]
 ssl_ca_certs = REDIS_CFG["ssl_ca_certs"]
 
-conn = redis.StrictRedis(host=host, 
-                            port=port, 
-                            password=pwd, 
-                            db=0,
-                            ssl=ssl,
-                            ssl_keyfile=ssl_keyfile,
-                            ssl_certfile=ssl_certfile,
-                            ssl_ca_certs=ssl_ca_certs,
-                            ssl_cert_reqs=ssl_cert_reqs, 
-                            decode_responses=False)
+conn = redis.StrictRedis(host=host,
+                         port=port,
+                         password=pwd,
+                         db=0,
+                         ssl=ssl,
+                         ssl_keyfile=ssl_keyfile,
+                         ssl_certfile=ssl_certfile,
+                         ssl_ca_certs=ssl_ca_certs,
+                         ssl_cert_reqs=ssl_cert_reqs,
+                         decode_responses=False)
 
 
-@admin.route('/tools')
+@admin_bp.route('/tools')
 @login_required
 @requires_access_level(Role.ADMIN)
 def tools():
-    TITLE="Admin functions"
-    DESC="Admin functions"
+    TITLE = "Admin functions"
+    DESC = "Admin functions"
     key = []
     name = []
     group = []
     email = []
 
-    rs = get_db().ft("user_idx").search(Query("*").return_field("name").return_field("group").return_field("email").paging(0, 100))
+    rs = get_db().ft("user_idx").search(
+        Query("*").return_field("name").return_field("group").return_field("email").paging(0, 100))
     for doc in rs.docs:
         key.append(doc.id.split(':')[-1])
         name.append(doc.name)
         group.append(doc.group)
         email.append(doc.email)
 
-    users=zip(key,name,group,email)
+    users = zip(key, name, group, email)
     return render_template('admin.html', title=TITLE, desc=DESC, users=users)
 
 
-@admin.route('/tags')
+@admin_bp.route('/tags')
 @login_required
 @requires_access_level(Role.ADMIN)
 def tags():
-    TITLE="Admin functions"
-    DESC="Admin functions"
+    TITLE = "Admin functions"
+    DESC = "Admin functions"
     tags = []
 
     # Fetching list of tags
-    cursor, fields  = get_db().hscan("keybase:tags", 0, count=200)
+    cursor, fields = get_db().hscan("keybase:tags", 0, count=200)
     for tag in fields:
         tags.append(tag)
 
     return render_template('tags.html', title=TITLE, desc=DESC, tags=tags)
 
 
-@admin.route('/tagsearch', methods=['GET'])
+@admin_bp.route('/tagsearch', methods=['GET'])
 @login_required
 @requires_access_level(Role.EDITOR)
 def tagsearch():
-    TITLE="Admin functions"
-    DESC="Admin functions"
+    TITLE = "Admin functions"
+    DESC = "Admin functions"
     tags = []
 
     # Fetching list of tags
-    cursor, fields  = get_db().hscan("keybase:tags", 0, match="*" + request.args.get('q') + "*", count=200)
+    cursor, fields = get_db().hscan("keybase:tags", 0, match="*" + request.args.get('q') + "*", count=200)
     for tag in fields:
         tags.append(tag)
 
     return jsonify(matching_results=tags)
 
 
-@admin.route('/tag', methods=['POST'])
+@admin_bp.route('/tag', methods=['POST'])
 @login_required
 @requires_access_level(Role.ADMIN)
 def tag():
-    TITLE="Admin functions"
-    DESC="Admin functions"
+    TITLE = "Admin functions"
+    DESC = "Admin functions"
 
     if get_db().hexists("keybase:tags", request.form['tag'].lower().replace(" ", "")):
-        return redirect(url_for('admin.tags'))
+        return redirect(url_for('admin_bp.tags'))
 
     # Add lowercase tag and description
-    if len(request.form['tag'])>1:
-        tag = { request.form['tag'].lower().replace(" ", ""):request.form['description']}
+    if len(request.form['tag']) > 1:
+        tag = {request.form['tag'].lower().replace(" ", ""): request.form['description']}
         get_db().hmset("keybase:tags", tag)
 
-    return redirect(url_for('admin.tags'))
+    return redirect(url_for('admin_bp.tags'))
 
 
-@admin.route('/data')
+@admin_bp.route('/data')
 @login_required
 @requires_access_level(Role.ADMIN)
 def data():
-    TITLE="Admin functions"
-    DESC="Admin functions"
-    
+    TITLE = "Admin functions"
+    DESC = "Admin functions"
+
     return render_template('data.html', title=TITLE, desc=DESC)
+
 
 """
 # Routines to backup and restore encoding data as UTF-8. Cannot encode binary vector embeddings, so to use vector similarity, I choose base64 encoding
@@ -173,16 +169,17 @@ def restore():
     return jsonify(message="Restore done")
 """
 
-@admin.route('/backup', methods=['GET'])
+
+@admin_bp.route('/backup', methods=['GET'])
 @login_required
 @requires_access_level(Role.ADMIN)
 def backup():
     result = []
     backup = ""
-    cursor=0
+    cursor = 0
 
     while True:
-        cursor, keys  = conn.scan(cursor, match='keybase*', count=20, _type="HASH")
+        cursor, keys = conn.scan(cursor, match='keybase*', count=20, _type="HASH")
         result.extend(keys)
         for key in keys:
             hash = conn.hgetall(key)
@@ -195,13 +192,13 @@ def backup():
             data['value'] = theValue
             backup += json.dumps(data) + "\n"
 
-        if (cursor==0):
+        if (cursor == 0):
             break
 
     return jsonify(message="Backup created", backup=backup)
 
 
-@admin.route('/restore', methods=['POST'])
+@admin_bp.route('/restore', methods=['POST'])
 @login_required
 @requires_access_level(Role.ADMIN)
 def restore():
@@ -219,11 +216,11 @@ def restore():
     return jsonify(message="Restore done")
 
 
-@admin.route('/group', methods=['POST'])
+@admin_bp.route('/group', methods=['POST'])
 @login_required
 @requires_access_level(Role.ADMIN)
 def group():
     # TODO Check the user exists and the role is valid
     print("Setting role of " + request.form['id'] + " to " + request.form['group'])
-    get_db().hmset("keybase:okta:{}".format(request.form['id']), {"group" : request.form['group']})
+    get_db().hmset("keybase:okta:{}".format(request.form['id']), {"group": request.form['group']})
     return jsonify(message="Role updated")

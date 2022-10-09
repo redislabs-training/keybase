@@ -2,12 +2,12 @@
 {% block content %}
 
     {% if not bookmarked %}
-    <a id="bookmark" class="is-size-7" style="display:inline;" href="{{ url_for('bookmrk.bookmark', docid=docid) }}">
+    <a id="bookmark" class="is-size-7" style="display:inline;" href="{{ url_for('bookmarks_bp.bookmark', docid=docid) }}">
         <img id="bkmrk" width="10" src="{{ url_for('static',filename='images/bookmark-gray.png') }}">
     </a>
     {% endif %}
     {% if bookmarked %}
-    <a id="bookmark" class="is-size-7" style="display:inline;" href="{{ url_for('bookmrk.bookmark', docid=docid) }}">
+    <a id="bookmark" class="is-size-7" style="display:inline;" href="{{ url_for('bookmarks_bp.bookmark', docid=docid) }}">
         <img id="bkmrk" width="10" src="{{ url_for('static',filename='images/bookmark-red.png') }}">
     </a>
     {% endif %}
@@ -27,7 +27,7 @@
                 <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Recommendations</h4>
                 {% if suggestlist is not none %}
                     {% for key, name, pretty in suggestlist %}
-                    <a style="display:block;" class="is-size-6" href="{{ url_for('app.doc',id=key,prettyurl=pretty) }}">
+                    <a style="display:block;" class="is-size-6" href="{{ url_for('document_bp.doc',id=key,prettyurl=pretty) }}">
                         {{name}}
                     </a>
                     {% endfor %}
@@ -41,7 +41,7 @@
                 <div class="tags">
                 {% set tags = document[4].split(',') %}
                 {% for tag in tags %}
-                <a class="tag is-link is-light" href="{{ url_for('app.browse',tag=tag) }}">{{tag}}</a>
+                <a class="tag is-link is-light" href="{{ url_for('document_bp.browse',tag=tag) }}">{{tag}}</a>
                 {% endfor %}
                 </div>
                 {% else %}
@@ -85,7 +85,7 @@
             <div class="widget box">
                 <h4 class="title is-6 mb-2" style="margin-bottom:0em;">Actions</h4>
                 <p>
-                    <a class="is-size-6" style="display:inline;" href="{{ url_for('app.edit',id=docid) }}">Edit</a>
+                    <a class="is-size-6" style="display:inline;" href="{{ url_for('document_bp.edit',id=docid) }}">Edit</a>
                 </p>
             </div>
             {% endif %}
@@ -108,7 +108,7 @@
         event.preventDefault();
         $.ajax({
 	        type: "POST",
-	        url: "{{ url_for('bookmrk.bookmark')}}",
+	        url: "{{ url_for('bookmarks_bp.bookmark')}}",
 	        data : {docid:"{{docid}}"},
 	        success: function(data) {
 	        console.log(data);

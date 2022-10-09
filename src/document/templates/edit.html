@@ -14,8 +14,8 @@
 			<button id="tags" class="button is-info is-light" type="button">tags</button> 
 			<button id="close" class="button is-info is-light" type="button">close</button> 
 			{% if current_user.is_admin() %}
-			<a id="publish" class="{% if not state == "draft" %}is-hidden {% endif%} button is-warning is-light" href="{{ url_for('app.publish',id=id) }}">publish</a>
-			<a id="delete" class="button is-danger is-light" href="{{ url_for('app.delete',id=id) }}">delete</a>
+			<a id="publish" class="{% if not state == "draft" %}is-hidden {% endif%} button is-warning is-light" href="{{ url_for('document_bp.publish',id=id) }}">publish</a>
+			<a id="delete" class="button is-danger is-light" href="{{ url_for('document_bp.delete',id=id) }}">delete</a>
 			{% endif %}
 		</p>
 	  </div>
@@ -71,7 +71,7 @@
             $("#tagsearch").autocomplete({
                 source:function(request, response) {
 					console.log(request.term)
-                    $.getJSON("{{url_for('admin.tagsearch')}}",{
+                    $.getJSON("{{url_for('admin_bp.tagsearch')}}",{
                         q: encodeURIComponent(request.term), 
                     }, function(data) {
 						console.log(data.matching_results)
@@ -93,7 +93,7 @@
 		e.preventDefault();
 	    $.ajax({
 	    	type: "POST",
-	        url: "{{ url_for('app.addtag')}}",
+	        url: "{{ url_for('document_bp.addtag')}}",
 	        data : {id:"{{id}}", tag:$("#tagsearch").val()},
 	        success: function(data) {
 				if (data["code"] == "success"){
@@ -110,7 +110,7 @@
 		var clicked = $(this);
 	    $.ajax({
 	    	type: "POST",
-	        url: "{{ url_for('app.deltag')}}",
+	        url: "{{ url_for('document_bp.deltag')}}",
 	        data : {id:"{{id}}", tag:clicked.siblings('span').text()},
 	        success: function(data) {
 				if (data["code"] == "success"){
@@ -148,7 +148,7 @@
         }
 	    $.ajax({
 	    	type: "POST",
-	        url: "{{ url_for('app.update')}}",
+	        url: "{{ url_for('document_bp.update')}}",
 	        data : {id:"{{id}}", content:encodeURIComponent(editor.getMarkdown()), name:encodeURIComponent($("#name").val())},
 	        success: function(data) {
 	        	console.log(data);
@@ -167,7 +167,7 @@
 		}
 		$.ajax({
 			type: "POST",
-			url: "{{ url_for('app.publish')}}",
+			url: "{{ url_for('document_bp.publish')}}",
 			data : {id:"{{id}}", content:encodeURIComponent(editor.getMarkdown()), name:encodeURIComponent($("#name").val())},
 			success: function(data) {
 				console.log(data);
@@ -180,7 +180,7 @@
 	  
 
 	  closeBtn.addEventListener("mousedown", function(e) {
-		window.location.replace("{{ url_for('app.doc',id=id,prettyurl=pretty) }}");
+		window.location.replace("{{ url_for('document_bp.doc',id=id,prettyurl=pretty) }}");
 	  }, true);
 
 	  $("#delete").click(function() {

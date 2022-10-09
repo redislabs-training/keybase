@@ -12,9 +12,8 @@
         {% endif %}
         {% endwith %}   
 
-       <form action="{{ url_for('simplelogin.login') }}" method="post">
+       <form action="{{ url_for('auth_bp.login_post') }}" method="post">
             <div class="form-group">
-            {{ form.csrf_token }}
             <div class="field">
                 <div class="control">
                     <input id="username" class="input" name="username" placeholder="Username" required="" type="text" autofocus="">

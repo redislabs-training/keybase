@@ -4,8 +4,8 @@
   <div class="tabs is-toggle is-centered">
     <ul>
       <li class="is-active"><a>Users</a></li>
-      <li><a href="{{ url_for('admin.tags') }}">Tags</a></li>
-      <li><a href="{{ url_for('admin.data') }}">Backup</a></li>
+      <li><a href="{{ url_for('admin_bp.tags') }}">Tags</a></li>
+      <li><a href="{{ url_for('admin_bp.data') }}">Backup</a></li>
     </ul>
   </div>
 
@@ -35,7 +35,7 @@
       .change(function () {
 	      $.ajax({
 	        type: "POST",
-	        url: "{{ url_for('admin.group')}}",
+	        url: "{{ url_for('admin_bp.group')}}",
 	        data : {id:$( this ).attr("id"), group:$(this).children("option:selected").val()},
 	        success: function(data) {
 	        console.log(data);

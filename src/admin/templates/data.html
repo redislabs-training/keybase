@@ -3,8 +3,8 @@
 {% block content %}
   <div class="tabs is-toggle is-centered">
     <ul>
-      <li><a href="{{ url_for('admin.tools') }}">Users</a></li>
-      <li><a href="{{ url_for('admin.tags') }}">Tags</a></li>
+      <li><a href="{{ url_for('admin_bp.tools') }}">Users</a></li>
+      <li><a href="{{ url_for('admin_bp.tags') }}">Tags</a></li>
       <li class="is-active"><a>Backup</a></li>
     </ul>
   </div>
@@ -40,7 +40,7 @@
       filename = "keybase_"+today.toISOString()+".txt";
         $.ajax({
           type: "GET",
-          url: "{{ url_for('admin.backup')}}",
+          url: "{{ url_for('admin_bp.backup')}}",
           data : {},
           success: function(data) {
             console.log(data.backup)
@@ -58,7 +58,7 @@
       fd.append('file',files[0]);
   
       $.ajax({
-      url: "{{ url_for('admin.restore')}}",
+      url: "{{ url_for('admin_bp.restore')}}",
       type: 'post',
       data: fd,
       contentType: false,

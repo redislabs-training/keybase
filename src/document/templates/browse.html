@@ -27,7 +27,7 @@
         $(function() {
             $(".input").autocomplete({
                 source:function(request, response) {
-                    $.getJSON("{{url_for('app.autocomplete')}}",{
+                    $.getJSON("{{url_for('document_bp.autocomplete')}}",{
                         q: encodeURIComponent(request.term), 
                     }, function(data) {
                         response(data.matching_results); 
@@ -44,7 +44,7 @@
       
     {% if keydocument is not none %}
     {% for key, name, pretty, creation in keydocument %}
-        <a style="display:block;" class="is-size-6" href="{{ url_for('app.doc',id=key,prettyurl=pretty) }}">
+        <a style="display:block;" class="is-size-6" href="{{ url_for('document_bp.doc',id=key,prettyurl=pretty) }}">
             {{name}}
         </a>
         <span class="is-size-7 has-text-weight-light has-text-grey">created: {{creation}}</span>

@@ -1,13 +1,14 @@
 from flask_login import UserMixin
-from flask_login import (LoginManager,current_user,login_required,login_user,logout_user,)
+from flask_login import (current_user)
 from functools import wraps
-from flask import url_for, request, redirect, session
+from flask import url_for, redirect
 from enum import IntEnum
 import time
 from common.config import get_db
 
 # Simulate user database
 USERS_DB = {}
+
 
 class User(UserMixin):
     def __init__(self, id_, given_name, name, email, access_level):
@@ -33,9 +34,9 @@ class User(UserMixin):
     @staticmethod
     def create(user_id, given_name, name, email):
         get_db().hmset("keybase:okta:{}".format(user_id), {
-            'name' : name,
-            'given_name' : given_name,
-            'email' : email,
+            'name': name,
+            'given_name': given_name,
+            'email': email,
             'group': 'viewer',
             'signup': time.time(),
             'login': time.time()})
@@ -46,9 +47,9 @@ class User(UserMixin):
     @staticmethod
     def update(user_id, given_name, name, email):
         get_db().hmset("keybase:okta:{}".format(user_id), {
-            'name' : name,
-            'given_name' : given_name,
-            'email' : email,
+            'name': name,
+            'given_name': given_name,
+            'email': email,
             'signup': time.time(),
             'login': time.time()})
 
@@ -71,6 +72,7 @@ class User(UserMixin):
     def is_allowed(self, access_level):
         return self.access_level >= access_level
 
+
 class Role(IntEnum):
     ADMIN = 3
     EDITOR = 2
@@ -78,16 +80,22 @@ class Role(IntEnum):
 
     @staticmethod
     def group2role(group):
-        if group == 'admin': return Role.ADMIN
-        elif group == 'editor': return Role.EDITOR
-        elif group == 'viewer': return Role.VIEWER
+        if group == 'admin':
+            return Role.ADMIN
+        elif group == 'editor':
+            return Role.EDITOR
+        elif group == 'viewer':
+            return Role.VIEWER
+
 
 def requires_access_level(access_level):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if not current_user.is_allowed(access_level):
-                return redirect(url_for('app.browse'))
+                return redirect(url_for('document_bp.browse'))
             return f(*args, **kwargs)
+
         return decorated_function
+
     return decorator
