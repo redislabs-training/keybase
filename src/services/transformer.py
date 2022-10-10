@@ -1,10 +1,13 @@
-import redis
 from sentence_transformers import SentenceTransformer
 from redis.commands.search.query import Query
-from common.config import get_db
+from src.common.config import get_db
 import numpy as np
 import sys
-from flask import Flask, current_app
+from flask import Flask
+
+# Preparation
+# export PYTHONPATH="/Users/mortensi/PycharmProjects/keybase/"
+# python3 /Users/mortensi/PycharmProjects/keybase/src/services/transformer.py
 
 app = Flask(__name__)
 with app.app_context():
