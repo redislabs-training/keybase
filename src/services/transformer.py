@@ -1,15 +1,20 @@
 from sentence_transformers import SentenceTransformer
 from redis.commands.search.query import Query
-from src.common.config import get_db
+
 import numpy as np
 import sys
 from flask import Flask
 
-# Preparation
+# In production uncomment this line and set the keybase folder path
+#sys.path.append('/Users/mortensi/PycharmProjects/keybase/')
+from src.common.config import get_db
+
+# Or set the PYTHONPATH environment variables
 # export PYTHONPATH="/Users/mortensi/PycharmProjects/keybase/"
 # python3 /Users/mortensi/PycharmProjects/keybase/src/services/transformer.py
 
 app = Flask(__name__)
+
 with app.app_context():
     rs = get_db().ft("document_idx").search(Query('@processable:{1}').return_field("content").return_field("processable"))
     if not len(rs.docs):
