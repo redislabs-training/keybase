@@ -80,7 +80,6 @@ def browse():
                 pretty.append(pretty_title(urllib.parse.unquote(key.name)))
                 creations.append(datetime.utcfromtimestamp(int(key.creation)).strftime('%Y-%m-%d'))
             keydocument=zip(keys,names,pretty,creations)
-
         return render_template('browse.html', title=TITLE, desc=DESC, keydocument=keydocument, page=page, per_page=per_page, pagination=pagination)
     except RedisError as err:
         print(err)
@@ -104,7 +103,7 @@ def save():
            "owner": current_user.id,
            "processable": 0,
            "update": unixtime}
-    get_db().hmset("keybase:kb:{}".format(id), doc)
+    get_db().hset("keybase:kb:{}".format(id), mapping=doc)
     return jsonify(message="Document created", id=id)
 
 
@@ -124,7 +123,7 @@ def publish():
            "state": "public",
            "processable": 1,
            "update": unixtime}
-    get_db().hmset("keybase:kb:{}".format(request.form['id']), doc)
+    get_db().hset("keybase:kb:{}".format(request.form['id']), mapping=doc)
     return jsonify(message="Document published")
 
 
@@ -239,9 +238,12 @@ def doc(id, prettyurl):
 
     # If it is a draft, role is editor: make sure the editor owns the draft. Editor can edit the draft
     # If it is a draft, role is admin: can see, edit and publish
-    if (document[2] == 'draft' and document[3] != current_user.id and not current_user.is_admin()):
+    if document[2] == 'draft' and document[3] != current_user.id and not current_user.is_admin():
         print("This document is locked for editing, if not an admin, cannot read it")
-        return render_template('locked.html', name=document[0])
+        return render_template('locked.html', name=document[0]), 403
+    elif document[2] == 'draft' and current_user.is_viewer():
+        print("Drafts are locked for viewers")
+        return render_template('locked.html', name=document[0]), 403
 
     document[0] = urllib.parse.quote(document[0])
     document[1] = urllib.parse.quote(document[1])

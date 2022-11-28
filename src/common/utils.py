@@ -2,7 +2,7 @@ import redis
 import time
 import json
 from datetime import datetime
-from common.config import get_db
+from src.common.config import get_db
 import re
 
 def pretty_title(title):

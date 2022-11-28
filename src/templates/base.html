@@ -53,19 +53,19 @@
                                 <span {% if "new" == active_page %} class="has-background-info-light" style="padding:6px; border-radius:4px;"{% endif%}>New</span>
                             </a>
                             <div class="navbar-dropdown">
-                                <a href="{{ url_for('app.new',doc='case') }}" class="navbar-item">
+                                <a href="{{ url_for('main_bp.new',doc='case') }}" class="navbar-item">
                                     Customer case
                                 </a>
-                                <a href="{{ url_for('app.new',doc='troubleshooting') }}" class="navbar-item">
+                                <a href="{{ url_for('main_bp.new',doc='troubleshooting') }}" class="navbar-item">
                                     Troubleshooting guide
                                 </a>
-                                <a href="{{ url_for('app.new',doc='design') }}" class="navbar-item">
+                                <a href="{{ url_for('main_bp.new',doc='design') }}" class="navbar-item">
                                     Design article
                                 </a>
-                                <a href="{{ url_for('app.new',doc='howto') }}" class="navbar-item">
+                                <a href="{{ url_for('main_bp.new',doc='howto') }}" class="navbar-item">
                                     How-to guide
                                 </a>
-                                <a href="{{ url_for('app.new',doc='qa') }}" class="navbar-item">
+                                <a href="{{ url_for('main_bp.new',doc='qa') }}" class="navbar-item">
                                     Q&A
                                 </a>
                             </div>
@@ -80,7 +80,7 @@
                             <span {% if "analytics" == active_page %} class="has-background-info-light" style="padding:6px; border-radius:4px;"{% endif%}>Analytics</span>
                         </a>
                         {% endif %}
-                        <a href="{{ url_for('app.about') }}" class="navbar-item">
+                        <a href="{{ url_for('main_bp.about') }}" class="navbar-item">
                             <span {% if "about" == active_page %} class="has-background-info-light" style="padding:6px; border-radius:4px;"{% endif%}>About</span>
                         </a>
                         {% endif %}

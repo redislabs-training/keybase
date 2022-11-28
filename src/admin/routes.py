@@ -99,16 +99,13 @@ def tagsearch():
 @login_required
 @requires_access_level(Role.ADMIN)
 def tag():
-    TITLE = "Admin functions"
-    DESC = "Admin functions"
-
     if get_db().hexists("keybase:tags", request.form['tag'].lower().replace(" ", "")):
         return redirect(url_for('admin_bp.tags'))
 
     # Add lowercase tag and description
     if len(request.form['tag']) > 1:
         tag = {request.form['tag'].lower().replace(" ", ""): request.form['description']}
-        get_db().hmset("keybase:tags", tag)
+        get_db().hset("keybase:tags", mapping=tag)
 
     return redirect(url_for('admin_bp.tags'))
 

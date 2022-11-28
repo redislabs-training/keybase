@@ -1,10 +1,10 @@
 from flask_login import UserMixin
 from flask_login import (current_user)
 from functools import wraps
-from flask import url_for, redirect
+from flask import url_for, redirect, Response
 from enum import IntEnum
 import time
-from common.config import get_db
+from src.common.config import get_db
 
 # Simulate user database
 USERS_DB = {}
@@ -33,7 +33,7 @@ class User(UserMixin):
 
     @staticmethod
     def create(user_id, given_name, name, email):
-        get_db().hmset("keybase:okta:{}".format(user_id), {
+        get_db().hset("keybase:okta:{}".format(user_id), mapping={
             'name': name,
             'given_name': given_name,
             'email': email,
@@ -46,7 +46,7 @@ class User(UserMixin):
 
     @staticmethod
     def update(user_id, given_name, name, email):
-        get_db().hmset("keybase:okta:{}".format(user_id), {
+        get_db().hset("keybase:okta:{}".format(user_id), mapping={
             'name': name,
             'given_name': given_name,
             'email': email,
@@ -60,8 +60,15 @@ class User(UserMixin):
     def set_role(self, access_level):
         self.access_level = access_level
 
+    def set_group(self, group):
+        self.access_level = Role.group2role(group)
+        get_db().hset("keybase:okta:{}".format(self.id), mapping={"group": group})
+
     def get_role(self):
         return self.access_level
+
+    def is_viewer(self):
+        return self.access_level == Role.VIEWER
 
     def is_editor(self):
         return self.access_level >= Role.EDITOR
@@ -93,7 +100,8 @@ def requires_access_level(access_level):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if not current_user.is_allowed(access_level):
-                return redirect(url_for('document_bp.browse'))
+                return Response(response="Unauthorized", status=403)
+                #return redirect(url_for('document_bp.browse'))
             return f(*args, **kwargs)
 
         return decorated_function

@@ -72,6 +72,8 @@ Configure Okta's secret and token in the `config.py` file.
 
 You can test the Okta integration with a [Okta Developer Edition](https://developer.okta.com/signup/).
 
+> Note, additional basic username-password authentication method is in the works
+
 ### 4. Keybase execution
 
 Time to start the platform with:

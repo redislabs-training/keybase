@@ -33,7 +33,7 @@ def unauthorized_callback():
         if request.endpoint == "document_bp.doc" and not current_user.is_authenticated:
             print("post-login doc is " + request.path)
             flash(request.path, 'wanted')
-        return render_template('index.html', next=request.endpoint)
+        return render_template('index.html', next=request.endpoint),401
 
 
 @okta_bp.before_request
@@ -82,7 +82,7 @@ def login():
 
 @okta_bp.errorhandler(404)
 def page_not_found(error):
-    return redirect(url_for('app.index'))
+    return redirect(url_for('main_bp.index'))
 
 
 @okta_bp.route("/authorization-code/callback")
@@ -103,7 +103,7 @@ def callback():
             return "The code was not returned or is not accessible", 403
     except KeyError:
         print("KeyError error: app_state missing")
-        return redirect(url_for('app.index'))
+        return redirect(url_for('main_bp.index'))
 
     query_params = {'grant_type': 'authorization_code',
                     'code': code,
@@ -156,7 +156,7 @@ def callback():
 @okta_bp.route("/logout", methods=["GET", "POST"])
 def logout():
     logout_user()
-    return redirect(url_for('app.index'))
+    return redirect(url_for('main_bp.index'))
 
 
 def getUserGroups():

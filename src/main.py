@@ -1,24 +1,12 @@
-from redis.commands.search.query import Query
-from redis import RedisError
 import urllib.parse
-from datetime import datetime
-import time
-import json
-import math
-from flask import Response, stream_with_context
-from flask import Flask, Blueprint, render_template, redirect, url_for, request, jsonify, session
-from flask_login import (LoginManager,current_user,login_required,login_user,logout_user)
-from flask_paginate import Pagination, get_page_args
-import shortuuid
+from flask import Blueprint, render_template, redirect, url_for
+from flask_login import (current_user,login_required)
+from .user import requires_access_level, Role
 
-from user import requires_access_level, Role
-from common.config import get_db
-from common.utils import get_analytics, pretty_title
-
-app = Blueprint('app', __name__)
+main_bp = Blueprint('main_bp', __name__)
 
 
-@app.route('/')
+@main_bp.route('/')
 def index():
     if not current_user.is_authenticated:
         return render_template('index.html')
@@ -26,7 +14,7 @@ def index():
         return redirect(url_for('document_bp.browse'))
 
 
-@app.route('/about', methods=['GET'])
+@main_bp.route('/about', methods=['GET'])
 @login_required
 def about():
     TITLE="About keybase"
@@ -34,7 +22,7 @@ def about():
     return render_template('about.html', title=TITLE, desc=DESC)
 
 
-@app.route('/new/<doc>')
+@main_bp.route('/new/<doc>')
 @login_required
 @requires_access_level(Role.EDITOR)
 def new(doc):
