@@ -39,7 +39,6 @@
 	        success: function(data) {
 	        console.log(data.id);
             $.notify("Draft created", "success");
-            window.location.replace("edit?id=" + data.id);
 			window.location.replace("{{ url_for('drafts_bp.drafts')}}");
 	        }});
 	  }, true);

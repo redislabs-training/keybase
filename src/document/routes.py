@@ -6,7 +6,7 @@ from datetime import datetime
 import time
 import urllib.parse
 from redis.commands.search.query import Query
-from .document import Document
+from .document import Document, Version
 from pydantic import ValidationError
 from redis_om import NotFoundError
 
@@ -116,7 +116,8 @@ def save():
             processable=1,
             state="draft",
             owner=current_user.id,
-            author=current_user.id
+            author=current_user.id,
+            versions=[]
         )
 
         doc.save()
@@ -210,6 +211,17 @@ def update():
 
     unixtime = int(time.time())
 
+    # Create version
+    version = Version(
+        name=document.name,
+        content=document.content,
+        creation=document.creation,
+        last=document.last,
+        owner=document.owner
+    )
+
+    document.versions.insert(0, version)
+
     # Save the document and revert the state TAG to "draft"
     document.content = urllib.parse.unquote(request.form['content'])
     document.name = urllib.parse.unquote(request.form['name'])
@@ -238,7 +250,7 @@ def edit(id):
     doc_content = urllib.parse.quote(document.content)
     return render_template('edit.html', title=TITLE, desc=DESC, id=id, name=doc_name,
                            pretty=pretty_title(urllib.parse.unquote(doc_name)), content=doc_content,
-                           state=document.state, tags=document.tags)
+                           state=document.state, tags=document.tags, versions=document.versions)
 
 
 @document_bp.route('/delete/<id>')
@@ -317,3 +329,10 @@ def doc(id, prettyurl):
 
     return render_template('view.html', title=TITLE, desc=DESC, docid=id, bookmarked=bookmarked, document=document,
                            suggestlist=suggestlist, analytics=analytics)
+
+
+@document_bp.route('/version/<id>')
+@login_required
+@requires_access_level(Role.EDITOR)
+def version(id):
+    return jsonify(message="Version is available")

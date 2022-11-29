@@ -4,7 +4,6 @@
 <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
 
 <div id="container">
-
 	<div class="field is-grouped">
 		<p class="control is-expanded">
 			<input class="input" id="name" type="text" placeholder="Document name">
@@ -19,8 +18,18 @@
 			{% endif %}
 		</p>
 	  </div>
-	<div id="editor"></div>
-
+	<div class="columns">
+		<div class="column is-9">
+			<div id="editor"></div>
+		</div>
+		<div class="column is-3 versions">
+			{% for v in versions %}
+			<div class="version">
+				<a class="is-size-6" href="{{ url_for('document_bp.version',id=v.pk) }}">{{v.last | int | ctime}}</a>
+			</div>
+			{% endfor %}
+		</div>
+	</div>
 	<div class="modal">
 		<div class="modal-background"></div>
 		<div class="modal-card">

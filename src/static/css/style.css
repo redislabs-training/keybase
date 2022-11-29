@@ -2,6 +2,24 @@
 
 .box{border-radius: 3px;box-shadow: rgba(0, 0, 0, 0.06) 0px 0px 1.6rem;}
 
+.versions{
+    border: 1px solid #dadde6;
+    border-radius: 4px;
+    margin-top:12px;
+    margin-bottom:12px;
+    font-size:14px;
+    padding:0px;
+}
+
+.version{
+    border-bottom: 1px solid #dadde6;
+    padding:6px;
+}
+
+.columns{
+    margin-right:0px;
+}
+
 .signinbox {
     margin-top:200px;
     position: absolute;

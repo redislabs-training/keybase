@@ -12,9 +12,10 @@ class ShortUuidPk:
 
 class Version(EmbeddedJsonModel):
     name: str
-    content: Optional[str]
+    content: str
     creation: int
-    last: int
+    last: str = Field(index=True)
+    owner: str
 
 
 class Document(JsonModel):

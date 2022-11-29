@@ -1,6 +1,8 @@
 import secrets
 from flask import Flask
 from flask_cors import CORS
+from datetime import datetime
+import time
 
 
 def create_app():
@@ -9,6 +11,11 @@ def create_app():
     app.config["SESSION_TYPE"] = "filesystem"
     app.config.update({'SECRET_KEY': secrets.token_hex(64)})
     CORS(app)
+
+    @app.template_filter('ctime')
+    def timectime(s):
+        date_time = datetime.fromtimestamp(s)
+        return date_time.strftime("%B %d %Y, %H:%M")
 
     from .main import main_bp
     app.register_blueprint(main_bp)
