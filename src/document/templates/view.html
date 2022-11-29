@@ -37,9 +37,9 @@
             </div>
             <div class="widget box">
                 <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Tags</h4>
-                {% if document[4] is not none and document[4]|length > 0 %}
+                {% if document.tags is not none and document.tags|length > 0 %}
                 <div class="tags">
-                {% set tags = document[4].split(',') %}
+                {% set tags = document.tags.split(',') %}
                 {% for tag in tags %}
                 <a class="tag is-link is-light" href="{{ url_for('document_bp.browse',tag=tag) }}">{{tag}}</a>
                 {% endfor %}
@@ -89,7 +89,7 @@
                 </p>
             </div>
             {% endif %}
-            {% if "draft" == document[2] %} 
+            {% if "draft" == document.state %}
             <div class="widget box">
                 <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Info</h4>
                 <p class="draft is-size-6">
@@ -119,7 +119,7 @@
         return false; 
     });
 
-    $( "#name" ).text(decodeURIComponent("{{document[0]}}"));  
+    $( "#name" ).text(decodeURIComponent("{{document.name}}"));
       const viewer = toastui.Editor.factory({
         el: document.querySelector('#editor'),
         viewer: true,
@@ -129,15 +129,9 @@
             contenteditable: 'false',
             rel: 'noopener noreferrer'
         },
-        initialValue: decodeURIComponent("{{document[1]}}")
+        initialValue: decodeURIComponent("{{document.content}}")
         });
 
-    $("#delete").click(function() {
-        if (confirm("Confirm the deletion of the document!") == true) {
-            return true;
-        } else {
-            return false;
-    }})
 
 </script>
 {% endblock %}

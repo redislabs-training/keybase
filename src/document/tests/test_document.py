@@ -1,36 +1,6 @@
-from src.application import create_app
 from src.user import User
 import json, pytest, flask_login
-from src.common.config import get_db, REDIS_CFG
-from flask import template_rendered
-from contextlib import contextmanager
-
-@pytest.fixture
-def captured_templates(create_flask_app):
-    recorded = []
-    def record(sender, template, context, **extra):
-        recorded.append((template, context))
-    template_rendered.connect(record, create_flask_app)
-    try:
-        yield recorded
-    finally:
-        template_rendered.disconnect(record, create_flask_app)
-
-
-@pytest.fixture
-def prepare_db():
-    get_db().execute_command('FT.CREATE document_idx ON HASH PREFIX 1 keybase:kb SCHEMA name TEXT content TEXT creation NUMERIC SORTABLE update NUMERIC SORTABLE state TAG owner TEXT processable TAG tags TAG content_embedding VECTOR HNSW 6 TYPE FLOAT32 DIM 768 DISTANCE_METRIC COSINE')
-    get_db().execute_command('FT.CREATE user_idx ON HASH PREFIX 1 keybase:okta SCHEMA name TEXT group TEXT')
-
-
-@pytest.fixture
-def user_auth():
-    REDIS_CFG['port'] = 6379
-    get_db().flushall()
-    user = User.create("00000000000000000000", "test_name", "test_username", "test_mail")
-    flask_login.login_user(user)
-    yield user
-    get_db().delete("keybase:okta:00000000000000000000")
+from src.common.config import REDIS_CFG
 
 
 def user2_auth():
@@ -39,22 +9,6 @@ def user2_auth():
     flask_login.logout_user()
     flask_login.login_user(user)
     return user
-
-
-@pytest.fixture
-def create_flask_app():
-    flask_app = create_app()
-    with flask_app.app_context():
-        with flask_app.test_request_context():
-            #flask_login.login_required(False)
-            yield flask_app
-
-
-@pytest.fixture
-def test_client(create_flask_app):
-    # Create a test client using the Flask application configured for testing
-    with create_flask_app.test_client() as test_client:
-        yield test_client
 
 
 def test_document_browse_not_authenticated(test_client):
@@ -132,7 +86,7 @@ def test_document_save_route_draft_others_drafts_forbidden(test_client, user_aut
     response = test_client.post("/save", data={'name': 'my name is...', 'content': 'my content is...'})
     doc_id = json.loads(response.data)['id']
 
-    # Authenticating as another user, can't see own drafts
+    # Authenticating as another user, can't see others' drafts
     user2_auth()
     response = test_client.get("/doc/{}".format(doc_id))
     assert response.status_code == 403
@@ -158,36 +112,55 @@ def test_document_save_route_published_as_viewer(test_client, user_auth):
     assert response.status_code == 200
 
 
-def test_document_create_tag_not_exists(test_client, user_auth):
-    # create the document
-    user_auth.set_group("editor")
-    response = test_client.post("/save", data={'name': 'my name is...', 'content': 'my content is...'})
-    doc_id = json.loads(response.data)['id']
-
+def test_document_add_tag_tag_not_existing(test_client, user_auth, create_document):
+    doc_id = create_document
     response = test_client.post("/addtag", data={'id': doc_id, 'tag': 'oss'})
     assert response.status_code == 200
     assert json.loads(response.data)['message'] == "The tag does not exist"
 
 
-def test_document_create_add_only_preexisting_tag(test_client, user_auth):
-    # create the document
+def test_document_add_tag_document_not_existing(test_client, user_auth):
     user_auth.set_group("editor")
-    response = test_client.post("/save", data={'name': 'my name is...', 'content': 'my content is...'})
-    doc_id = json.loads(response.data)['id']
+    response = test_client.post("/addtag", data={'id': "1xmkzwa8w5", 'tag': 'oss'})
+    assert response.status_code == 404
+    assert json.loads(response.data)['message'] == "The document does not exist"
 
-    response = test_client.post("/addtag", data={'id': doc_id, 'tag': 'oss'})
+
+def test_document_add_tag_user_not_authorized(test_client, user_auth):
+    response = test_client.post("/addtag", data={'id': "1xmkzwa8w5", 'tag': 'oss'})
+    assert response.status_code == 403
+    assert response.data == b"Unauthorized"
+
+
+def test_document_del_tag_user_not_authorized(test_client, user_auth):
+    response = test_client.post("/deltag", data={'id': "1xmkzwa8w5", 'tag': 'oss'})
+    assert response.status_code == 403
+    assert response.data == b"Unauthorized"
+
+
+def test_document_del_tag_document_not_existing(test_client, create_document):
+    response = test_client.post("/deltag", data={'id': "1xmkzwa8w5", 'tag': 'oss'})
+    assert response.status_code == 404
+    assert json.loads(response.data)['message'] == "The document does not exist"
+
+
+def test_document_del_tag_document_success(test_client, create_document):
+    doc_id = create_document
+    test_client.post("/addtag", data={'id': doc_id, 'tag': 'oss'})
+    response = test_client.post("/deltag", data={'id': doc_id, 'tag': 'oss'})
     assert response.status_code == 200
-    assert json.loads(response.data)['message'] == "The tag does not exist"
+    assert json.loads(response.data)['message'] == "The tag has been removed"
+    assert json.loads(response.data)['tags'] == []
 
 
-def test_document_create_editor_cannot_add_tags(test_client, user_auth):
+def test_document_editor_cannot_create_tags(test_client, user_auth):
     # create the document
     user_auth.set_group("editor")
     response = test_client.post("/tag", data={'tag': 'oss', 'description':''})
     assert response.status_code == 403
 
 
-def test_document_create_admin_can_add_tags(test_client, user_auth):
+def test_document_admin_can_create_tags(test_client, user_auth):
     # create the tag
     user_auth.set_group("admin")
 
@@ -201,19 +174,25 @@ def test_document_create_admin_can_add_tags(test_client, user_auth):
     assert json.loads(response.data)['matching_results'] == ["oss"]
 
 
-def test_document_and_tag_creation_tag_document(test_client, user_auth):
-    # create the document
+def test_document_add_tag_retag_document(test_client, user_auth, create_document):
+    doc_id = create_document
     user_auth.set_group("admin")
-    response = test_client.post("/save", data={'name': 'my name is...', 'content': 'my content is...'})
-    doc_id = json.loads(response.data)['id']
 
     # create the tag
     test_client.post("/tag", data={'tag': 'oss', 'description':''})
+    test_client.post("/tag", data={'tag': 'troubleshooting', 'description': ''})
 
     # tag the document
     response = test_client.post("/addtag", data={'id': doc_id, 'tag': 'oss'})
     assert response.status_code == 200
     assert json.loads(response.data)['message'] == "The tag has been added"
+    assert json.loads(response.data)['tags'] == ['oss']
+
+    # tag the document
+    response = test_client.post("/addtag", data={'id': doc_id, 'tag': 'troubleshooting'})
+    assert response.status_code == 200
+    assert json.loads(response.data)['message'] == "The tag has been added"
+    assert json.loads(response.data)['tags'] == ['oss', 'troubleshooting']
 
     # retag the document
     response = test_client.post("/addtag", data={'id': doc_id, 'tag': 'oss'})
@@ -233,20 +212,58 @@ def test_document_autocomplete_authenticated_index_created(test_client, user_aut
     assert json.loads(response.data)['matching_results'][0] ==  {'id': doc_id, 'label': 'my name is...', 'pretty': 'my-name-is', 'value': 'my name is...'}
 
 
-def test_document_browse_authenticated_index_created(test_client, user_auth, prepare_db, captured_templates):
+def test_document_save_authenticated_index_created(test_client, user_auth, prepare_db, captured_templates):
     # create the document
     user_auth.set_group("admin")
     response = test_client.post("/save", data={'name': 'my name is...', 'content': 'my content is...'})
     doc_id = json.loads(response.data)['id']
     test_client.post("/publish", data=dict(id=doc_id, name='my name is...', content='my content is...'))
 
-    response = test_client.get("/browse", query_string={"q": "content"});
+    response = test_client.get("/browse", query_string={"q": "content"})
     assert response.status_code == 200
     assert len(captured_templates) == 1
     template, context = captured_templates[0]
     assert template.name == "browse.html"
     assert "keydocument" in context
     #keys,names,pretty,creations = zip(*context['keydocument'])
+
+
+def test_document_not_existing(test_client, user_auth, prepare_db):
+    response = test_client.get("/doc/{}".format("1xmkzwa8w5"))
+    assert response.status_code == 404
+
+
+def test_document_save_delete_not_authorized(test_client, create_document):
+    response = test_client.get("/doc/{}".format(create_document))
+    assert response.status_code == 200
+    response = test_client.get("/delete/{}".format(create_document))
+    assert response.status_code == 403
+
+
+def test_document_save_delete_authorized(test_client, user_auth, create_document):
+    doc_id = create_document
+    user_auth.set_group("admin")
+    response = test_client.get("/doc/{}".format(doc_id))
+    assert response.status_code == 200
+    response = test_client.get("/delete/{}".format(doc_id))
+    assert response.status_code == 302
+    response = test_client.get("/doc/{}".format(doc_id))
+    assert response.status_code == 404
+
+
+def test_document_update_name_content_success(test_client, user_auth, create_document):
+    doc_id = create_document
+    response = test_client.post("/update", data={'id': doc_id, 'name': 'new name is...', 'content': 'new content is...'})
+
+
+def test_document_update_name_content_user_not_authorized(test_client, user_auth, create_document):
+    user_auth.set_group("viewer")
+    doc_id = create_document
+    response = test_client.post("/update", data={'id': doc_id, 'name': 'new name is...', 'content': 'new content is...'})
+    assert response.status_code == 403
+    assert response.data == b"Unauthorized"
+
+
 
 
 #flask_app.config['LOGIN_DISABLED'] = True
