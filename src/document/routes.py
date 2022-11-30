@@ -3,8 +3,7 @@ from flask_login import (current_user, login_required)
 from flask_paginate import Pagination, get_page_args
 from redis import RedisError
 from datetime import datetime
-import time
-import urllib.parse
+import time, urllib.parse, json
 from redis.commands.search.query import Query
 from .document import Document, Version
 from pydantic import ValidationError
@@ -138,6 +137,17 @@ def publish():
 
     unixtime = int(time.time())
 
+    # Create version
+    version = Version(
+        name=document.name,
+        content=document.content,
+        creation=document.creation,
+        last=document.last,
+        owner=document.owner
+    )
+
+    document.versions.insert(0, version)
+
     # Save the document and change the state TAG to "public"
     document.content = urllib.parse.unquote(request.form['content'])
     document.name = urllib.parse.unquote(request.form['name'])
@@ -211,17 +221,6 @@ def update():
 
     unixtime = int(time.time())
 
-    # Create version
-    version = Version(
-        name=document.name,
-        content=document.content,
-        creation=document.creation,
-        last=document.last,
-        owner=document.owner
-    )
-
-    document.versions.insert(0, version)
-
     # Save the document and revert the state TAG to "draft"
     document.content = urllib.parse.unquote(request.form['content'])
     document.name = urllib.parse.unquote(request.form['name'])
@@ -250,7 +249,7 @@ def edit(id):
     doc_content = urllib.parse.quote(document.content)
     return render_template('edit.html', title=TITLE, desc=DESC, id=id, name=doc_name,
                            pretty=pretty_title(urllib.parse.unquote(doc_name)), content=doc_content,
-                           state=document.state, tags=document.tags, versions=document.versions)
+                           state=document.state, last=document.last, tags=document.tags, versions=document.versions)
 
 
 @document_bp.route('/delete/<id>')
@@ -331,8 +330,20 @@ def doc(id, prettyurl):
                            suggestlist=suggestlist, analytics=analytics)
 
 
-@document_bp.route('/version/<id>')
+@document_bp.route('/version', methods=['GET'])
 @login_required
 @requires_access_level(Role.EDITOR)
-def version(id):
-    return jsonify(message="Version is available")
+def version():
+    try:
+        document = Document.get(request.args.get('pk'))
+    except NotFoundError:
+        return jsonify(message="The document does not exist"), 404
+
+    for json_doc in document.versions:
+        if json_doc.pk == request.args.get('vpk'):
+            # Fetch on-the-fly the username, not persisted in the version
+            username = get_db().hmget("keybase:okta:{}".format(json_doc.owner), 'name')
+            json_doc.username = username
+            return jsonify(json_doc.json())
+
+    return jsonify(message="The version does not exist"), 404

@@ -35,6 +35,15 @@
                     <p class="is-size-6">creating recommendations...</p>
                 {% endif %}
             </div>
+            {% if "draft" == document.state %}
+            <div class="widget box">
+                <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Info</h4>
+                <p class="draft is-size-6">
+                    This document has been modified and is not listed among the published documents but only as a draft owned by the editor.
+                    The system administrator only can publish the document.
+                </p>
+            </div>
+            {% endif%}
             <div class="widget box">
                 <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Tags</h4>
                 {% if document.tags is not none and document.tags|length > 0 %}
@@ -89,15 +98,6 @@
                 </p>
             </div>
             {% endif %}
-            {% if "draft" == document.state %}
-            <div class="widget box">
-                <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Info</h4>
-                <p class="draft is-size-6">
-                    This document has been modified and is not listed among the published documents but only as a draft owned by the editor. 
-                    The system administrator only can publish the document.
-                </p>
-            </div>
-            {% endif%}
         </div>
         <!--end navigator column-->
 

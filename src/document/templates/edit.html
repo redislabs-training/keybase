@@ -19,23 +19,27 @@
 		</p>
 	  </div>
 	<div class="columns">
-		<div class="column is-9">
+		<div class="column is-10">
 			<div id="editor"></div>
 		</div>
-		<div class="column is-3 versions">
+		<div class="column is-2 versions">
+			<div class="version">
+				<p class="is-size-6">Current version</p>
+				{{last | int | ctime}}
+			</div>
 			{% for v in versions %}
 			<div class="version">
-				<a class="is-size-6" href="{{ url_for('document_bp.version',id=v.pk) }}">{{v.last | int | ctime}}</a>
+				<a class="is-size-7" data-pk="{{id}}" data-vpk="{{v.pk}}" href="{{ url_for('document_bp.version',pk=id,vpk=v.pk) }}">{{v.last | int | ctime}}</a>
 			</div>
 			{% endfor %}
 		</div>
 	</div>
-	<div class="modal">
+	<div class="modal tagsmodal">
 		<div class="modal-background"></div>
 		<div class="modal-card">
 		  <header class="modal-card-head">
 			<p class="modal-card-title">Tags</p>
-			<button id="closemodal" class="delete" aria-label="close"></button>
+			<button id="tagsclosemodal" class="delete" aria-label="close"></button>
 		  </header>
 		  <section class="modal-card-body">
             <div id="existingtags" class="field is-grouped is-grouped-multiline">
@@ -65,15 +69,66 @@
 		</div>
 	</div>
 
+	<div class="modal versionmodal">
+		<div class="modal-background"></div>
+		<div class="modal-card">
+		  <header class="modal-card-head">
+			  <p class="modal-card-title">
+				  <span style="font-weight: bold;" class="is-size-6" id="versionusername"></span>,
+				  <span class="is-size-6" id="versionlast"></span>
+			  </p>
+			<button id="versionclosemodal" class="delete" aria-label="close"></button>
+		  </header>
+		  <section class="modal-card-body">
+			  <div class="title is-4" id="versionname"></div>
+			  <div id="versioncontent"></div>
+		  </section>
+		  <footer class="modal-card-foot">
+		  </footer>
+		</div>
+	</div>
+
 </div>
 
 <script>
-	$("#tags").click(function(e){
-		$(".modal").addClass("is-active");
+	$(".version a").click(function(e){
+        $.ajax({
+            type: "GET",
+            url: "{{ url_for('document_bp.version') }}",
+            data : {pk: $(this).attr("data-pk"),vpk: $(this).attr("data-vpk")},
+            success: function(data) {
+            	jver = jQuery.parseJSON(data)
+            	$('#versionusername').html(decodeURIComponent(jver.username));
+            	$('#versionlast').html((new Date(jver.last*1000)).toLocaleString());
+            	$('#versionname').html(decodeURIComponent(jver.name));
+			  const viewer = toastui.Editor.factory({
+				el: document.querySelector('#versioncontent'),
+				viewer: true,
+				height: '500px',
+				linkAttributes: {
+					target: '_blank',
+					contenteditable: 'false',
+					rel: 'noopener noreferrer'
+				},
+				initialValue: decodeURIComponent(jver.content)
+				});
+
+                $(".versionmodal").addClass("is-active");
+            }
+        });
+		return false;
 	})
 
-	$("#closemodal").click(function(e){
-		$(".modal").removeClass("is-active");
+	$("#versionclosemodal").click(function(e){
+		$(".versionmodal").removeClass("is-active");
+	})
+
+	$("#tags").click(function(e){
+		$(".tagsmodal").addClass("is-active");
+	})
+
+	$("#tagsclosemodal").click(function(e){
+		$(".tagsmodal").removeClass("is-active");
 	})
 
 	$(function() {
@@ -182,6 +237,7 @@
 				console.log(data);
 				$.notify(data["message"], "success");
 				$( "#publish" ).addClass("is-hidden")
+				location.reload(true)
 			}
 		});
 		return false;

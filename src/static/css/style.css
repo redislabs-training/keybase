@@ -7,13 +7,14 @@
     border-radius: 4px;
     margin-top:12px;
     margin-bottom:12px;
-    font-size:14px;
+    font-size:13px;
     padding:0px;
 }
 
 .version{
     border-bottom: 1px solid #dadde6;
     padding:6px;
+    font-size:12px;
 }
 
 .columns{

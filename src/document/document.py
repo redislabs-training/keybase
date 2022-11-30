@@ -17,6 +17,9 @@ class Version(EmbeddedJsonModel):
     last: str = Field(index=True)
     owner: str
 
+    class Meta:
+        embedded = True
+
 
 class Document(JsonModel):
     name: str = Field(index=True, full_text_search=True)
