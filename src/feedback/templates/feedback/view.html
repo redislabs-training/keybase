@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+  <h1 id="name" class="title is-4">Documents feedback</h1>
+
+    <div class="select is-small mb-3">
+        <select id="state">
+            <option value="all" {% if state is none %} selected="selected"{% endif %}>All</option>
+            <option value="open" {% if state=="open" %} selected="selected"{% endif %}>Open</option>
+            <option value="implemented" {% if state=="implemented" %} selected="selected"{% endif %}>Implemented</option>
+            <option value="rejected" {% if state=="rejected" %} selected="selected"{% endif %}>Rejected</option>
+        </select>
+    </div>
+
+    {% if results is not none %}
+    {% for doc in results %}
+    <a style="display:block;" class="feedback is-size-6" data-pk="{{doc.key}}" href="{{ url_for('feedback_bp.detail',pk=doc.key) }}">
+        {{doc.description}}
+    </a>
+
+    {% if 'open' == doc.state %}
+    <span class="tag is-danger is-light">{{doc.state}}</span>
+    {% elif 'implemented' == doc.state %}
+    <span class="tag is-success is-light">{{doc.state}}</span>
+    {% else %}
+    <span class="tag is-info is-light">{{doc.state}}</span>
+    {% endif %}
+
+    <span class="is-size-7 has-text-weight-light has-text-grey">created: {{doc.creation}} | </span>
+    <a target="_blank" style="display:inline;" class="is-underlined is-size-7 has-text-weight-light has-text-grey" href="{{ url_for('document_bp.doc',id=doc.docid) }}">open document</a>
+    <div class="mt-1" style="border-top: .05rem solid #dbdbdb;"></div>
+  {% endfor %}
+  {% else %}
+      <p>There is no document with an open feedback reported</p>
+  {% endif %}
+
+        <div class="modal feedbackmodal">
+            <div class="modal-background"></div>
+            <div class="modal-card">
+              <header class="modal-card-head">
+                  <p class="modal-card-title">
+                      <span style="font-weight: bold;" class="is-size-6">Answer this feedback</span>
+                  </p>
+                <button id="feedbackclosemodal" class="delete" aria-label="close"></button>
+              </header>
+              <section class="modal-card-body">
+                  <div class="feedbackbody">
+                      <div class="field">
+                          <input disabled id="feedbackdescription" class="input" type="text" placeholder="Feedback short description" autocomplete="off">
+                      </div>
+                    <div class="field">
+                        <div class="control">
+                        <textarea disabled id="feedbackmessage" class="textarea" placeholder="Input your feedback" autocomplete="off"></textarea>
+                      </div>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                        <textarea id="feedbackresponse" class="textarea" placeholder="Input your response" autocomplete="off"></textarea>
+                      </div>
+                    </div>
+                    <div class="field">
+                       <div class="control">
+                           <div class="select is-small mb-3">
+                                <select id="saved-state">
+                                    <option value="open">Open</option>
+                                    <option value="implemented">Implemented</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                            </div>
+                      </div>
+                    </div>
+                    <div class="field is-grouped is-grouped-right">
+                      <div class="control">
+                        <button id="postfeedback" class="button is-link is-small">Save</button>
+                      </div>
+                      <div class="control">
+                        <button id="cancelfeedback" class="button is-light is-small">Cancel</button>
+                      </div>
+                    </div>
+                    <input type="hidden" id="feedback-id" id="feedback-id" value="">
+                  </div>
+              </section>
+              <footer class="modal-card-foot">
+              </footer>
+            </div>
+        </div>
+
+
+<script>
+	$(".feedback").click(function(e){
+        $.ajax({
+            type: "GET",
+            url: "{{ url_for('feedback_bp.detail') }}",
+            data : {pk: $(this).attr("data-pk")},
+            success: function(data) {
+                $("#feedbackdescription").val(data.description);
+                $("#feedbackmessage").val(data.message);
+                $("#feedbackresponse").val(data.response);
+                $("#saved-state").val(data.state);
+                $("#feedback-id").val(data.pk);
+                $(".feedbackmodal").addClass("is-active");
+            }
+        });
+		return false;
+	})
+
+	$("#postfeedback").click(function(e){
+		e.preventDefault();
+	    $.ajax({
+	    	type: "POST",
+	        url: "{{ url_for('feedback_bp.response')}}",
+	        data : {pk:$("#feedback-id").val(), response:$("#feedbackresponse").val(), state: $('#saved-state option:selected').val()},
+	        success: function(data) {
+	            $.notify(data["message"], data["code"]);
+	            $('.feedbackbody').replaceWith( '<h2 class="is-size-6 has-text-centered">Your response has been recorded</h2>' );
+	            window.location.href = "{{ url_for('feedback_bp.feedback')}}"
+	        },
+            error: function (jqXHR, textStatus, errorThrown) {
+                $.notify(JSON.parse(jqXHR.responseText)['message'], 'error');
+            }
+		})
+	})
+
+	$("#feedbackclosemodal,#cancelfeedback").click(function(e){
+		$(".feedbackmodal").removeClass("is-active");
+	})
+
+    $('#state').on('change', function (e) {
+        var optionSelected = $("option:selected", this);
+        var valueSelected = this.value;
+        window.location.href = "{{ url_for('feedback_bp.feedback')}}" + "?state=" + valueSelected;
+    });
+
+
+</script>
+{% endblock %}

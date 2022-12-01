@@ -1,24 +1,10 @@
 from typing import Optional, List
-from redis_om import (JsonModel, EmbeddedJsonModel, Field, get_redis_connection)
+from redis_om import (JsonModel, Field)
 from src.common.config import get_db
+from src.common.utils import ShortUuidPk
+from src.feedback.feedback import Feedback
+from src.version.version import Version
 import shortuuid
-
-
-class ShortUuidPk:
-    def create_pk(self) -> str:
-        shortuuid.set_alphabet('123456789abcdefghijkmnopqrstuvwxyz')
-        return shortuuid.uuid()[:10]
-
-
-class Version(EmbeddedJsonModel):
-    name: str
-    content: str
-    creation: int
-    last: str = Field(index=True)
-    owner: str
-
-    class Meta:
-        embedded = True
 
 
 class Document(JsonModel):

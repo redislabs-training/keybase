@@ -1,5 +1,5 @@
 from src.user import User
-import json, pytest, flask_login
+import json, flask_login
 from src.common.config import REDIS_CFG
 
 
@@ -64,27 +64,23 @@ def test_document_save_route_draft_viewers_forbidden(test_client, user_auth):
     assert response.status_code == 403
 
 
-def test_document_save_route_draft_as_editor(test_client, user_auth):
+def test_document_draft_as_editor_allowed(test_client, user_auth, create_document):
     # Viewer can't see a draft
     user_auth.set_group("editor")
     response = test_client.post("/save", data={'name': 'my name is...', 'content': 'my content is...'})
     assert response.status_code == 200
 
 
-def test_document_save_route_draft_see_own_drafts(test_client, user_auth):
+def test_document_draft_see_own_drafts(test_client, user_auth, create_document):
     # If you create a draft, you can see it
-    user_auth.set_group("editor")
-    response = test_client.post("/save", data={'name': 'my name is...', 'content': 'my content is...'})
-    doc_id = json.loads(response.data)['id']
+    doc_id = create_document
     response = test_client.get("/doc/{}".format(doc_id))
     assert response.status_code == 200
 
 
-def test_document_save_route_draft_others_drafts_forbidden(test_client, user_auth):
+def test_document_draft_others_drafts_forbidden(test_client, user_auth, create_document):
     # The editor creates a draft
-    user_auth.set_group("editor")
-    response = test_client.post("/save", data={'name': 'my name is...', 'content': 'my content is...'})
-    doc_id = json.loads(response.data)['id']
+    doc_id = create_document
 
     # Authenticating as another user, can't see others' drafts
     user2_auth()
@@ -92,11 +88,9 @@ def test_document_save_route_draft_others_drafts_forbidden(test_client, user_aut
     assert response.status_code == 403
 
 
-def test_document_save_route_published_as_viewer(test_client, user_auth):
-    # create the document
+def test_document_publish_viewer_allowed(test_client, user_auth, create_document):
+    doc_id = create_document
     user_auth.set_group("admin")
-    response = test_client.post("/save", data={'name': 'my name is...', 'content': 'my content is...'})
-    doc_id = json.loads(response.data)['id']
 
     # Publish the document by id, need to pass the name and the content of the document too
     # It is a save and publish feature, in reality
@@ -110,6 +104,16 @@ def test_document_save_route_published_as_viewer(test_client, user_auth):
     user_auth.set_group("viewer")
     response = test_client.get("/doc/{}".format(doc_id))
     assert response.status_code == 200
+
+
+def test_document_publish_just_once(test_client, user_auth, create_document):
+    doc_id = create_document
+    user_auth.set_group("admin")
+    response = test_client.post("/publish", data=dict(id=doc_id, name='my name is...', content='my content is...'))
+    assert response.status_code == 200
+    response = test_client.post("/publish", data=dict(id=doc_id, name='my name is...', content='my content is...'))
+    assert response.status_code == 403
+    assert json.loads(response.data)['message'] == "Document already published"
 
 
 def test_document_add_tag_tag_not_existing(test_client, user_auth, create_document):
@@ -264,6 +268,22 @@ def test_document_update_name_content_user_not_authorized(test_client, user_auth
     assert response.data == b"Unauthorized"
 
 
+def test_document_edit_viewer_not_allowed(test_client, user_auth, create_document):
+    doc_id = create_document
+    user_auth.set_group("viewer")
+    response = test_client.get("/edit/{}".format(doc_id))
+    assert response.status_code == 403
+    assert response.data == b"Unauthorized"
+
+
+def test_document_edit_editor_allowed(test_client, user_auth, create_document, captured_templates):
+    doc_id = create_document
+    response = test_client.get("/edit/{}".format(doc_id))
+    assert response.status_code == 200
+
+    assert len(captured_templates) == 1
+    template, context = captured_templates[0]
+    assert template.name == "edit.html"
 
 
 #flask_app.config['LOGIN_DISABLED'] = True

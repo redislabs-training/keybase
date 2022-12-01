@@ -98,6 +98,11 @@
                                     Admin
                                 </a>
                                 {% endif %}
+                                {% if current_user.is_editor() %}
+                                <a href="{{ url_for('feedback_bp.feedback') }}" class="navbar-item">
+                                    Feedback
+                                </a>
+                                {% endif %}
                                 <a href="{{ url_for('bookmarks_bp.bookmarks') }}" class="navbar-item">
                                     Bookmarks
                                 </a>

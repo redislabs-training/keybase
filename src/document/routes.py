@@ -116,7 +116,8 @@ def save():
             state="draft",
             owner=current_user.id,
             author=current_user.id,
-            versions=[]
+            versions=[],
+            feedback=[]
         )
 
         doc.save()
@@ -134,6 +135,9 @@ def publish():
         document = Document.get(request.form['id'])
     except NotFoundError:
         return jsonify(message="Error publishing the document"), 404
+
+    if document.state == "public":
+        return jsonify(message="Document already published"), 403
 
     unixtime = int(time.time())
 
@@ -258,6 +262,7 @@ def edit(id):
 def delete(id):
     try:
         Document.delete(id)
+        get_db().delete("keybase:vss:{}".format(id))
     except NotFoundError:
         return redirect(url_for('document_bp.browse')), 404
 
@@ -329,21 +334,3 @@ def doc(id, prettyurl):
     return render_template('view.html', title=TITLE, desc=DESC, docid=id, bookmarked=bookmarked, document=document,
                            suggestlist=suggestlist, analytics=analytics)
 
-
-@document_bp.route('/version', methods=['GET'])
-@login_required
-@requires_access_level(Role.EDITOR)
-def version():
-    try:
-        document = Document.get(request.args.get('pk'))
-    except NotFoundError:
-        return jsonify(message="The document does not exist"), 404
-
-    for json_doc in document.versions:
-        if json_doc.pk == request.args.get('vpk'):
-            # Fetch on-the-fly the username, not persisted in the version
-            username = get_db().hmget("keybase:okta:{}".format(json_doc.owner), 'name')
-            json_doc.username = username
-            return jsonify(json_doc.json())
-
-    return jsonify(message="The version does not exist"), 404

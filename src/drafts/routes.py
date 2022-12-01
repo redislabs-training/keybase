@@ -34,12 +34,13 @@ def drafts():
         # And if you are admin, also everybody else's drafts
         jrs = Document.find((Document.state == "draft")).sort_by("-last").all()
 
-    for jdoc in jrs:
-        keys.append(jdoc.pk)
-        names.append(urllib.parse.unquote(jdoc.name))
-        pretty.append(pretty_title(urllib.parse.unquote(jdoc.name)))
-        owner.append(get_db().hget("keybase:okta:{}".format(jdoc.owner), "name"))
-        updates.append(datetime.utcfromtimestamp(int(jdoc.last)).strftime('%Y-%m-%d %H:%M:%S'))
+    if len(jrs):
+        for jdoc in jrs:
+            keys.append(jdoc.pk)
+            names.append(urllib.parse.unquote(jdoc.name))
+            pretty.append(pretty_title(urllib.parse.unquote(jdoc.name)))
+            owner.append(get_db().hget("keybase:okta:{}".format(jdoc.owner), "name"))
+            updates.append(datetime.utcfromtimestamp(int(jdoc.last)).strftime('%Y-%m-%d %H:%M:%S'))
+        docs = zip(keys, names, pretty, owner, updates)
 
-    docs = zip(keys, names, pretty, owner, updates)
     return render_template("draft.html", drafts=docs)

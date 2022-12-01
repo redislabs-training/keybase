@@ -35,6 +35,12 @@ def create_app():
     from .document.routes import document_bp
     app.register_blueprint(document_bp)
 
+    from .version.routes import version_bp
+    app.register_blueprint(version_bp)
+
+    from .feedback.routes import feedback_bp
+    app.register_blueprint(feedback_bp)
+
     from .okta.routes import okta_bp
     app.register_blueprint(okta_bp)
 

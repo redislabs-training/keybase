@@ -90,20 +90,87 @@
                 </script>
             </div>
             {% endif %}
-            {% if current_user.is_editor() %}
             <div class="widget box">
                 <h4 class="title is-6 mb-2" style="margin-bottom:0em;">Actions</h4>
-                <p>
-                    <a class="is-size-6" style="display:inline;" href="{{ url_for('document_bp.edit',id=docid) }}">Edit</a>
-                </p>
+                    {% if current_user.is_editor() %}
+                    <p>
+                        <a class="is-size-6" style="display:inline;" href="{{ url_for('document_bp.edit',id=docid) }}">Edit the document</a>
+                    </p>
+                    {% endif %}
+                    <p>
+                        <a id="feedback" class="is-size-6" style="display:inline;">Leave a feedback</a>
+                    </p>
             </div>
-            {% endif %}
         </div>
         <!--end navigator column-->
+
+        <div class="modal feedbackmodal">
+            <div class="modal-background"></div>
+            <div class="modal-card">
+              <header class="modal-card-head">
+                  <p class="modal-card-title">
+                      <span style="font-weight: bold;" class="is-size-6">Post a feedback on this document</span>
+                  </p>
+                <button id="feedbackclosemodal" class="delete" aria-label="close"></button>
+              </header>
+              <section class="modal-card-body">
+                  <div class="feedbackbody">
+                      <div class="field">
+                          <label class="label">Description</label>
+                          <input id="feedbackdescription" class="input" type="text" placeholder="Feedback short description" autocomplete="off">
+                      </div>
+                    <div class="field">
+                        <label class="label">Message</label>
+                        <div class="control">
+                        <textarea id="feedbackmessage" class="textarea" placeholder="Input your feedback" autocomplete="off"></textarea>
+                      </div>
+                    </div>
+                    <div class="field is-grouped is-grouped-right">
+                      <div class="control">
+                        <button id="postfeedback" class="button is-link is-small">Submit</button>
+                      </div>
+                      <div class="control">
+                        <button id="cancelfeedback" class="button is-light is-small">Cancel</button>
+                      </div>
+                    </div>
+                  </div>
+              </section>
+              <footer class="modal-card-foot">
+              </footer>
+            </div>
+        </div>
 
     </div>
 
 <script>
+	$("#feedback").click(function(e){
+		$(".feedbackmodal").addClass("is-active");
+	})
+
+	$("#postfeedback").click(function(e){
+		e.preventDefault();
+	    $.ajax({
+	    	type: "POST",
+	        url: "{{ url_for('feedback_bp.comment')}}",
+	        data : {pk:"{{docid}}", desc:encodeURIComponent($("#feedbackdescription").val()), msg:encodeURIComponent($("#feedbackmessage").val())},
+	        success: function(data) {
+	            $.notify(data["message"], data["code"]);
+	            $('.feedbackbody').replaceWith( '<h2 class="is-size-6 has-text-centered">Your feedback has been recorded</h2>' );
+	        },
+            error: function (jqXHR, textStatus, errorThrown) {
+                $.notify(JSON.parse(jqXHR.responseText)['message'], 'error');
+            }
+		})
+	})
+
+	$("#feedbackclosemodal,#cancelfeedback").click(function(e){
+		$(".feedbackmodal").removeClass("is-active");
+	})
+
+	$("#feedbackclosemodal,#cancelfeedback").click(function(e){
+		$(".feedbackmodal").removeClass("is-active");
+	})
+
     $("#bookmark").click(function(event){
         event.preventDefault();
         $.ajax({

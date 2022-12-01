@@ -23,13 +23,16 @@
 			<div id="editor"></div>
 		</div>
 		<div class="column is-2 versions">
+			<div class="version" style="padding: 10px 10px 0px; background-color:#f7f9fc; height:45px; border-radius: 3px 3px 0 0;">
+				<p class="is-size-6">versions</p>
+			</div>
 			<div class="version">
-				<p class="is-size-6">Current version</p>
+				<p class="is-size-7 has-text-weight-bold">current</p>
 				{{last | int | ctime}}
 			</div>
 			{% for v in versions %}
 			<div class="version">
-				<a class="is-size-7" data-pk="{{id}}" data-vpk="{{v.pk}}" href="{{ url_for('document_bp.version',pk=id,vpk=v.pk) }}">{{v.last | int | ctime}}</a>
+				<a class="is-size-7" data-pk="{{id}}" data-vpk="{{v.pk}}" href="{{ url_for('version_bp.version',pk=id,vpk=v.pk) | safe }}">{{v.last | int | ctime}}</a>
 			</div>
 			{% endfor %}
 		</div>
@@ -38,7 +41,9 @@
 		<div class="modal-background"></div>
 		<div class="modal-card">
 		  <header class="modal-card-head">
-			<p class="modal-card-title">Tags</p>
+			<p class="modal-card-title">
+				<span style="font-weight: bold;" class="is-size-5">Tags</span>
+			</p>
 			<button id="tagsclosemodal" class="delete" aria-label="close"></button>
 		  </header>
 		  <section class="modal-card-body">
@@ -74,8 +79,8 @@
 		<div class="modal-card">
 		  <header class="modal-card-head">
 			  <p class="modal-card-title">
-				  <span style="font-weight: bold;" class="is-size-6" id="versionusername"></span>,
 				  <span class="is-size-6" id="versionlast"></span>
+				  <span style="font-weight: bold;" class="is-size-6" id="versionusername"></span>
 			  </p>
 			<button id="versionclosemodal" class="delete" aria-label="close"></button>
 		  </header>
@@ -94,23 +99,24 @@
 	$(".version a").click(function(e){
         $.ajax({
             type: "GET",
-            url: "{{ url_for('document_bp.version') }}",
+            url: "{{ url_for('version_bp.version') }}",
             data : {pk: $(this).attr("data-pk"),vpk: $(this).attr("data-vpk")},
             success: function(data) {
             	jver = jQuery.parseJSON(data)
             	$('#versionusername').html(decodeURIComponent(jver.username));
             	$('#versionlast').html((new Date(jver.last*1000)).toLocaleString());
             	$('#versionname').html(decodeURIComponent(jver.name));
-			  const viewer = toastui.Editor.factory({
+
+			  	const viewer = toastui.Editor.factory({
 				el: document.querySelector('#versioncontent'),
-				viewer: true,
-				height: '500px',
-				linkAttributes: {
-					target: '_blank',
-					contenteditable: 'false',
-					rel: 'noopener noreferrer'
-				},
-				initialValue: decodeURIComponent(jver.content)
+					viewer: true,
+					height: '500px',
+					linkAttributes: {
+						target: '_blank',
+						contenteditable: 'false',
+						rel: 'noopener noreferrer'
+					},
+					initialValue: decodeURIComponent(jver.content)
 				});
 
                 $(".versionmodal").addClass("is-active");
