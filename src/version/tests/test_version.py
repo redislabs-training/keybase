@@ -39,8 +39,8 @@ def test_document_draft_document_draft_has_version(test_client, user_auth, creat
     assert len(captured_templates) == 1
     template, context = captured_templates[0]
     assert template.name == "edit.html"
-    assert "versions" in context
-    vpk = context['versions'][0].pk
+    assert "document" in context
+    vpk = context['document'].versions[0].pk
 
     response = test_client.get("/version", query_string={"pk": doc_id, "vpk": vpk})
     assert response.status_code == 200

@@ -3,9 +3,9 @@ import secrets
 import requests
 import base64
 import flask
-from flask import Flask, flash, Blueprint, g, render_template, redirect, request, session, url_for
+from flask import flash, Blueprint, render_template, redirect, request, session, url_for
 import flask_login
-from flask_login import (LoginManager,current_user,login_required,login_user,logout_user,)
+from flask_login import (LoginManager,current_user,logout_user,)
 
 from src.user import User
 from src.common.config import get_db, okta
@@ -77,6 +77,7 @@ def login():
         query_params=requests.compat.urlencode(query_params)
     )
     print(request_uri)
+
     return redirect(request_uri)
 
 

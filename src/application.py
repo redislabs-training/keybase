@@ -1,8 +1,8 @@
 import secrets
+
 from flask import Flask
 from flask_cors import CORS
 from datetime import datetime
-import time
 
 
 def create_app():

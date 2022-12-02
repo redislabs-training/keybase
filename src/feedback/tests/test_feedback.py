@@ -37,7 +37,7 @@ def test_feedback_comment_success(test_client, user_auth, create_document):
     assert json.loads(response.data)['message'] == "The feedback has been posted"
 
 
-def test_feedback_viewer_not_allowed(test_client, user_auth):
+def test_feedback_viewer_not_allowed(test_client, user_auth, prepare_db):
     user_auth.set_group("viewer")
     response = test_client.get("/feedback")
     assert response.status_code == 403

@@ -27,7 +27,7 @@
 <body>
     <section> <!--is-primary-->
 
-            <nav class="navbar is-transparent" role="navigation" aria-label="main navigation">
+            <nav class="mb-2 navbar is-transparent" role="navigation" aria-label="main navigation">
                 <div class="navbar-brand">
                 {% if current_user.is_authenticated %}
                     <a href="{{ url_for('document_bp.browse') }}" class="navbar-item">

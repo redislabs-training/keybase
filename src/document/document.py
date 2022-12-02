@@ -2,9 +2,7 @@ from typing import Optional, List
 from redis_om import (JsonModel, Field)
 from src.common.config import get_db
 from src.common.utils import ShortUuidPk
-from src.feedback.feedback import Feedback
 from src.version.version import Version
-import shortuuid
 
 
 class Document(JsonModel):
@@ -14,6 +12,7 @@ class Document(JsonModel):
     creation: int = Field(index=True, sortable=True)
     last: int = Field(index=True, sortable=True)
     tags: Optional[str] = Field(index=True)
+    category: Optional[str] = Field(index=True)
     processable: int = Field(index=True)
     state: str = Field(index=True, default="draft")
     author: str = Field(index=True)

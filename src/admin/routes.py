@@ -5,11 +5,12 @@ from redis.commands.search.query import Query
 import json
 import base64
 
+from src.common.utils import ShortUuidPk
 from src.user import requires_access_level, Role
 from src.common.config import get_db, REDIS_CFG
 
-admin_bp = Blueprint(   'admin_bp', __name__,
-                        template_folder='./templates')
+admin_bp = Blueprint('admin_bp', __name__,
+                     template_folder='./templates')
 
 
 @admin_bp.before_request
@@ -18,25 +19,15 @@ def check_valid_login():
         return render_template('index.html')
 
 
-# Database Connection
-host = REDIS_CFG["host"]
-port = REDIS_CFG["port"]
-pwd = REDIS_CFG["password"]
-ssl = REDIS_CFG["ssl"]
-ssl_keyfile = REDIS_CFG["ssl_keyfile"]
-ssl_certfile = REDIS_CFG["ssl_certfile"]
-ssl_cert_reqs = REDIS_CFG["ssl_cert_reqs"]
-ssl_ca_certs = REDIS_CFG["ssl_ca_certs"]
-
-conn = redis.StrictRedis(host=host,
-                         port=port,
-                         password=pwd,
+conn = redis.StrictRedis(host=REDIS_CFG["host"],
+                         port=REDIS_CFG["port"],
+                         password=REDIS_CFG["password"],
                          db=0,
-                         ssl=ssl,
-                         ssl_keyfile=ssl_keyfile,
-                         ssl_certfile=ssl_certfile,
-                         ssl_ca_certs=ssl_ca_certs,
-                         ssl_cert_reqs=ssl_cert_reqs,
+                         ssl=REDIS_CFG["ssl"],
+                         ssl_keyfile=REDIS_CFG["ssl_keyfile"],
+                         ssl_certfile=REDIS_CFG["ssl_certfile"],
+                         ssl_ca_certs=REDIS_CFG["ssl_ca_certs"],
+                         ssl_cert_reqs=REDIS_CFG["ssl_cert_reqs"],
                          decode_responses=False)
 
 
@@ -70,13 +61,12 @@ def tags():
     TITLE = "Admin functions"
     DESC = "Admin functions"
     tags = []
+    categories = []
 
-    # Fetching list of tags
-    cursor, fields = get_db().hscan("keybase:tags", 0, count=200)
-    for tag in fields:
-        tags.append(tag)
-
-    return render_template('tags.html', title=TITLE, desc=DESC, tags=tags)
+    # Fetching list of tags and categories
+    categories = get_db().hgetall("keybase:categories")
+    tags = get_db().hgetall("keybase:tags")
+    return render_template('tags.html', title=TITLE, desc=DESC, tags=tags, categories=categories)
 
 
 @admin_bp.route('/tagsearch', methods=['GET'])
@@ -106,6 +96,18 @@ def tag():
     if len(request.form['tag']) > 1:
         tag = {request.form['tag'].lower().replace(" ", ""): request.form['description']}
         get_db().hset("keybase:tags", mapping=tag)
+
+    return redirect(url_for('admin_bp.tags'))
+
+
+@admin_bp.route('/category', methods=['POST'])
+@login_required
+@requires_access_level(Role.ADMIN)
+def category():
+    if len(request.form['category']) > 1:
+        pkcreator = ShortUuidPk()
+        category = {pkcreator.create_pk(): request.form['category']}
+        get_db().hset("keybase:categories", mapping=category)
 
     return redirect(url_for('admin_bp.tags'))
 

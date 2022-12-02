@@ -2,28 +2,38 @@
 {% set active_page = "browse" %}
 
 {% block content %}
+<form class="mb-4" method="post" action="{{ url_for('document_bp.browse') }}">
     <div class="field has-addons">
         <div class="control is-expanded">
-          <input class="input" type="text" placeholder="Search the knowledge base">
+            <input name="q" class="input" type="text" placeholder="Search the knowledge base">
         </div>
+        {% if categories|length > 0 %}
+        <p class="control">
+            <span class="select">
+                <select name="cat">
+                      <option>all categories</option>
+                      {% for catid, catname in categories.items() %}
+                      <option {% if category == catid %} selected{% endif %} value="{{catid}}">{{catname}}</option>
+                      {% endfor %}
+                </select>
+            </span>
+        </p>
+        {% endif %}
+        <p class="control">
+                <span class="select">
+                  <select name="asc">
+                    <option {% if asc == 0 %}selected{% endif %} value="false">newer</option>
+                    <option {% if asc == 1 %}selected{% endif %} value="true">older</option>
+                  </select>
+                </span>
+        </p>
         <div class="control">
-          <a class="button is-info">
-            Search
-          </a>
+            <button type="submit" class="button is-info">Search</button>
         </div>
-      </div>
+    </div>
+</form>
 
-      <script type="text/javascript">
-        $(".button").click(function() {
-            window.location.replace("browse?q=" + encodeURIComponent($("input").val()));
-        })
-
-        $(".input").on('keyup', function (e) {
-            if (e.key === 'Enter' || e.keyCode === 13) {
-                window.location.replace("browse?q=" + encodeURIComponent($("input").val()));
-            }
-        });
-
+<script type="text/javascript">
         $(function() {
             $(".input").autocomplete({
                 source:function(request, response) {
@@ -41,25 +51,26 @@
             });
         })
       </script>
-      
-    {% if keydocument is not none %}
-    {% for key, name, pretty, creation in keydocument %}
-        <a style="display:block;" class="is-size-6" href="{{ url_for('document_bp.doc',id=key,prettyurl=pretty) }}">
-            {{name}}
-        </a>
-        <span class="is-size-7 has-text-weight-light has-text-grey">created: {{creation}}</span>
-        <div style="border-top: .05rem solid #dbdbdb;"></div>
-    {% endfor %}
 
-    {% if pagination is not none %}
-    <div class="mt-4 mb-6">
-      {{ pagination.links }}
-    </div>
-    {% endif %}
+{% if keydocument is not none %}
 
-    {% else %}
-        No result found, refine your search
-    {% endif %}
+{% for key, name, pretty, creation in keydocument %}
+<a style="display:block;" class="is-size-6" href="{{ url_for('document_bp.doc',id=key,prettyurl=pretty) }}">
+    {{name}}
+</a>
+<span class="is-size-7 has-text-weight-light has-text-grey">created: {{creation}}</span>
+<div style="border-top: .05rem solid #dbdbdb;"></div>
+{% endfor %}
+
+{% if pagination is not none %}
+<div class="mt-4 mb-6">
+    {{ pagination.links }}
+</div>
+{% endif %}
+
+{% else %}
+No result found, refine your search
+{% endif %}
 {% endblock %}
 
 

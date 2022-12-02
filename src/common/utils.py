@@ -1,8 +1,6 @@
-import redis
 import time
 import json
 from datetime import datetime
-
 import shortuuid
 
 from src.common.config import get_db

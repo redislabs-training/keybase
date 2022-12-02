@@ -22,8 +22,8 @@ def version():
 
     for json_doc in document.versions:
         if json_doc.pk == request.args.get('vpk'):
-            json_doc.name = urllib.parse.quote(document.name)
-            json_doc.content = urllib.parse.quote(document.content)
+            json_doc.name = urllib.parse.quote(json_doc.name)
+            json_doc.content = urllib.parse.quote(json_doc.content)
             # Fetch on-the-fly the username, not persisted in the version
             username = get_db().hmget("keybase:okta:{}".format(json_doc.owner), 'name')
             json_doc.username = username

@@ -1,3 +1,6 @@
+from typing import List
+
+import flask
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify
 from flask_login import (current_user, login_required)
 from flask_paginate import Pagination, get_page_args
@@ -43,7 +46,7 @@ def autocomplete():
     return jsonify(matching_results=jresults)
 
 
-@document_bp.route('/browse', methods=['GET'])
+@document_bp.route('/browse', methods=['GET', 'POST'])
 @login_required
 def browse():
     TITLE = "List documents"
@@ -55,34 +58,71 @@ def browse():
     keydocument = None
     pagination = None
     rs = None
+    category = ""
+    sortby = "false"
+    asc = 0
 
     try:
-        if (request.args.get('q')):
+        if request.method == 'POST':
+            queryfilter = ""
+            catfilter = ""
+            sortbyfilter = False
+
+            # Check the ordering
+            if request.form['asc'] == "true":
+                sortbyfilter = False
+                asc = 1
+
             # Sanitized input for RediSearch
-            query = urllib.parse.unquote(request.args.get('q')).translate(str.maketrans('', '', "\"@!{}()|-=>"))
+            if request.form.get('q'):
+                queryfilter = urllib.parse.unquote(request.form['q']).translate(str.maketrans('', '', "\"@!{}()|-=>"))
+
+            # If the category is good, can be processed and set in the UI
+            if request.form.get('cat'):
+                if get_db().hexists("keybase:categories", request.form.get('cat')):
+                    catfilter = " @category:{"+request.form.get('cat')+"} "
+                    category = request.form.get('cat')
+
             page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
             rs = get_db().ft("document_idx").search(
-                Query(query + " -@state:{draft}").return_field("name").return_field("creation").sort_by("creation",
-                                                                                                        asc=False).paging(
-                    offset, per_page))
+                Query(queryfilter + catfilter + " -@state:{draft}")
+                .return_field("name")
+                .return_field("creation")
+                .sort_by("creation", asc=sortbyfilter)
+                .paging(offset, per_page))
+
+            """
+            jrs = Document.find((Document.state != "draft") &
+                                ((Document.name % query) | (Document.content % query))
+                                ).sort_by("creation").page(offset, per_page)
+            for jdoc in jrs:
+                print(jdoc)
+            """
             pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma',
                                     bulma_style='small', prev_label='Previous', next_label='Next page')
-        elif (request.args.get('tag')):
+        elif flask.request.method == 'GET' and flask.request.args.get('tag'):
             # Sanitized tags for RediSearch: may be empty afterwards, a search like @tags:{""} fails
-            tag = request.args.get('tag').translate(str.maketrans('', '', "\"@!{}()|-=>"))
+            tag = flask.request.args.get('tag').translate(str.maketrans('', '', "\"@!{}()|-=>"))
             page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
             if len(tag):
                 rs = get_db().ft("document_idx").search(
-                    Query("@tags:{" + tag + "} -@state:{draft}").return_field("name").return_field("creation").sort_by(
-                        "creation", asc=False).paging(offset, per_page))
+                    Query("@tags:{" + tag + "} -@state:{draft}")
+                    .return_field("name")
+                    .return_field("creation")
+                    .sort_by("creation", asc=False)
+                    .paging(offset, per_page))
+
                 pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma',
                                         bulma_style='small', prev_label='Previous', next_label='Next page')
         else:
             page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
             rs = get_db().ft("document_idx").search(
-                Query("-@state:{draft}").return_field("name").return_field("creation").sort_by("creation",
-                                                                                               asc=False).paging(offset,
-                                                                                                                 per_page))
+                Query("-@state:{draft}")
+                .return_field("name")
+                .return_field("creation")
+                .sort_by("creation",asc=False)
+                .paging(offset,per_page))
+
             pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma',
                                     bulma_style='small', prev_label='Previous', next_label='Next page')
 
@@ -94,8 +134,11 @@ def browse():
                 pretty.append(pretty_title(urllib.parse.unquote(key.name)))
                 creations.append(datetime.utcfromtimestamp(int(key.creation)).strftime('%Y-%m-%d'))
             keydocument = zip(keys, names, pretty, creations)
-        return render_template('browse.html', title=TITLE, desc=DESC, keydocument=keydocument, page=page,
-                               per_page=per_page, pagination=pagination)
+
+        # Get the categories
+        categories = get_db().hgetall("keybase:categories")
+        return render_template('browse.html', title=TITLE, desc=DESC, categories=categories, keydocument=keydocument, page=page,
+                               per_page=per_page, pagination=pagination, category=category, asc=asc)
     except RedisError as err:
         print(err)
         return redirect(url_for("document_bp.browse"))
@@ -193,6 +236,24 @@ def addtag():
     return jsonify(message="The tag has been added", code="success", tags=taglist)
 
 
+@document_bp.route('/addcategory', methods=['POST'])
+@login_required
+@requires_access_level(Role.EDITOR)
+def addcategory():
+    try:
+        document = Document.get(request.form['id'])
+    except NotFoundError:
+        return jsonify(message="The document does not exist", code="error"),404
+
+    # Make sure the category exists
+    if not get_db().hexists("keybase:categories", request.form['cat']) and len(request.form['cat']):
+        return jsonify(message="The category does not exist", code="error")
+
+    document.category = request.form['cat']
+    document.save()
+    return jsonify(message="The category has been changed", code="success")
+
+
 @document_bp.route('/deltag', methods=['POST'])
 @login_required
 @requires_access_level(Role.EDITOR)
@@ -249,11 +310,19 @@ def edit(id):
     except NotFoundError:
         return redirect(url_for('document_bp.browse')), 404
 
-    doc_name = urllib.parse.quote(document.name)
-    doc_content = urllib.parse.quote(document.content)
-    return render_template('edit.html', title=TITLE, desc=DESC, id=id, name=doc_name,
-                           pretty=pretty_title(urllib.parse.unquote(doc_name)), content=doc_content,
-                           state=document.state, last=document.last, tags=document.tags, versions=document.versions)
+    # These are all the categories in the system, for the taxonomy
+    # System tags are not returned, now. They can be searched
+    categories = get_db().hgetall("keybase:categories")
+
+    document.name = urllib.parse.quote(document.name)
+    document.content = urllib.parse.quote(document.content)
+
+    return render_template('edit.html',
+                           title=TITLE,
+                           desc=DESC,
+                           document=document,
+                           categories=categories,
+                           pretty=pretty_title(urllib.parse.unquote(document.name)))
 
 
 @document_bp.route('/delete/<id>')
@@ -291,10 +360,8 @@ def doc(id, prettyurl):
     # If it is a draft, role is editor: make sure the editor owns the draft. Editor can edit the draft
     # If it is a draft, role is admin: can see, edit and publish
     if document.state == 'draft' and document.owner != current_user.id and not current_user.is_admin():
-        print("This document is locked for editing, if not an admin, cannot read it")
         return render_template('locked.html', name=document.name), 403
     elif document.state == 'draft' and current_user.is_viewer():
-        print("Drafts are locked for viewers")
         return render_template('locked.html', name=document.name), 403
 
     document.name = urllib.parse.quote(document.name)
