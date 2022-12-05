@@ -5,13 +5,18 @@ from flask import Blueprint, render_template
 from flask_login import (current_user, login_required)
 
 from src.common.config import get_db
-from src.common.utils import pretty_title
+from src.common.utils import pretty_title, track_request
 from src.user import requires_access_level, Role
 from src.document.document import Document
 
 
 drafts_bp = Blueprint('drafts_bp', __name__,
                       template_folder='./templates')
+
+@drafts_bp.before_request
+def before_request():
+    # Track the request in a Redis Stream
+    track_request()
 
 
 @drafts_bp.route('/drafts')

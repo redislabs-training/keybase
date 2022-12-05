@@ -1,5 +1,3 @@
-from typing import List
-
 import flask
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify
 from flask_login import (current_user, login_required)
@@ -14,7 +12,7 @@ from redis_om import NotFoundError
 
 from src.user import requires_access_level, Role
 from src.common.config import get_db
-from src.common.utils import get_analytics, pretty_title
+from src.common.utils import get_analytics, pretty_title, track_request
 
 document_bp = Blueprint('document_bp', __name__,
                         template_folder='./templates')
@@ -22,6 +20,9 @@ document_bp = Blueprint('document_bp', __name__,
 
 @document_bp.before_request
 def before_request():
+    # Track the request in a Redis Stream
+    track_request()
+
     # Store visits in a time series visited pages
     if current_user.is_authenticated and request.endpoint == "document_bp.doc":
         get_db().ts().add("keybase:visits", "*", 1, duplicate_policy='first')

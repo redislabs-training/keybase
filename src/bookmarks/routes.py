@@ -4,11 +4,17 @@ from datetime import datetime
 from redis_om import NotFoundError
 
 from src.common.config import get_db
-from src.common.utils import pretty_title
+from src.common.utils import pretty_title, track_request
 from src.document.document import Document
 
 bookmarks_bp = Blueprint('bookmarks_bp', __name__,
                          template_folder='./templates')
+
+
+@bookmarks_bp.before_request
+def before_request():
+    # Track the request in a Redis Stream
+    track_request()
 
 
 @bookmarks_bp.route('/bookmark', methods=['POST'])

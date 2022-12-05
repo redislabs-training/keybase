@@ -2,6 +2,7 @@ from flask import Flask, flash, Blueprint, g, render_template, redirect, request
 from flask_login import (LoginManager, current_user, login_required)
 import hashlib, time
 
+from src.common.utils import track_request
 from src.user import User
 from src.common.config import get_db
 
@@ -9,6 +10,12 @@ auth_bp = Blueprint('auth_bp', __name__,
                     template_folder='./templates')
 
 login_manager = LoginManager()
+
+
+@auth_bp.before_request
+def before_request():
+    # Track the request in a Redis Stream
+    track_request()
 
 
 @auth_bp.record_once

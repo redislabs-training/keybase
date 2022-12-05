@@ -2,9 +2,17 @@ import time
 import json
 from datetime import datetime
 import shortuuid
+from flask import request
+from flask_login import current_user
 
 from src.common.config import get_db
 import re
+
+
+def track_request():
+    if current_user.is_authenticated and request.full_path is not None:
+        data = {'full_path': request.full_path, 'user': current_user.id}
+        get_db().xadd("keybase:requests", data)
 
 
 class ShortUuidPk:

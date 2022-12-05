@@ -104,7 +104,6 @@ def requires_access_level(access_level):
         def decorated_function(*args, **kwargs):
             if not current_user.is_allowed(access_level):
                 return Response(response="Unauthorized", status=403)
-                #return redirect(url_for('document_bp.browse'))
             return f(*args, **kwargs)
 
         return decorated_function

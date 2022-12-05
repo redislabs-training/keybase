@@ -6,12 +6,19 @@ from flask import Blueprint, request, jsonify, render_template
 from flask_login import login_required, current_user
 from redis_om import NotFoundError
 
+from src.common.utils import track_request
 from src.document.document import Document
 from src.feedback.feedback import Feedback
 from src.user import requires_access_level, Role
 
 feedback_bp = Blueprint('feedback_bp', __name__,
                         template_folder='./templates')
+
+
+@feedback_bp.before_request
+def before_request():
+    # Track the request in a Redis Stream
+    track_request()
 
 
 @feedback_bp.route('/comment', methods=['POST'])

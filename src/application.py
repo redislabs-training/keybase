@@ -10,6 +10,7 @@ def create_app():
 
     app.config["SESSION_TYPE"] = "filesystem"
     app.config.update({'SECRET_KEY': secrets.token_hex(64)})
+    app.url_map.strict_slashes = False
     CORS(app)
 
     @app.template_filter('ctime')
@@ -19,6 +20,9 @@ def create_app():
 
     from .main import main_bp
     app.register_blueprint(main_bp)
+
+    from .api.routes import api_bp
+    app.register_blueprint(api_bp)
 
     from .bookmarks.routes import bookmarks_bp
     app.register_blueprint(bookmarks_bp)

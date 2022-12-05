@@ -157,27 +157,6 @@ def test_document_del_tag_document_success(test_client, create_document):
     assert json.loads(response.data)['tags'] == []
 
 
-def test_document_editor_cannot_create_tags(test_client, user_auth):
-    # create the document
-    user_auth.set_group("editor")
-    response = test_client.post("/tag", data={'tag': 'oss', 'description':''})
-    assert response.status_code == 403
-
-
-def test_document_admin_can_create_tags(test_client, user_auth):
-    # create the tag
-    user_auth.set_group("admin")
-
-    response = test_client.post("/tag", data={'tag': 'oss', 'description':''})
-    # if all fine, redirect. TODO: make this an api and test better
-    assert response.status_code == 302
-
-    # search the tag
-    response = test_client.get("/tagsearch", query_string={'q': 'oss'})
-    assert response.status_code == 200
-    assert json.loads(response.data)['matching_results'] == ["oss"]
-
-
 def test_document_add_tag_retag_document(test_client, user_auth, create_document):
     doc_id = create_document
     user_auth.set_group("admin")
@@ -211,7 +190,7 @@ def test_document_autocomplete_authenticated_index_created(test_client, user_aut
     doc_id = json.loads(response.data)['id']
     test_client.post("/publish", data=dict(id=doc_id, name='my name is...', content='my content is...'))
 
-    response = test_client.get("/autocomplete", query_string={"q": "content"});
+    response = test_client.get("/autocomplete", query_string={"q": "content"})
     assert response.status_code == 200
     assert json.loads(response.data)['matching_results'][0] ==  {'id': doc_id, 'label': 'my name is...', 'pretty': 'my-name-is', 'value': 'my name is...'}
 
