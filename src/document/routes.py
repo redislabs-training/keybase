@@ -35,7 +35,7 @@ def autocomplete():
     query = urllib.parse.unquote(request.args.get('q')).translate(str.maketrans('', '', "\"@!{}()|-=>"))
     jrs = Document.find((Document.state != "draft") &
                         ((Document.name % query) | (Document.content % query))
-                        ).sort_by("creation").all(10)
+                        ).sort_by("creation").page(0, 10)
 
     jresults = []
     for jdoc in jrs:

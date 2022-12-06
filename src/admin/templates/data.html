@@ -58,7 +58,7 @@
       fd.append('file',files[0]);
   
       $.ajax({
-      url: "{{ url_for('admin_bp.restore')}}",
+      url: "{{ url_for('admin_bp.jimport')}}",
       type: 'post',
       data: fd,
       contentType: false,

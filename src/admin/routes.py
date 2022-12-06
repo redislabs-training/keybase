@@ -1,3 +1,5 @@
+import urllib
+
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify
 from flask_login import (current_user, login_required)
 import redis
@@ -6,6 +8,7 @@ import json
 import base64
 
 from src.common.utils import ShortUuidPk
+from src.document.document import Document
 from src.user import requires_access_level, Role
 from src.common.config import get_db, REDIS_CFG
 
@@ -211,6 +214,60 @@ def restore():
         for (field, value) in data['value'].items():
             hash[base64.b64decode(field.encode('ascii'))] = base64.b64decode(value.encode('ascii'))
         conn.hmset(data['key'], hash)
+
+    return jsonify(message="Restore done")
+
+
+@admin_bp.route('/jimport', methods=['POST'])
+@login_required
+@requires_access_level(Role.ADMIN)
+def jimport():
+    print("Starting to import to Json")
+    uploaded_file = request.files['file']
+    print(uploaded_file.filename)
+    cnt = 0
+    for line in uploaded_file:
+        data = json.loads(line)
+        if "keybase:kb:" in data['key']:
+            cnt = cnt + 1
+            # print(str(cnt) + ": " + data['key'])
+            name, content, tags, state, owner, author = "", "", "", "", "", ""
+            creation, update = 0, 0
+            for (field, value) in data['value'].items():
+                if base64.b64decode(field.encode('ascii')).decode('utf-8') == 'name':
+                    name = base64.b64decode(value.encode('ascii'))
+                if base64.b64decode(field.encode('ascii')).decode('utf-8') == 'content':
+                    content = base64.b64decode(value.encode('ascii'))
+                if base64.b64decode(field.encode('ascii')).decode('utf-8') == 'creation':
+                    creation = base64.b64decode(value.encode('ascii'))
+                if base64.b64decode(field.encode('ascii')).decode('utf-8') == 'update':
+                    update = base64.b64decode(value.encode('ascii'))
+                if base64.b64decode(field.encode('ascii')).decode('utf-8') == 'tags':
+                    tags = base64.b64decode(value.encode('ascii'))
+                if base64.b64decode(field.encode('ascii')).decode('utf-8') == 'owner':
+                    owner = base64.b64decode(value.encode('ascii'))
+                if base64.b64decode(field.encode('ascii')).decode('utf-8') == 'author':
+                    author = base64.b64decode(value.encode('ascii'))
+                if base64.b64decode(field.encode('ascii')).decode('utf-8') == 'state':
+                    state = base64.b64decode(value.encode('ascii'))
+                # hash[base64.b64decode(field.encode('ascii'))] = base64.b64decode(value.encode('ascii'))
+            # use data['key'] as keyname
+            doc = Document(
+                pk=data['key'].split(':')[-1],
+                name=name,
+                content=content,
+                creation=creation,
+                last=update,
+                processable=1,
+                state=state,
+                owner=owner,
+                tags=tags,
+                author=author,
+                versions=[],
+                feedback=[]
+            )
+            #doc.set_name = "keybase:json:" + data['key'].split(':')[-1]
+            doc.save()
 
     return jsonify(message="Restore done")
 

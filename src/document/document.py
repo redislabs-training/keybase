@@ -22,6 +22,6 @@ class Document(JsonModel):
     class Meta:
         database = get_db()
         global_key_prefix = "keybase"
-        model_key_prefix = "kb"
+        model_key_prefix = "json"
         index_name = "document_idx"
         primary_key_creator_cls = ShortUuidPk
