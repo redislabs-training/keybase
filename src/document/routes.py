@@ -33,18 +33,31 @@ def before_request():
 def autocomplete():
     # Sanitize input for RediSearch
     query = urllib.parse.unquote(request.args.get('q')).translate(str.maketrans('', '', "\"@!{}()|-=>"))
-    jrs = Document.find((Document.state != "draft") &
+
+    """
+    # OM does not have the option to select returned values, so it fetches the entire object
+    # This is not optimal, better to resort to the traditional ft.search fot the time being
+    rs = Document.find((Document.state != "draft") &
                         ((Document.name % query) | (Document.content % query))
                         ).sort_by("creation").page(0, 10)
 
-    jresults = []
-    for jdoc in jrs:
-        jresults.append({'value': urllib.parse.unquote(jdoc.name),
-                         'label': urllib.parse.unquote(jdoc.name),
-                         'pretty': pretty_title(urllib.parse.unquote(jdoc.name)),
-                         'id': jdoc.pk})
+    results = []
+    for doc in rs:
+        results.append({'value': urllib.parse.unquote(doc.name),
+                         'label': urllib.parse.unquote(doc.name),
+                         'pretty': pretty_title(urllib.parse.unquote(doc.name)),
+                         'id': doc.pk})
+    """
+    rs = get_db().ft("document_idx").search(Query(query + " -@state:{draft}").return_field("name").sort_by("creation", asc=False).paging(0, 10))
+    results = []
 
-    return jsonify(matching_results=jresults)
+    for doc in rs.docs:
+        results.append({'value': urllib.parse.unquote(doc.name),
+                        'label': urllib.parse.unquote(doc.name),
+                        'pretty': pretty_title(urllib.parse.unquote(doc.name)),
+                        'id': doc.id.split(':')[-1]})
+
+    return jsonify(matching_results=results)
 
 
 @document_bp.route('/browse', methods=['GET', 'POST'])
@@ -71,7 +84,7 @@ def browse():
 
             # Check the ordering
             if request.form['asc'] == "true":
-                sortbyfilter = False
+                sortbyfilter = True
                 asc = 1
 
             # Sanitized input for RediSearch

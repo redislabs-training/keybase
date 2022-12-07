@@ -263,8 +263,7 @@ def jimport():
                 owner=owner,
                 tags=tags,
                 author=author,
-                versions=[],
-                feedback=[]
+                versions=[]
             )
             #doc.set_name = "keybase:json:" + data['key'].split(':')[-1]
             doc.save()

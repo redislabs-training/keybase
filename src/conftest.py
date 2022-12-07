@@ -49,9 +49,10 @@ def create_token():
 @pytest.fixture
 def prepare_db():
     get_db().execute_command(
-        'FT.CREATE document_idx ON JSON PREFIX 1 keybase:kb SCHEMA $.name TEXT $.content TEXT $.creation NUMERIC SORTABLE $.update NUMERIC SORTABLE $.state TAG $.owner TEXT $.processable TAG $.tags TAG $.category TAG $.feedback[*].state AS feedback_state TAG')
+        'FT.CREATE document_idx ON JSON PREFIX 1 keybase:kb SCHEMA $.name TEXT $.content TEXT $.creation NUMERIC SORTABLE $.update NUMERIC SORTABLE $.state TAG $.owner TEXT $.processable TAG $.tags TAG $.category TAG')
     get_db().execute_command(
         'FT.CREATE vss_idx ON HASH PREFIX 1 keybase:vss SCHEMA content_embedding VECTOR HNSW 6 TYPE FLOAT32 DIM 768 DISTANCE_METRIC COSINE')
+    get_db().execute_command('FT.CREATE feedback_idx ON JSON PREFIX 1 keybase:feedback SCHEMA $.document TAG $.state TAG $.creation NUMERIC SORTABLE $.reporter TAG')
     get_db().execute_command('FT.CREATE user_idx ON HASH PREFIX 1 keybase:okta SCHEMA name TEXT group TEXT')
     Migrator().run()
 
