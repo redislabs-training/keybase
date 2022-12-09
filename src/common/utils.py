@@ -1,9 +1,13 @@
 import time
 import json
 from datetime import datetime
+from enum import IntEnum
+
 import shortuuid
 from flask import request
 from flask_login import current_user
+from functools import wraps
+from flask import Response
 
 from src.common.config import get_db
 import re
@@ -35,3 +39,31 @@ def get_analytics(timeseries, bucket, duration):
     data_graph = {'labels': data_labels, 'value': data}
     points = json.dumps(data_graph)
     return points
+
+
+def requires_access_level(access_level):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_allowed(access_level):
+                return Response(response="Unauthorized", status=403)
+            return f(*args, **kwargs)
+
+        return decorated_function
+
+    return decorator
+
+
+class Role(IntEnum):
+    ADMIN = 3
+    EDITOR = 2
+    VIEWER = 1
+
+    @staticmethod
+    def group2role(group):
+        if group == 'admin':
+            return Role.ADMIN
+        elif group == 'editor':
+            return Role.EDITOR
+        elif group == 'viewer':
+            return Role.VIEWER

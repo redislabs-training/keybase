@@ -1,7 +1,7 @@
 from flask import Flask, Blueprint, render_template, redirect, url_for, request, jsonify, session
 from flask_login import (LoginManager,current_user,login_required,login_user,logout_user,)
 
-from src.user import requires_access_level, Role
+from src.common.utils import requires_access_level, Role
 from src.common.utils import get_analytics
 
 analytics_bp = Blueprint('analytics_bp', __name__,

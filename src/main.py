@@ -5,7 +5,7 @@ from flask import Blueprint, render_template, redirect, url_for
 from flask_login import (current_user, login_required)
 
 from .common.config import get_db
-from .user import requires_access_level, Role
+from src.common.utils import requires_access_level, Role
 
 main_bp = Blueprint('main_bp', __name__)
 

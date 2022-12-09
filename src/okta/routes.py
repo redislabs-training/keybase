@@ -7,7 +7,7 @@ from flask import flash, Blueprint, render_template, redirect, request, session,
 import flask_login
 from flask_login import (LoginManager,current_user,logout_user,)
 
-from src.user import User
+from src.okta.user import OktaUser
 from src.common.config import get_db, okta
 
 okta_bp = Blueprint('okta_bp', __name__,
@@ -25,7 +25,7 @@ def on_load(state):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.get(user_id)
+    return OktaUser.get(user_id)
 
 @login_manager.unauthorized_handler
 def unauthorized_callback():
@@ -134,11 +134,11 @@ def callback():
     user_name = userinfo_response["name"]
 
     user = None
-    if not User.exists(unique_id):
+    if not OktaUser.exists(unique_id):
         # default user is a viewer
-        user = User.create(unique_id, user_given_name, user_name, user_email)
+        user = OktaUser.create(unique_id, user_given_name, user_name, user_email)
     else:
-        user = User.update(unique_id, user_given_name, user_name, user_email)
+        user = OktaUser.update(unique_id, user_given_name, user_name, user_email)
 
     # Now create the session
     flask_login.login_user(user)

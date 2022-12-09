@@ -6,7 +6,7 @@ from redis_om import NotFoundError
 
 from src.common.config import get_db
 from src.document.document import Document
-from src.user import requires_access_level, Role
+from src.common.utils import requires_access_level, Role
 
 version_bp = Blueprint('version_bp', __name__,
                         template_folder='./templates')

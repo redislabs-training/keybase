@@ -10,9 +10,9 @@ from .document import Document, Version
 from pydantic import ValidationError
 from redis_om import NotFoundError
 
-from src.user import requires_access_level, Role
+
 from src.common.config import get_db
-from src.common.utils import get_analytics, pretty_title, track_request
+from src.common.utils import get_analytics, pretty_title, track_request, requires_access_level, Role
 
 document_bp = Blueprint('document_bp', __name__,
                         template_folder='./templates')
@@ -73,69 +73,39 @@ def browse():
     pagination = None
     rs = None
     category = ""
-    sortby = "false"
     asc = 0
 
     try:
-        if request.method == 'POST':
-            queryfilter = ""
-            catfilter = ""
-            sortbyfilter = False
+        if flask.request.method == 'GET':
+            catfilter, tagfilter, queryfilter, sortbyfilter = "", "", "", False
 
             # Check the ordering
-            if request.form['asc'] == "true":
+            if flask.request.args.get('asc') == "true":
                 sortbyfilter = True
                 asc = 1
 
             # Sanitized input for RediSearch
-            if request.form.get('q'):
-                queryfilter = urllib.parse.unquote(request.form['q']).translate(str.maketrans('', '', "\"@!{}()|-=>"))
+            if flask.request.args.get('q'):
+                queryfilter = urllib.parse.unquote(flask.request.args.get('q')).translate(str.maketrans('', '', "\"@!{}()|-=>"))
 
             # If the category is good, can be processed and set in the UI
-            if request.form.get('cat'):
-                if get_db().hexists("keybase:categories", request.form.get('cat')):
-                    catfilter = " @category:{"+request.form.get('cat')+"} "
-                    category = request.form.get('cat')
+            if flask.request.args.get('cat'):
+                if get_db().hexists("keybase:categories", flask.request.args.get('cat')):
+                    catfilter = " @category:{"+flask.request.args.get('cat')+"} "
+                    category = flask.request.args.get('cat')
+
+            # Sanitized tags for RediSearch: may be empty afterwards, a search like @tags:{""} fails
+            if flask.request.args.get('tag'):
+                tag = flask.request.args.get('tag').translate(str.maketrans('', '', "\"@!{}()|-=>"))
+                tagfilter = " @tags:{" + tag + "} "
 
             page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
             rs = get_db().ft("document_idx").search(
-                Query(queryfilter + catfilter + " -@state:{draft}")
+                Query(queryfilter + catfilter + tagfilter + " -@state:{draft}")
                 .return_field("name")
                 .return_field("creation")
                 .sort_by("creation", asc=sortbyfilter)
                 .paging(offset, per_page))
-
-            """
-            jrs = Document.find((Document.state != "draft") &
-                                ((Document.name % query) | (Document.content % query))
-                                ).sort_by("creation").page(offset, per_page)
-            for jdoc in jrs:
-                print(jdoc)
-            """
-            pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma',
-                                    bulma_style='small', prev_label='Previous', next_label='Next page')
-        elif flask.request.method == 'GET' and flask.request.args.get('tag'):
-            # Sanitized tags for RediSearch: may be empty afterwards, a search like @tags:{""} fails
-            tag = flask.request.args.get('tag').translate(str.maketrans('', '', "\"@!{}()|-=>"))
-            page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
-            if len(tag):
-                rs = get_db().ft("document_idx").search(
-                    Query("@tags:{" + tag + "} -@state:{draft}")
-                    .return_field("name")
-                    .return_field("creation")
-                    .sort_by("creation", asc=False)
-                    .paging(offset, per_page))
-
-                pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma',
-                                        bulma_style='small', prev_label='Previous', next_label='Next page')
-        else:
-            page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
-            rs = get_db().ft("document_idx").search(
-                Query("-@state:{draft}")
-                .return_field("name")
-                .return_field("creation")
-                .sort_by("creation",asc=False)
-                .paging(offset,per_page))
 
             pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma',
                                     bulma_style='small', prev_label='Previous', next_label='Next page')

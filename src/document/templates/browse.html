@@ -11,7 +11,7 @@
         <p class="control">
             <span class="select">
                 <select name="cat">
-                      <option>all categories</option>
+                      <option value="all">all categories</option>
                       {% for catid, catname in categories.items() %}
                       <option {% if category == catid %} selected{% endif %} value="{{catid}}">{{catname}}</option>
                       {% endfor %}
@@ -34,23 +34,43 @@
 </form>
 
 <script type="text/javascript">
-        $(function() {
-            $(".input").autocomplete({
-                source:function(request, response) {
-                    $.getJSON("{{url_for('document_bp.autocomplete')}}",{
-                        q: encodeURIComponent(request.term), 
-                    }, function(data) {
-                        response(data.matching_results); 
-                    });
-                },
-                minLength: 3,
-                select: function(event, ui) {
-                    console.log(ui.item.id); 
-                    window.location.replace("doc/" + ui.item.id + "/" + ui.item.pretty);
-                }
-            });
-        })
-      </script>
+    function send_query(){
+        var qs = {
+            q    : encodeURIComponent($("input").val()),
+            cat  : $('select[name="cat"]').val(),
+            asc  : $('select[name="asc"]').val()
+        };
+        window.location.replace("{{ url_for('document_bp.browse') }}?" + $.param(qs));
+        return false;
+    }
+
+    $(".button").click(function() {
+        return send_query();
+    })
+
+    $(".input").on('keyup', function (e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            return send_query();
+        }
+    });
+
+    $(function() {
+        $(".input").autocomplete({
+            source:function(request, response) {
+                $.getJSON("{{url_for('document_bp.autocomplete')}}",{
+                    q: encodeURIComponent(request.term),
+                }, function(data) {
+                    response(data.matching_results);
+                });
+            },
+            minLength: 3,
+            select: function(event, ui) {
+                console.log(ui.item.id);
+                window.location.replace("doc/" + ui.item.id + "/" + ui.item.pretty);
+            }
+        });
+    })
+</script>
 
 {% if keydocument is not none %}
 

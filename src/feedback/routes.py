@@ -9,7 +9,7 @@ from redis_om import NotFoundError
 from src.common.utils import track_request
 from src.document.document import Document
 from src.feedback.feedback import Feedback
-from src.user import requires_access_level, Role
+from src.common.utils import requires_access_level, Role
 
 feedback_bp = Blueprint('feedback_bp', __name__,
                         template_folder='./templates')
