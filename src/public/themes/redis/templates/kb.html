@@ -1,0 +1,30 @@
+{% extends "theme.html" %}
+{% set active_page = "document" %}
+{% block content %}
+    <h1 id="name" class="title is-4 mt-5"></h1>
+
+    <div class="columns" style="margin-top:0px;">
+        <div class="column is-8">
+            <div id="editor" style="text-align:justify; text-justify: inter-word;"></div>
+        </div>
+        <div class="column">
+            {% include 'recommendations.html' %}
+            {% include 'filters.html' %}
+        </div>
+    </div>
+
+<script>
+    $( "#name" ).text(decodeURIComponent("{{document['name']}}"));
+      const viewer = toastui.Editor.factory({
+        el: document.querySelector('#editor'),
+        viewer: true,
+        height: '500px',
+        linkAttributes: {
+            target: '_blank',
+            contenteditable: 'false',
+            rel: 'noopener noreferrer'
+        },
+        initialValue: decodeURIComponent("{{document['content']}}")
+        });
+</script>
+{% endblock %}

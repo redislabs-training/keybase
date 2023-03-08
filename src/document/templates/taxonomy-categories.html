@@ -1,0 +1,37 @@
+<div class="settings">
+    <div class="settings-header">
+        <p class="is-size-6">category</p>
+    </div>
+    <div class="settings-item">
+        <div id="existing-cat">
+            <div class="field is-grouped">
+                {% if categories|length > 0 %}
+                <p class="control">
+                <span class="select is-small">
+                    <select name="cat">
+                        <option value="">no category</option>
+                        {% for catid, catname in categories.items() %}
+                        <option value="{{catid}}" {% if document.category == catid %} selected{% endif %}>{{catname}}</option>
+                        {% endfor %}
+                    </select>
+                </span>
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+        $('select[name="cat"]').on('change', function (e) {
+		e.preventDefault();
+	    $.ajax({
+	    	type: "POST",
+	        url: "{{ url_for('document_bp.addcategory')}}",
+	        data : {id:"{{document.pk}}", cat:this.value},
+	        success: function(data) {
+            	$.notify(data["message"], data["code"]);
+	        }
+		});
+    });
+</script>

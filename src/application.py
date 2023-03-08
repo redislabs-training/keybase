@@ -45,6 +45,9 @@ def create_app():
     from .feedback.routes import feedback_bp
     app.register_blueprint(feedback_bp)
 
+    from .public.routes import public_bp
+    app.register_blueprint(public_bp)
+
     from .okta.routes import okta_bp
     app.register_blueprint(okta_bp)
 

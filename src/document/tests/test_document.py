@@ -1,11 +1,11 @@
-from src.user import User
+from src.okta.user import OktaUser
 import json, flask_login
 from src.common.config import REDIS_CFG
 
 
 def user2_auth():
     REDIS_CFG['port'] = 6379
-    user = User.create("11111111111111111111", "test_name", "test_username", "test_mail")
+    user = OktaUser.create("11111111111111111111", "test_name", "test_username", "test_mail")
     flask_login.logout_user()
     flask_login.login_user(user)
     return user
@@ -263,6 +263,72 @@ def test_document_edit_editor_allowed(test_client, user_auth, create_document, c
     assert len(captured_templates) == 1
     template, context = captured_templates[0]
     assert template.name == "edit.html"
+
+
+def test_document_privacy_document_missing(test_client, user_auth, create_document):
+    create_document
+    user_auth.set_group("admin")
+    response = test_client.post("/setprivacy", data={'id': '42f43f23f', 'privacy': 'internal'})
+    assert response.status_code == 404
+
+def test_document_privacy_forbidden(test_client, create_document, user_auth):
+    doc_id = create_document
+    response = test_client.post("/setprivacy", data={'id': doc_id, 'privacy': 'internal'})
+    assert response.status_code == 403
+    user_auth.set_group("viewer")
+    response = test_client.post("/setprivacy", data={'id': doc_id, 'privacy': 'internal'})
+    assert response.status_code == 403
+
+def test_document_privacy_allowed(test_client, create_document, user_auth):
+    doc_id = create_document
+    user_auth.set_group("admin")
+    response = test_client.post("/setprivacy", data={'id': doc_id, 'privacy': 'internal'})
+    assert response.status_code == 200
+    response = test_client.post("/setprivacy", data={'id': doc_id, 'privacy': 'public'})
+    assert response.status_code == 200
+
+def test_document_privacy_wrong_class(test_client, create_document, user_auth):
+    doc_id = create_document
+    user_auth.set_group("admin")
+    response = test_client.post("/setprivacy", data={'id': doc_id, 'privacy': 'wrongvalue'})
+    assert response.status_code == 500
+
+def test_document_metadata_description_exceeding(test_client, create_document):
+    doc_id = create_document
+    response = test_client.post("/addmetadata", data={'id': doc_id,
+                                                        'keyword': 'redis,real-time',
+                                                      'description': 'Welcome to the Redis Knowledge Base! In this portal, you will find troubleshooting guides, articles, tutorials, and more for all the Redis solutions and clients. But too long!'})
+    assert response.status_code == 500
+
+def test_document_metadata_keywords_exceeding(test_client, create_document):
+    doc_id = create_document
+    response = test_client.post("/addmetadata", data={'id': doc_id,
+                                                        'keyword': 'redis,database,real-time,microservices,timeseries,graph,capabilities,cache,caching,probabilistic,in-memory,persistent,service,sentinel,replication,high-availability',
+                                                      'description': 'Welcome to the Redis Knowledge Base! In this portal, you will find guides, articles, tutorials, and more for all the Redis solutions and clients!'})
+    assert response.status_code == 500
+
+
+def test_document_metadata_document_missing(test_client, create_document):
+    doc_id = create_document
+    response = test_client.post("/addmetadata", data={'id': 'f3f4234f2',
+                                                        'keyword': 'redis,real-time',
+                                                      'description': 'Welcome to the Redis Knowledge Base! In this portal, you will find guides, articles, tutorials, and more for all the Redis solutions and clients.'})
+    assert response.status_code == 404
+
+def test_document_metadata_allowed(test_client, create_document):
+    doc_id = create_document
+    response = test_client.post("/addmetadata", data={'id': doc_id,
+                                                        'keyword': 'redis,real-time',
+                                                      'description': 'Welcome to the Redis Knowledge Base! In this portal, you will find guides, articles, tutorials, and more for all the Redis solutions and clients.'})
+    assert response.status_code == 200
+
+
+
+
+# def test_document_category_not_existing
+# def test_document_category_forbidden
+# def test_document_category_allowed
+
 
 
 #flask_app.config['LOGIN_DISABLED'] = True

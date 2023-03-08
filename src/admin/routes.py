@@ -2,6 +2,7 @@ import urllib
 
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify
 from flask_login import (current_user, login_required)
+from flask_paginate import Pagination, get_page_args
 import redis
 from redis.commands.search.query import Query
 import json
@@ -45,8 +46,18 @@ def tools():
     group = []
     email = []
 
+    page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
     rs = get_db().ft("user_idx").search(
-        Query("*").return_field("name").return_field("group").return_field("email").paging(0, 100))
+        Query("*")
+        .return_field("name")
+        .return_field("group")
+        .return_field("email")
+        .sort_by("name", asc=True)
+        .paging(offset, per_page))
+
+    pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma',
+                            bulma_style='small', prev_label='Previous', next_label='Next page')
+
     for doc in rs.docs:
         key.append(doc.id.split(':')[-1])
         name.append(doc.name)
@@ -54,7 +65,7 @@ def tools():
         email.append(doc.email)
 
     users = zip(key, name, group, email)
-    return render_template('admin.html', title=TITLE, desc=DESC, users=users)
+    return render_template('admin.html', title=TITLE, desc=DESC, users=users, pagination=pagination)
 
 
 @admin_bp.route('/tags')
@@ -103,7 +114,7 @@ def tag():
     return redirect(url_for('admin_bp.tags'))
 
 
-@admin_bp.route('/category', methods=['POST'])
+@admin_bp.route('/addcategory', methods=['POST'])
 @login_required
 @requires_access_level(Role.ADMIN)
 def category():
@@ -111,6 +122,8 @@ def category():
         pkcreator = ShortUuidPk()
         category = {pkcreator.create_pk(): request.form['category']}
         get_db().hset("keybase:categories", mapping=category)
+    else:
+        return jsonify(message="Metadata is missing", code="success"),500
 
     return redirect(url_for('admin_bp.tags'))
 

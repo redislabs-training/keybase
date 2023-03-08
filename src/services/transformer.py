@@ -29,9 +29,11 @@ with app.app_context():
         document = Document.get(pk)
         print("This document has no embedding: " + pk)
 
-        embedding = model.encode(document.content).astype(np.float32).tobytes()
+        embedding = model.encode(document.currentversion.content).astype(np.float32).tobytes()
         doc = { "content_embedding" : embedding,
-                "name" : document.name}
+                "name" : document.currentversion.name,
+                "state" : document.state,
+                "privacy" : document.privacy}
         get_db().hset("keybase:vss:{}".format(pk), mapping=doc)
         document.processable = 0
         document.save()

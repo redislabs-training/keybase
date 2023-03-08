@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
 
-<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
-
 <div id="container">
 	<div class="field is-grouped">
 		<p class="control is-expanded">
@@ -10,226 +8,29 @@
 		</p>
 		<p class="control">
 			<button id="save" class="button is-info is-light" type="button">save</button>
-			<button id="tags" class="button is-info is-light" type="button">taxonomy</button>
 			<button id="close" class="button is-info is-light" type="button">close</button>
 			{% if current_user.is_admin() %}
-			<a id="publish" class="{% if not document.state == 'draft' %} is-hidden {% endif%} button is-warning is-light" href="{{ url_for('document_bp.publish',id=document.pk) }}">publish</a>
+			<a id="publish" class="{% if document.state != 'draft' and document.state != 'review' %} is-hidden {% endif%} button is-warning is-light" href="{{ url_for('document_bp.publish',id=document.pk) }}">publish</a>
 			<a id="delete" class="button is-danger is-light" href="{{ url_for('document_bp.delete',id=document.pk) }}">delete</a>
 			{% endif %}
 		</p>
 	</div>
 	<div class="columns">
-		<div class="column is-10">
+		<div class="column is-9">
 			<div id="editor"></div>
 		</div>
-		<div class="column is-2 versions">
-			<div class="version" style="padding: 10px 10px 0px; background-color:#f7f9fc; height:45px; border-radius: 3px 3px 0 0;">
-				<p class="is-size-6">versions</p>
-			</div>
-			<div class="version">
-				<p class="is-size-7 has-text-weight-bold">current</p>
-				{{document.last | int | ctime}}
-			</div>
-			{% for v in document.versions %}
-			<div class="version">
-				<a class="is-size-7" data-pk="{{document.pk}}" data-vpk="{{v.pk}}" href="{{ url_for('version_bp.version',pk=document.pk,vpk=v.pk) | safe }}">{{v.last | int | ctime}}</a>
-			</div>
-			{% endfor %}
+		<div class="column is-3">
+			{% if current_user.is_admin() %}
+			{% include 'privacy.html' %}
+			{% endif %}
+			{% include 'taxonomy-categories.html' %}
+			{% include 'taxonomy-tags.html' %}
+			{% include 'metadata.html' %}
+			{% include 'versions.html' %}
 		</div>
 	</div>
-	<div class="modal tagsmodal">
-		<div class="modal-background"></div>
-		<div class="modal-card">
-			<header class="modal-card-head">
-				<p class="modal-card-title">
-					<span style="font-weight: bold;" class="is-size-5">Categories and Tags</span>
-				</p>
-				<button id="tagsclosemodal" class="delete" aria-label="close"></button>
-			</header>
-			<section class="modal-card-body">
-				<label class="label">Tags</label>
-				<div id="existingtags" class="field is-grouped is-grouped-multiline">
-					{% if document.tags is not none and document.tags|length > 0 %}
-					{% set tags = document.tags.split(',') %}
-					{% for tag in tags %}
-					<div class="control">
-						<div class="tags has-addons">
-							<span class="tagname tag is-link is-light">{{tag}}</span>
-							<a class="tag is-delete"></a>
-						</div>
-					</div>
-					{% endfor %}
-					<p id="notags" class="is-size-6 is-hidden">This document has no tags</p>
-					{% else %}
-					<p id="notags" class="is-size-6 mb-2">This document has no tags</p>
-					{% endif %}
-				</div>
-				<div id="taglist" class="tags mb-0"></div>
-				<div class="field is-grouped">
-					<input id="tagsearch" class="is-small input is-info mb-3" type="text" placeholder="Search an existing tag">
-					<button id="addtag" class="ml-1 button is-info is-small" type="button">Add</button>
-				</div>
-
-				<div style="border-top: .05rem solid #dbdbdb;" class="mb-3"></div>
-
-				<label class="label">Category</label>
-				<div id="existing-cat" class="field is-grouped is-grouped-multiline">
-					<div class="field is-grouped">
-						{% if categories|length > 0 %}
-						<p class="control">
-						<span class="select is-small">
-							<select name="cat">
-								<option value="">no category</option>
-							  	{% for catid, catname in categories.items() %}
-							  	<option value="{{catid}}" {% if document.category == catid %} selected{% endif %}>{{catname}}</option>
-							  	{% endfor %}
-							</select>
-						</span>
-						</p>
-						{% endif %}
-					</div>
-				</div>
-			</section>
-			<footer class="modal-card-foot">
-
-			</footer>
-		</div>
-	</div>
-
-	<div class="modal versionmodal">
-		<div class="modal-background"></div>
-		<div class="modal-card">
-			<header class="modal-card-head">
-				<p class="modal-card-title">
-					<span class="is-size-6" id="versionlast"></span>
-					<span style="font-weight: bold;" class="is-size-6" id="versionusername"></span>
-				</p>
-				<button id="versionclosemodal" class="delete" aria-label="close"></button>
-			</header>
-			<section class="modal-card-body">
-				<div class="title is-4" id="versionname"></div>
-				<div id="versioncontent"></div>
-			</section>
-			<footer class="modal-card-foot">
-			</footer>
-		</div>
-	</div>
-
 </div>
 
-<script>
-	$(".version a").click(function(e){
-        $.ajax({
-            type: "GET",
-            url: "{{ url_for('version_bp.version') }}",
-            data : {pk: $(this).attr("data-pk"),vpk: $(this).attr("data-vpk")},
-            success: function(data) {
-            	jver = jQuery.parseJSON(data)
-            	$('#versionusername').html(decodeURIComponent(jver.username));
-            	$('#versionlast').html((new Date(jver.last*1000)).toLocaleString());
-            	$('#versionname').html(decodeURIComponent(jver.name));
-
-			  	const viewer = toastui.Editor.factory({
-				el: document.querySelector('#versioncontent'),
-					viewer: true,
-					height: '500px',
-					linkAttributes: {
-						target: '_blank',
-						contenteditable: 'false',
-						rel: 'noopener noreferrer'
-					},
-					initialValue: decodeURIComponent(jver.content)
-				});
-
-                $(".versionmodal").addClass("is-active");
-            }
-        });
-		return false;
-	})
-
-	$("#versionclosemodal").click(function(e){
-		$(".versionmodal").removeClass("is-active");
-	})
-
-	$("#tags").click(function(e){
-		$(".tagsmodal").addClass("is-active");
-	})
-
-	$("#tagsclosemodal").click(function(e){
-		$(".tagsmodal").removeClass("is-active");
-	})
-
-    $('select').on('change', function (e) {
-		e.preventDefault();
-	    $.ajax({
-	    	type: "POST",
-	        url: "{{ url_for('document_bp.addcategory')}}",
-	        data : {id:"{{document.pk}}", cat:this.value},
-	        success: function(data) {
-            	$.notify(data["message"], data["code"]);
-	        }
-		});
-    });
-
-	$(function() {
-            $("#tagsearch").autocomplete({
-                source:function(request, response) {
-					console.log(request.term)
-                    $.getJSON("{{url_for('admin_bp.tagsearch')}}",{
-                        q: encodeURIComponent(request.term), 
-                    }, function(data) {
-						console.log(data.matching_results)
-                        response(data.matching_results); 
-						//$('#taglist').empty();
-						//data.matching_results.forEach(function(tag) {
-						//	$('#taglist').append('<span class="tag is-link">'+tag+'</span>');
-						//})
-                    });
-                },
-                minLength: 3,
-                select: function(event, ui) {
-                    //console.log(ui.item.id); 
-                }
-            });
-        })
-
-		$("#addtag").click(function(e){
-		e.preventDefault();
-	    $.ajax({
-	    	type: "POST",
-	        url: "{{ url_for('document_bp.addtag')}}",
-	        data : {id:"{{document.pk}}", tag:$("#tagsearch").val()},
-	        success: function(data) {
-				if (data["code"] == "success"){
-					$( "#notags" ).addClass("is-hidden")
-					$('#existingtags').append('<div class="control"><div class="tags has-addons"><span class="tag is-link is-light">'+$("#tagsearch").val()+'</span><a class="tag is-delete"></a></div></div>');
-				}
-            	$.notify(data["message"], data["code"]);
-	        }
-		});
-		return false;
-	});
-
-	$("#existingtags").on("click", ".is-delete", function(){
-		var clicked = $(this);
-	    $.ajax({
-	    	type: "POST",
-	        url: "{{ url_for('document_bp.deltag')}}",
-	        data : {id:"{{document.pk}}", tag:clicked.siblings('span').text()},
-	        success: function(data) {
-				if (data["code"] == "success"){
-					clicked.closest('.control').remove();
-					if($('.tagname').length == 0){
-						$( "#notags" ).removeClass("is-hidden")
-					}
-				}
-            	$.notify(data["message"], data["code"]);
-	        }
-		});
-		return false;
-	});
-
-</script>
 
 <script>
     const editor = new toastui.Editor({
@@ -237,10 +38,10 @@
         initialEditType: 'wysiwyg',
         width: '500px',
 		height: '500px',
-        initialValue: decodeURIComponent("{{document.content}}")
+        initialValue: decodeURIComponent("{{document.editorversion.content}}")
       });
 
-	$( "#name" ).val(decodeURIComponent("{{document.name}}"));
+	$( "#name" ).val(decodeURIComponent("{{document.editorversion.name}}"));
 
 	var closeBtn = document.querySelector('#close');
 

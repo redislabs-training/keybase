@@ -1,0 +1,13 @@
+<div class="widget box">
+    <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Tags</h4>
+    {% if document.tags is not none and document.tags|length > 0 %}
+    <div class="tags">
+    {% set tags = document.tags.split('|') %}
+    {% for tag in tags %}
+    <a class="tag is-link is-light" href="{{ url_for('public_bp.public',tag=tag) }}">{{tag}}</a>
+    {% endfor %}
+    </div>
+    {% else %}
+        <p class="is-size-6">no tags</p>
+    {% endif %}
+</div>

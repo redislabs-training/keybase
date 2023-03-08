@@ -1,22 +1,23 @@
-from typing import Optional, List
+from typing import Optional, List, Any
 from redis_om import (JsonModel, Field)
 from src.common.config import get_db
 from src.common.utils import ShortUuidPk
-from src.version.version import Version
+from src.version.version import Version, CurrentVersion
 
 
 class Document(JsonModel):
-    name: str = Field(index=True, full_text_search=True)
-    content: Optional[str] = Field(index=True, full_text_search=True)
-    content_embedding: Optional[str]
+    editorversion: Version
+    currentversion: CurrentVersion
+    description: Optional[str]
+    keyword: Optional[str]
     creation: int = Field(index=True, sortable=True)
-    last: int = Field(index=True, sortable=True)
+    updated: int = Field(index=True, sortable=True)
     tags: Optional[str] = Field(index=True)
     category: Optional[str] = Field(index=True)
     processable: int = Field(index=True)
+    privacy: str = Field(index=True, default="internal")
     state: str = Field(index=True, default="draft")
     author: str = Field(index=True)
-    owner: str = Field(index=True)
     versions: Optional[List[Version]]
 
     class Meta:

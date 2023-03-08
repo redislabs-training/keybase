@@ -26,6 +26,13 @@
     </div>
   </div>
   {% endfor %}
+
+  {% if pagination is not none %}
+  <div class="mt-4 mb-6">
+      {{ pagination.links }}
+  </div>
+  {% endif %}
+
   {% else %}
       No users in the system
   {% endif %}

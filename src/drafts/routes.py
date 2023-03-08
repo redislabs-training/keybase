@@ -33,19 +33,19 @@ def drafts():
     # Search for own drafts if not admin
     if not current_user.is_admin():
         jrs = Document.find((Document.state == "draft") &
-                            (Document.owner == current_user.id)
-                            ).sort_by("-last").all()
+                            (Document.author == current_user.id)
+                            ).sort_by("-updated").all()
     else:
         # And if you are admin, also everybody else's drafts
-        jrs = Document.find((Document.state == "draft")).sort_by("-last").all()
+        jrs = Document.find((Document.state == "draft")).sort_by("-updated").all()
 
     if len(jrs):
         for jdoc in jrs:
             keys.append(jdoc.pk)
-            names.append(urllib.parse.unquote(jdoc.name))
-            pretty.append(pretty_title(urllib.parse.unquote(jdoc.name)))
-            owner.append(get_db().hget("keybase:okta:{}".format(jdoc.owner), "name"))
-            updates.append(datetime.utcfromtimestamp(int(jdoc.last)).strftime('%Y-%m-%d %H:%M:%S'))
+            names.append(urllib.parse.unquote(jdoc.editorversion.name))
+            pretty.append(pretty_title(urllib.parse.unquote(jdoc.editorversion.name)))
+            owner.append(get_db().hget("keybase:okta:{}".format(jdoc.author), "name"))
+            updates.append(datetime.utcfromtimestamp(int(jdoc.updated)).strftime('%Y-%m-%d %H:%M:%S'))
         docs = zip(keys, names, pretty, owner, updates)
 
     return render_template("draft.html", drafts=docs)

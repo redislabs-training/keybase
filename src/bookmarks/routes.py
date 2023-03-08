@@ -49,8 +49,8 @@ def bookmarks():
         for key in keys:
             doc = Document.get(key)
             docs.append(key)
-            names.append(doc.name)
-            pretty.append(pretty_title(doc.name))
+            names.append(doc.editorversion.name)
+            pretty.append(pretty_title(doc.editorversion.name))
             creations.append(datetime.utcfromtimestamp(int(doc.creation)).strftime('%Y-%m-%d %H:%M:%S'))
         if cursor == 0:
             break

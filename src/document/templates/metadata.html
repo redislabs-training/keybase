@@ -1,0 +1,32 @@
+<div class="settings">
+    <div class="settings-header">
+        <p class="is-size-6">metadata</p>
+    </div>
+    <div class="settings-item">
+        <div id="taglist" class="mb-0"></div>
+        <div class="field">
+            <input id="keyword" class="is-small input" type="text" placeholder="Comma-separated keywords" value="{{document.keyword}}">
+        </div>
+        <div class="field">
+            <textarea id="description" class="is-small textarea" placeholder="Description (max 160 cc)">{{document.description}}</textarea>
+        </div>
+        <button id="addmetadata" class="ml-1 button is-info is-small" type="button">Save</button>
+    </div>
+</div>
+
+<script>
+	$("#addmetadata").click(function(e){
+		e.preventDefault();
+	    $.ajax({
+	    	type: "POST",
+	        url: "{{ url_for('document_bp.addmetadata')}}",
+	        data : {id:"{{document.pk}}", keyword:$("#keyword").val(), description:$("#description").val()},
+	        success: function(data) {
+				if (data["code"] == "success"){
+				}
+            	$.notify(data["message"], data["code"]);
+	        }
+		});
+		return false;
+	});
+</script>

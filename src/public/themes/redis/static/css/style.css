@@ -2,26 +2,55 @@
 
 .box{border-radius: 3px;box-shadow: rgba(0, 0, 0, 0.06) 0px 0px 1.6rem;}
 
-.settings{
+section .navbar-brand img {
+  max-height:none;
+  width: 163px !important;
+  height: 35px;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+nav {
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  background-color: #fff;
+  color: #fff;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  z-index: 999;
+  transition: all .3s ease-in-out;
+  box-shadow: 0 0 6px 0 rgba(140,140,141,.5);
+}
+
+section .navbar-item span{
+color: #6d7278;
+display: inline;
+text-align: center;
+-webkit-text-stroke-color: #fff;
+font-weight: 700;
+font-size: 14px;
+}
+
+.versions{
     border: 1px solid #dadde6;
     border-radius: 4px;
+    margin-top:12px;
     margin-bottom:12px;
     font-size:13px;
     padding:0px;
 }
 
-.settings-header{
-    padding: 10px 10px 0px;
-    background-color:#f7f9fc;
-    height:45px;
-    border-radius: 3px 3px 0 0;
-    border-bottom: 1px solid #dadde6;
-}
-
-.settings-item{
+.version{
     border-bottom: 1px solid #dadde6;
     padding:6px;
     font-size:12px;
+}
+
+.columns{
+    margin-right:0px;
 }
 
 .signinbox {

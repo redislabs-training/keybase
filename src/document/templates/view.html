@@ -39,8 +39,16 @@
             <div class="widget box">
                 <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Info</h4>
                 <p class="draft is-size-6">
-                    This document has been modified and is not listed among the published documents but only as a draft owned by the editor.
+                    This document is a draft and is not listed among the published documents but only as a draft owned by the editor.
                     The system administrator only can publish the document.
+                </p>
+            </div>
+            {% endif%}
+            {% if "review" == document.state %}
+            <div class="widget box">
+                <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Info</h4>
+                <p class="draft is-size-6">
+                    This document is published but there is a more recent private review.
                 </p>
             </div>
             {% endif%}
@@ -48,7 +56,7 @@
                 <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Tags</h4>
                 {% if document.tags is not none and document.tags|length > 0 %}
                 <div class="tags">
-                {% set tags = document.tags.split(',') %}
+                {% set tags = document.tags.split('|') %}
                 {% for tag in tags %}
                 <a class="tag is-link is-light" href="{{ url_for('document_bp.browse',tag=tag) }}">{{tag}}</a>
                 {% endfor %}
@@ -186,7 +194,7 @@
         return false; 
     });
 
-    $( "#name" ).text(decodeURIComponent("{{document.name}}"));
+    $( "#name" ).text(decodeURIComponent("{{document.currentversion.name}}"));
       const viewer = toastui.Editor.factory({
         el: document.querySelector('#editor'),
         viewer: true,
@@ -196,7 +204,7 @@
             contenteditable: 'false',
             rel: 'noopener noreferrer'
         },
-        initialValue: decodeURIComponent("{{document.content}}")
+        initialValue: decodeURIComponent("{{document.currentversion.content}}")
         });
 
 

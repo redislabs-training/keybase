@@ -6,7 +6,7 @@ from redis import RedisError
 from datetime import datetime
 import time, urllib.parse, json
 from redis.commands.search.query import Query
-from .document import Document, Version
+from .document import Document, Version, CurrentVersion
 from pydantic import ValidationError
 from redis_om import NotFoundError
 
@@ -34,27 +34,18 @@ def autocomplete():
     # Sanitize input for RediSearch
     query = urllib.parse.unquote(request.args.get('q')).translate(str.maketrans('', '', "\"@!{}()|-=>"))
 
-    """
-    # OM does not have the option to select returned values, so it fetches the entire object
-    # This is not optimal, better to resort to the traditional ft.search fot the time being
-    rs = Document.find((Document.state != "draft") &
-                        ((Document.name % query) | (Document.content % query))
-                        ).sort_by("creation").page(0, 10)
+    rs = get_db().ft("document_idx")\
+            .search(Query(query + " @state:{published|review}")
+            .return_field("currentversion_name")
+            .sort_by("creation", asc=False)
+            .paging(0, 10))
 
-    results = []
-    for doc in rs:
-        results.append({'value': urllib.parse.unquote(doc.name),
-                         'label': urllib.parse.unquote(doc.name),
-                         'pretty': pretty_title(urllib.parse.unquote(doc.name)),
-                         'id': doc.pk})
-    """
-    rs = get_db().ft("document_idx").search(Query(query + " -@state:{draft}").return_field("name").sort_by("creation", asc=False).paging(0, 10))
     results = []
 
     for doc in rs.docs:
-        results.append({'value': urllib.parse.unquote(doc.name),
-                        'label': urllib.parse.unquote(doc.name),
-                        'pretty': pretty_title(urllib.parse.unquote(doc.name)),
+        results.append({'value': urllib.parse.unquote(doc.currentversion_name),
+                        'label': urllib.parse.unquote(doc.currentversion_name),
+                        'pretty': pretty_title(urllib.parse.unquote(doc.currentversion_name)),
                         'id': doc.id.split(':')[-1]})
 
     return jsonify(matching_results=results)
@@ -101,8 +92,8 @@ def browse():
 
             page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
             rs = get_db().ft("document_idx").search(
-                Query(queryfilter + catfilter + tagfilter + " -@state:{draft}")
-                .return_field("name")
+                Query(queryfilter + catfilter + tagfilter + " @state:{published|review}")
+                .return_field("currentversion_name")
                 .return_field("creation")
                 .sort_by("creation", asc=sortbyfilter)
                 .paging(offset, per_page))
@@ -114,8 +105,8 @@ def browse():
         if (rs is not None) and len(rs.docs):
             for key in rs.docs:
                 keys.append(key.id.split(':')[-1])
-                names.append(urllib.parse.unquote(key.name))
-                pretty.append(pretty_title(urllib.parse.unquote(key.name)))
+                names.append(urllib.parse.unquote(key.currentversion_name))
+                pretty.append(pretty_title(urllib.parse.unquote(key.currentversion_name)))
                 creations.append(datetime.utcfromtimestamp(int(key.creation)).strftime('%Y-%m-%d'))
             keydocument = zip(keys, names, pretty, creations)
 
@@ -133,18 +124,32 @@ def browse():
 @requires_access_level(Role.EDITOR)
 def save():
     unixtime = int(time.time())
+
     try:
-        doc = Document(
+        currentversion = CurrentVersion(
             name=urllib.parse.unquote(request.form['name']),
             content=urllib.parse.unquote(request.form['content']),
-            creation=unixtime,
             last=unixtime,
-            processable=1,
-            state="draft",
-            owner=current_user.id,
+            owner=current_user.id
+        )
+
+        editorversion = Version(
+            name=urllib.parse.unquote(request.form['name']),
+            content=urllib.parse.unquote(request.form['content']),
+            last=unixtime,
+            owner=current_user.id
+        )
+
+        doc = Document(
+            editorversion=editorversion,
+            currentversion=currentversion,
+            description="",
+            keyword="",
+            creation=unixtime,
+            updated=unixtime,
+            processable=0,
             author=current_user.id,
-            versions=[],
-            feedback=[]
+            versions=[]
         )
 
         doc.save()
@@ -163,31 +168,57 @@ def publish():
     except NotFoundError:
         return jsonify(message="Error publishing the document"), 404
 
-    if document.state == "public":
+    if document.state == "published":
         return jsonify(message="Document already published"), 403
 
     unixtime = int(time.time())
 
-    # Create version
     version = Version(
-        name=document.name,
-        content=document.content,
-        creation=document.creation,
-        last=document.last,
-        owner=document.owner
+        name=urllib.parse.unquote(request.form['name']),
+        content=urllib.parse.unquote(request.form['content']),
+        last=unixtime,
+        owner=document.editorversion.owner
+    )
+
+    currentversion = CurrentVersion(
+        name=urllib.parse.unquote(request.form['name']),
+        content=urllib.parse.unquote(request.form['content']),
+        last=unixtime,
+        owner=document.editorversion.owner
     )
 
     document.versions.insert(0, version)
 
-    # Save the document and change the state TAG to "public"
-    document.content = urllib.parse.unquote(request.form['content'])
-    document.name = urllib.parse.unquote(request.form['name'])
-    document.state = "public"
+    # Save the document and change the state TAG to "published"
+    document.editorversion = version
+    document.currentversion = currentversion
+    document.state = "published"
     document.processable = 1
-    document.last = unixtime
+    document.updated = unixtime
     document.save()
 
     return jsonify(message="Document published")
+
+
+@document_bp.route('/addmetadata', methods=['POST'])
+@login_required
+@requires_access_level(Role.EDITOR)
+def addmetadata():
+    try:
+        document = Document.get(request.form['id'])
+    except NotFoundError:
+        return jsonify(message="The document does not exist", code="error"),404
+
+    if len(request.form['keyword']) > 160:
+        return jsonify(message="Keywords too long: max is 160 chars", code="error"), 500
+
+    if len(request.form['description']) > 160:
+        return jsonify(message="Description too long: max is 160 chars", code="error"), 500
+
+    document.keyword = request.form['keyword']
+    document.description = request.form['description']
+    document.save()
+    return jsonify(message="The metadata has been saved", code="success"),200
 
 
 @document_bp.route('/addtag', methods=['POST'])
@@ -207,12 +238,12 @@ def addtag():
 
     # Get tags for this document
     if (document.tags is not None) and (len(document.tags) > 0):
-        taglist = document.tags.split(',')
+        taglist = document.tags.split('|')
 
-    #  The document hasn't the tag, and it can be added
+    # The document hasn't the tag, and it can be added
     if not taglist.count(request.form['tag']) > 0:
         taglist.append(request.form['tag'])
-        document.tags = ",".join(taglist)
+        document.tags = "|".join(taglist)
         document.save()
     else:
         return jsonify(message="Document already tagged", code="warn")
@@ -237,6 +268,27 @@ def addcategory():
     document.save()
     return jsonify(message="The category has been changed", code="success")
 
+@document_bp.route('/setprivacy', methods=['POST'])
+@login_required
+@requires_access_level(Role.ADMIN)
+def setprivacy():
+    try:
+        document = Document.get(request.form['id'])
+    except NotFoundError:
+        return jsonify(message="The document does not exist", code="error"),404
+
+    # Make sure the privacy is correct
+    if not (request.form['privacy'] == 'internal') and not (request.form['privacy'] == 'public'):
+        return jsonify(message="The privacy setting not exist", code="error"),500
+
+    # Do not recommend
+    privacy = { "privacy" : request.form['privacy']}
+    get_db().hset("keybase:vss:{}".format(request.form['id']), mapping=privacy)
+
+    document.privacy = request.form['privacy']
+    document.save()
+    return jsonify(message="The privacy has been changed", code="success")
+
 
 @document_bp.route('/deltag', methods=['POST'])
 @login_required
@@ -251,9 +303,9 @@ def deltag():
 
     # Get tags for this document
     if (document.tags is not None) and (len(document.tags) > 0):
-        taglist = document.tags.split(',')
+        taglist = document.tags.split('|')
         taglist.remove(request.form['tag'])
-        document.tags = ",".join(taglist)
+        document.tags = "|".join(taglist)
         document.save()
 
     return jsonify(message="The tag has been removed", code="success", tags=taglist)
@@ -270,16 +322,15 @@ def update():
 
     unixtime = int(time.time())
 
-    # Save the document and revert the state TAG to "draft"
-    document.content = urllib.parse.unquote(request.form['content'])
-    document.name = urllib.parse.unquote(request.form['name'])
-    document.state = "draft"
-    document.owner = current_user.id
-    document.processable = 1
-    document.last = unixtime
+    # Save the document, which becomes a current review
+    document.editorversion.content = urllib.parse.unquote(request.form['content'])
+    document.editorversion.name = urllib.parse.unquote(request.form['name'])
+    document.editorversion.last = unixtime
+    document.editorversion.owner = current_user.id
+    document.state = "review"
     document.save()
 
-    return jsonify(message="Document saved as draft")
+    return jsonify(message="Document saved as review")
 
 
 @document_bp.route('/edit/<id>')
@@ -294,19 +345,22 @@ def edit(id):
     except NotFoundError:
         return redirect(url_for('document_bp.browse')), 404
 
+    if document.state == 'review' and document.editorversion.owner != current_user.id and not current_user.is_admin():
+        return render_template('locked.html', name=document.currentversion.name), 403
+
     # These are all the categories in the system, for the taxonomy
     # System tags are not returned, now. They can be searched
     categories = get_db().hgetall("keybase:categories")
 
-    document.name = urllib.parse.quote(document.name)
-    document.content = urllib.parse.quote(document.content)
+    document.editorversion.name = urllib.parse.quote(document.editorversion.name)
+    document.editorversion.content = urllib.parse.quote(document.editorversion.content)
 
     return render_template('edit.html',
                            title=TITLE,
                            desc=DESC,
                            document=document,
                            categories=categories,
-                           pretty=pretty_title(urllib.parse.unquote(document.name)))
+                           pretty=pretty_title(urllib.parse.unquote(document.editorversion.name)))
 
 
 @document_bp.route('/delete/<id>')
@@ -341,15 +395,17 @@ def doc(id, prettyurl):
     # Check if the document is bookmarked
     bookmarked = get_db().hexists("keybase:bookmark:{}".format(current_user.id), id)
 
-    # If it is a draft, role is editor: make sure the editor owns the draft. Editor can edit the draft
-    # If it is a draft, role is admin: can see, edit and publish
-    if document.state == 'draft' and document.owner != current_user.id and not current_user.is_admin():
-        return render_template('locked.html', name=document.name), 403
-    elif document.state == 'draft' and current_user.is_viewer():
-        return render_template('locked.html', name=document.name), 403
+    # If it is a draft, make sure the user is not a viewer
+    if document.state == 'draft' and current_user.is_viewer():
+        return render_template('locked.html', name=document.currentversion.name), 403
 
-    document.name = urllib.parse.quote(document.name)
-    document.content = urllib.parse.quote(document.content)
+    # If it is a draft, make sure the user is the author
+    # If it is a draft, role is admin: can see, edit and publish
+    if document.state == 'draft' and document.author != current_user.id and not current_user.is_admin():
+        return render_template('locked.html', name=document.currentversion.name), 403
+
+    document.currentversion.name = urllib.parse.quote(document.currentversion.name)
+    document.currentversion.content = urllib.parse.quote(document.currentversion.content)
 
     # The document can be rendered, count the visit
     get_db().ts().add("keybase:docview:{}".format(id), "*", 1, duplicate_policy='first')
@@ -369,10 +425,10 @@ def doc(id, prettyurl):
     # luascript(keys=["keybase:kb:{}".format(request.args.get('id'))], client=pipe)
     # r = pipe.execute()
 
-    if get_db().exists("keybase:vss:{}".format(id)):
+    if get_db().hexists("keybase:vss:{}".format(id), "content_embedding"):
         keys_and_args = ["keybase:vss:{}".format(id)]
         res = get_db().eval(
-            "local vector = redis.call('HMGET',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','vss_idx','*=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres",
+            "local vector = redis.call('HMGET',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','vss_idx','@state:{published|review}=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres",
             1, *keys_and_args)
         it = iter(res[1:])
         for x in it:

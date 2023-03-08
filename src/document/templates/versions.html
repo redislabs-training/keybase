@@ -1,0 +1,72 @@
+<div class="settings">
+    <div class="settings-header">
+        <p class="is-size-6">versions</p>
+    </div>
+    <div class="settings-item">
+        <p class="is-size-7 has-text-weight-bold">state</p>
+        {{document.state}}
+    </div>
+    <div class="settings-item">
+        <p class="is-size-7 has-text-weight-bold">last saved</p>
+        {{document.editorversion.last | int | ctime}}
+    </div>
+    {% for v in document.versions %}
+    <div class="settings-item version">
+        <a class="is-size-7" data-pk="{{document.pk}}" data-vpk="{{v.pk}}" href="{{ url_for('version_bp.version',pk=document.pk,vpk=v.pk) | safe }}">{{v.last | int | ctime}}</a>
+    </div>
+    {% endfor %}
+
+    <div class="modal versionmodal">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+            <header class="modal-card-head">
+                <p class="modal-card-title">
+                    <span class="is-size-6" id="versionlast"></span>
+                    <span style="font-weight: bold;" class="is-size-6" id="versionusername"></span>
+                </p>
+                <button id="versionclosemodal" class="delete" aria-label="close"></button>
+            </header>
+            <section class="modal-card-body">
+                <div class="title is-4" id="versionname"></div>
+                <div id="versioncontent"></div>
+            </section>
+            <footer class="modal-card-foot">
+            </footer>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(".version a").click(function(e){
+        $.ajax({
+            type: "GET",
+            url: "{{ url_for('version_bp.version') }}",
+            data : {pk: $(this).attr("data-pk"),vpk: $(this).attr("data-vpk")},
+            success: function(data) {
+            	jver = jQuery.parseJSON(data)
+            	$('#versionusername').html(decodeURIComponent(jver.username));
+            	$('#versionlast').html((new Date(jver.last*1000)).toLocaleString());
+            	$('#versionname').html(decodeURIComponent(jver.name));
+
+			  	const viewer = toastui.Editor.factory({
+				el: document.querySelector('#versioncontent'),
+					viewer: true,
+					height: '500px',
+					linkAttributes: {
+						target: '_blank',
+						contenteditable: 'false',
+						rel: 'noopener noreferrer'
+					},
+					initialValue: decodeURIComponent(jver.content)
+				});
+
+                $(".versionmodal").addClass("is-active");
+            }
+        });
+		return false;
+	})
+
+	$("#versionclosemodal").click(function(e){
+		$(".versionmodal").removeClass("is-active");
+	})
+</script>
