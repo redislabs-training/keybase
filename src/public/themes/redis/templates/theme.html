@@ -6,13 +6,14 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         {% if "document" == active_page %}
-        <meta name="keywords" content="{{document.keyword}}">
-        <meta name="description" content="{{document.description}}">
+        <meta name="keywords" content="{{document['keyword']}}">
+        <meta name="description" content="{{document['description']}}">
+        <title>{{title}}</title>
         {% else %}
         <meta name="keywords" content="Redis, knowledge, documentation, issue, problem, how-to, instructions, tutorial">
         <meta name="description" content="Welcome to the Redis Knowledge Base! In this portal, you will find troubleshooting guides, articles, tutorials and more for all the Redis solutions and clients">
+        <title>Redis - Knowledge Base</title>
         {% endif%}
-        <title>Keybase</title>
         <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
         <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css"></link>

@@ -24,15 +24,15 @@ def test_admin_admin_tags_allowed(test_client, user_auth):
 def test_admin_editor_category_forbidden(test_client, user_auth):
     # create the document
     user_auth.set_group("editor")
-    response = test_client.post("/addcategory", data={'category': 'Redis Stack'})
+    response = test_client.post("/createcategory", data={'category': 'Redis Stack'})
     assert response.status_code == 403
 
     user_auth.set_group("viewer")
-    response = test_client.post("/addcategory", data={'category': 'Redis Stack'})
+    response = test_client.post("/createcategory", data={'category': 'Redis Stack'})
     assert response.status_code == 403
 
 def test_admin_admin_category_allowed(test_client, user_auth, captured_templates):
     # create the document
     user_auth.set_group("admin")
-    response = test_client.post("/addcategory", data={'category': 'Redis Stack'})
+    response = test_client.post("/createcategory", data={'category': 'Redis Stack'})
     assert response.status_code == 302

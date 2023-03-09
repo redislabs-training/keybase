@@ -50,7 +50,6 @@ def create_token():
 def prepare_db():
     #get_db().execute_command('FT.CREATE document_idx ON JSON PREFIX 1 keybase:kb SCHEMA $.name TEXT $.content TEXT $.creation NUMERIC SORTABLE $.update NUMERIC SORTABLE $.privacy AS privacy TAG $.state AS state TAG $.owner AS owner TEXT $.processable AS processable TAG $.tags AS tags TAG $.category AS category TAG')
     get_db().execute_command('FT.CREATE vss_idx ON HASH PREFIX 1 keybase:vss SCHEMA state AS state TAG privacy AS privacy TAG content_embedding VECTOR HNSW 6 TYPE FLOAT32 DIM 768 DISTANCE_METRIC COSINE')
-    #get_db().execute_command('FT.CREATE feedback_idx ON JSON PREFIX 1 keybase:feedback SCHEMA $.document TAG $.state TAG $.creation NUMERIC SORTABLE $.reporter TAG')
     get_db().execute_command('FT.CREATE user_idx ON HASH PREFIX 1 keybase:okta SCHEMA name TEXT group TEXT')
     Migrator().run()
 

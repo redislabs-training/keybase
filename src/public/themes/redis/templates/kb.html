@@ -10,6 +10,9 @@
         <div class="column">
             {% include 'recommendations.html' %}
             {% include 'filters.html' %}
+            {% if current_user.is_authenticated %}
+            Authenticated
+            {% endif %}
         </div>
     </div>
 

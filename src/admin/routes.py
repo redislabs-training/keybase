@@ -114,10 +114,10 @@ def tag():
     return redirect(url_for('admin_bp.tags'))
 
 
-@admin_bp.route('/addcategory', methods=['POST'])
+@admin_bp.route('/createcategory', methods=['POST'])
 @login_required
 @requires_access_level(Role.ADMIN)
-def category():
+def createcategory():
     if len(request.form['category']) > 1:
         pkcreator = ShortUuidPk()
         category = {pkcreator.create_pk(): request.form['category']}

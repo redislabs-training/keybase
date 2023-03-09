@@ -111,15 +111,13 @@ def public():
 @public_bp.route('/kb/<id>', defaults={'prettyurl': None})
 @public_bp.route('/kb/<id>/<prettyurl>')
 def kb(id, prettyurl):
-    TITLE = "Read Document"
-    DESC = "Read Document"
     keys = []
     names = []
     pretty = []
     suggestlist = None
 
     try:
-        documents = get_db().json().get('keybase:json:{}'.format(id), '$.currentversion', '$.privacy', '$.state')
+        documents = get_db().json().get('keybase:json:{}'.format(id), '$.currentversion', '$.keyword', '$.description', '$.privacy', '$.state')
 
         # Check the document is public and review or published
         if ((documents['$.state'][0] == 'published' or documents['$.state'][0] == 'review') and documents['$.privacy'][0] == 'public'):
@@ -129,8 +127,11 @@ def kb(id, prettyurl):
     except NotFoundError:
         return redirect(url_for('public_bp.public')), 404
 
+    TITLE = document['name']
     document['name'] = urllib.parse.quote(document['name'])
     document['content'] = urllib.parse.quote(document['content'])
+    document['keyword'] = documents['$.keyword'][0]
+    document['description'] = documents['$.description'][0]
 
     # The document can be rendered, count the visit
     get_db().ts().add("keybase:docview:{}".format(id), "*", 1, duplicate_policy='first')
@@ -148,5 +149,5 @@ def kb(id, prettyurl):
             pretty.append(pretty_title(docName))
         suggestlist = zip(keys, names, pretty)
 
-    return render_template('kb.html', title=TITLE, desc=DESC, docid=id, document=document,
+    return render_template('kb.html', title=TITLE, docid=id, document=document,
                            suggestlist=suggestlist)
