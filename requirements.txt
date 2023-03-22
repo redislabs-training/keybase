@@ -62,3 +62,4 @@ wrapt==1.14.1
 xmltodict==0.13.0
 yarl==1.8.1
 zipp==3.8.1
+gunicorn==20.1.0
