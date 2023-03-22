@@ -1,55 +1,42 @@
 {% extends "theme.html" %}
 {% set active_page = "browse" %}
-
 {% block content %}
-<form class="mt-5 mb-4" method="post" action="{{ url_for('public_bp.public') }}">
-    <div class="field has-addons">
-        <div class="control is-expanded">
-            <input name="q" class="input" type="text" placeholder="Search the knowledge base">
-        </div>
-        {% if categories|length > 0 %}
-        <p class="control">
-            <span class="select">
-                <select name="cat">
-                      <option value="all">all categories</option>
-                      {% for catid, catname in categories.items() %}
-                      <option {% if category == catid %} selected{% endif %} value="{{catid}}">{{catname}}</option>
-                      {% endfor %}
-                </select>
-            </span>
-        </p>
-        {% endif %}
-        <p class="control">
-                <span class="select">
-                  <select name="asc">
-                    <option {% if asc == 0 %}selected{% endif %} value="false">newer</option>
-                    <option {% if asc == 1 %}selected{% endif %} value="true">older</option>
-                  </select>
-                </span>
-        </p>
-        <div class="control">
-            <button type="submit" class="button is-info">Search</button>
-        </div>
+
+{% include 'breadcrumb.html' %}
+
+<div>
+    {% if keydocument is not none %}
+
+    <table class="table is-fullwidth is-hoverable">
+        <thead>
+            <tr>
+                <th>Document</th>
+                <th>Updated</th>
+        </tr>
+        </thead>
+        <tbody>
+            {% for key, name, pretty, updated in keydocument %}
+            <tr>
+                <td>
+                    <a style="display:block;" class="is-size-6" href="{{ url_for('public_bp.kb',id=key,prettyurl=pretty) }}">
+                        {{name}}
+                    </a>
+                </td>
+                <td>
+                    {{updated}}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if pagination is not none %}
+    <div class="mt-4 mb-6">
+        {{ pagination.links }}
     </div>
-</form>
-
-{% if keydocument is not none %}
-{% for key, name, pretty, creation in keydocument %}
-<a style="display:block;" class="is-size-6" href="{{ url_for('public_bp.kb',id=key,prettyurl=pretty) }}">
-    {{name}}
-</a>
-<span class="is-size-7 has-text-weight-light has-text-grey">created: {{creation}}</span>
-<div style="border-top: .05rem solid #dbdbdb;"></div>
-{% endfor %}
-
-{% if pagination is not none %}
-<div class="mt-4 mb-6">
-    {{ pagination.links }}
+    {% endif %}
+    {% endif %}
 </div>
-{% endif %}
-{% else %}
-No result found, refine your search
-{% endif %}
 
 <script type="text/javascript">
     function send_query(){
@@ -88,6 +75,10 @@ No result found, refine your search
             }
         });
     })
+
+    $(window).resize(function() {
+        $( ".input" ).autocomplete( "close" );
+    });
 </script>
 
 {% endblock %}

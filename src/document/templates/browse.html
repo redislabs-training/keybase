@@ -2,15 +2,19 @@
 {% set active_page = "browse" %}
 
 {% block content %}
+
 <form class="mb-4" method="post" action="{{ url_for('document_bp.browse') }}">
     <div class="field has-addons">
-        <div class="control is-expanded">
+        <div class="control has-icons-left is-expanded">
             <input name="q" class="input" type="text" placeholder="Search the knowledge base">
+            <span class="icon is-small is-left">
+              <i class="fas fa-search"></i>
+            </span>
         </div>
         {% if categories|length > 0 %}
         <p class="control">
             <span class="select">
-                <select name="cat">
+                <select name="cat" style="width:150px;">
                       <option value="all">all categories</option>
                       {% for catid, catname in categories.items() %}
                       <option {% if category == catid %} selected{% endif %} value="{{catid}}">{{catname}}</option>
@@ -24,6 +28,15 @@
                   <select name="asc">
                     <option {% if asc == 0 %}selected{% endif %} value="false">newer</option>
                     <option {% if asc == 1 %}selected{% endif %} value="true">older</option>
+                  </select>
+                </span>
+        </p>
+        <p class="control">
+                <span class="select">
+                  <select name="vis">
+                    <option {% if visibility == "all" %} selected{% endif %} value="{{all}}">all</option>
+                    <option {% if visibility == "internal" %} selected{% endif %} value="{{all}}">internal</option>
+                    <option {% if visibility == "public" %} selected{% endif %} value="{{all}}">public</option>
                   </select>
                 </span>
         </p>

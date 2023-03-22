@@ -18,7 +18,7 @@ class Version(EmbeddedJsonModel):
 class CurrentVersion(EmbeddedJsonModel):
     name: str = Field(index=True, full_text_search=True)
     content: Optional[str] = Field(index=True, full_text_search=True)
-    last: Optional[str] = Field(index=True)
+    last: Optional[str]
     owner: Optional[str]
 
     class Meta:

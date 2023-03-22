@@ -1,0 +1,9 @@
+
+{% if document.tags is not none and document.tags|length > 0 %}
+<div class="mb-1">
+    {% set tags = document.tags.split('|') %}
+    {% for tag in tags %}
+    <a class="tag is-info is-light" href="{{ url_for('public_bp.public',tag=tag) }}">{{tag}}</a>
+    {% endfor %}
+</div>
+{% endif %}

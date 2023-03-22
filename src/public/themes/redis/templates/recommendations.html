@@ -1,8 +1,8 @@
 <div class="widget box">
-    <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Recommendations</h4>
+    <p class="is-size-5 mb-4 has-text-centered" style="margin-bottom:0em;">Recommendations</p>
     {% if suggestlist is not none %}
         {% for key, name, pretty in suggestlist %}
-        <a style="display:block;" class="is-size-6" href="{{ url_for('public_bp.kb',id=key,prettyurl=pretty) }}">
+        <a style="display:block;" class="is-size-6 mb-3 is-underlined" href="{{ url_for('public_bp.kb',id=key,prettyurl=pretty) }}">
             {{name}}
         </a>
         {% endfor %}

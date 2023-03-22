@@ -33,7 +33,7 @@ def before_request():
 def autocomplete():
     # Sanitize input for RediSearch
     query = urllib.parse.unquote(request.args.get('q')).translate(str.maketrans('', '', "\"@!{}()|-=>"))
-
+    query = "@currentversion_name_fts|currentversion_content_fts:'*" + query + "*'"
     rs = get_db().ft("document_idx")\
             .search(Query(query + " @state:{published|review}")
             .return_field("currentversion_name")
@@ -78,7 +78,7 @@ def browse():
             # Sanitized input for RediSearch
             if flask.request.args.get('q'):
                 queryfilter = urllib.parse.unquote(flask.request.args.get('q')).translate(str.maketrans('', '', "\"@!{}()|-=>"))
-
+                queryfilter = "@currentversion_name_fts|currentversion_content_fts:'*" + queryfilter + "*'"
             # If the category is good, can be processed and set in the UI
             if flask.request.args.get('cat'):
                 if get_db().hexists("keybase:categories", flask.request.args.get('cat')):

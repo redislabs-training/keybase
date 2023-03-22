@@ -28,7 +28,6 @@ with app.app_context():
         pk = doc.id.split(':')[-1]
         document = Document.get(pk)
         print("This document has no embedding: " + pk)
-
         embedding = model.encode(document.currentversion.content).astype(np.float32).tobytes()
         doc = { "content_embedding" : embedding,
                 "name" : document.currentversion.name,

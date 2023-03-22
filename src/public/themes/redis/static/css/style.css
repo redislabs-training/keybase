@@ -1,28 +1,43 @@
 .widget{padding-bottom:20px;}
 
-.box{border-radius: 3px;box-shadow: rgba(0, 0, 0, 0.06) 0px 0px 1.6rem;}
+.box{border-radius: 8px;box-shadow: rgba(0, 0, 0, 0.06) 0px 0px 1.6rem;}
+
+html, th, td{
+    background-color: #f8f9f9;
+}
+
+.toastui-editor-contents h2{
+    color:#3f5e85;
+}
 
 section .navbar-brand img {
   max-height:none;
-  width: 163px !important;
   height: 35px;
   border: 0;
   margin: 0;
   padding: 0;
 }
 
-nav {
-  -webkit-box-align: center;
-  -ms-flex-align: center;
-  align-items: center;
-  background-color: #fff;
-  color: #fff;
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  z-index: 999;
-  transition: all .3s ease-in-out;
-  box-shadow: 0 0 6px 0 rgba(140,140,141,.5);
+.navbar{
+  border-bottom: 1px solid #BBB;
+}
+
+.liner{
+    border-bottom: 1px solid #AAA;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.footer {
+  background-color: #f8f9f9;
+  padding-left:100px;
+  padding-right:100px;
+
+  bottom: 0;
+  left: 0;
+  position: fixed;
+  right: 0;
+  z-index: 30;
 }
 
 section .navbar-item span{
@@ -34,46 +49,14 @@ font-weight: 700;
 font-size: 14px;
 }
 
-.versions{
-    border: 1px solid #dadde6;
-    border-radius: 4px;
-    margin-top:12px;
-    margin-bottom:12px;
-    font-size:13px;
-    padding:0px;
-}
-
-.version{
-    border-bottom: 1px solid #dadde6;
-    padding:6px;
-    font-size:12px;
-}
-
 .columns{
     margin-right:0px;
 }
 
-.signinbox {
-    margin-top:200px;
-    position: absolute;
-    border-radius: 0.8rem;
-    box-shadow: rgba(0, 0, 0, 0.06) 0px 0px 1.6rem;
-    background-color: rgb(255, 255, 255);
-    top: 50%;
-    left: 50%;
-    -moz-transform: translateX(-50%) translateY(-50%);
-    -webkit-transform: translateX(-50%) translateY(-50%);
-    transform: translateX(-50%) translateY(-50%);
-}
-
 .pagination-link.is-current {
-    background-color: #528dca;
-    border-color: #528dca;
+    background-color: #4b61c0;
+    border-color: #4b61c0;
     color: #fff;
-}
-
-.draft{
-    color:red;
 }
 
 .centeredbox {
@@ -92,7 +75,6 @@ font-size: 14px;
     z-index: 1000;
     display: none;
     float: left;
-    min-width: 160px;
     padding: 5px 0;
     margin: 2px 0 0;
     list-style: none;

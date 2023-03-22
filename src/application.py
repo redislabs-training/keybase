@@ -3,11 +3,12 @@ import secrets
 from flask import Flask
 from flask_cors import CORS
 from datetime import datetime
+from flask_breadcrumbs import Breadcrumbs
 
 
 def create_app():
     app = Flask(__name__, template_folder="templates")
-
+    Breadcrumbs(app=app)
     app.config["SESSION_TYPE"] = "filesystem"
     app.config.update({'SECRET_KEY': secrets.token_hex(64)})
     app.url_map.strict_slashes = False

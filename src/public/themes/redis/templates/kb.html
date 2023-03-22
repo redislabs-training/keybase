@@ -1,20 +1,32 @@
 {% extends "theme.html" %}
 {% set active_page = "document" %}
 {% block content %}
-    <h1 id="name" class="title is-4 mt-5"></h1>
 
-    <div class="columns" style="margin-top:0px;">
-        <div class="column is-8">
-            <div id="editor" style="text-align:justify; text-justify: inter-word;"></div>
+{% include 'breadcrumb.html' %}
+
+<div class="columns" style="mt-0">
+    <div class="column is-8">
+        <div class="columns mb-0">
+            <div class="column is-10">
+                <h1 id="name" class="title is-4 mb-0"></h1>
+            </div>
+            <div class="column">
+                {% if document.catid is not none and document.catid|length > 0 %}
+                <a class="tag is-danger is-light" href="{{ url_for('public_bp.public',cat=document.catid) }}">{{document.catname}}</a>
+                {% endif %}
+            </div>
         </div>
-        <div class="column">
-            {% include 'recommendations.html' %}
-            {% include 'filters.html' %}
-            {% if current_user.is_authenticated %}
-            Authenticated
-            {% endif %}
-        </div>
+        {% include 'doctags.html' %}
+        <span class="is-size-7 has-text-weight-medium">Last update: {{document['updated']}}</span>
+        <div class="liner"></div>
+        <div id="editor" style="text-align:justify; text-justify: inter-word;"></div>
     </div>
+    <div class="column">
+        {% include 'recommendations.html' %}
+        {% if current_user.is_authenticated %}
+        {% endif %}
+    </div>
+</div>
 
 <script>
     $( "#name" ).text(decodeURIComponent("{{document['name']}}"));
