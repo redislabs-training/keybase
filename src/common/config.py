@@ -1,9 +1,10 @@
 import redis
+import os
 from flask import g
 
-REDIS_CFG = {   "host" : "",
-                "port" : 6380,
-                "password" : "",
+REDIS_CFG = {   "host" : os.getenv('DB_SERVICE'),
+                "port" : int(os.getenv('DB_PORT')),
+                "password" : os.getenv('DB_PWD'),
                 "ssl" : False,
                 "ssl_keyfile" : '', 
                 "ssl_certfile" : '', 
@@ -11,16 +12,19 @@ REDIS_CFG = {   "host" : "",
                 "ssl_ca_certs" : ''} 
 SIGNUP_CFG = 'debug'
 
+OKTA_BASE=os.getenv('OKTA_BASE')
+OKTA_CALLBACK_URL=os.getenv('OKTA_CALLBACK_URL')
+
 okta = {
-    "client_id": "",
-    "client_secret": "",
-    "api_token" : "",
-    "auth_uri": "https://dev-XXX.okta.com/oauth2/default/v1/authorize",
-    "token_uri": "https://dev-XXX.okta.com/oauth2/default/v1/token",
-    "issuer": "https://dev-XXX.okta.com/oauth2/default",
-    "userinfo_uri": "https://dev-XXX.okta.com/oauth2/default/v1/userinfo",
-    "redirect_uri": "http://XXX/authorization-code/callback",
-    "groups_uri" : "https://dev-XXX.okta.com/api/v1/users/{}/groups"
+    "client_id": os.getenv('OKTA_CLIENT_ID'),
+    "client_secret": os.getenv('OKTA_CLIENT_SECRET'),
+    "api_token" : os.getenv('OKTA_API_TOKEN'),
+    "auth_uri": "https://{}/oauth2/default/v1/authorize".format(OKTA_BASE),
+    "token_uri": "https://{}/oauth2/default/v1/token".format(OKTA_BASE),
+    "issuer": "https://{}/oauth2/default",
+    "userinfo_uri": "https://{}/oauth2/default/v1/userinfo".format(OKTA_BASE),
+    "redirect_uri": OKTA_CALLBACK_URL,
+    "groups_uri" : "https://" + OKTA_BASE + "/api/v1/users/{}/groups"
 }
 
 def get_db():
