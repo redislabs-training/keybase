@@ -68,7 +68,7 @@ def browse():
 
     try:
         if flask.request.method == 'GET':
-            catfilter, tagfilter, queryfilter, sortbyfilter = "", "", "", False
+            catfilter, tagfilter, queryfilter, prvfilter, sortbyfilter = "", "", "", "", False
 
             # Check the ordering
             if flask.request.args.get('asc') == "true":
@@ -90,9 +90,13 @@ def browse():
                 tag = flask.request.args.get('tag').translate(str.maketrans('', '', "\"@!{}()|-=>"))
                 tagfilter = " @tags:{" + tag + "} "
 
+            prv = flask.request.args.get('prv')
+            if prv and (prv=='internal' or prv=='public'):
+                prvfilter = " @privacy:{" + prv + "} "
+
             page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
             rs = get_db().ft("document_idx").search(
-                Query(queryfilter + catfilter + tagfilter + " @state:{published|review}")
+                Query(queryfilter + catfilter + tagfilter + prvfilter + " @state:{published|review}")
                 .return_field("currentversion_name")
                 .return_field("creation")
                 .sort_by("creation", asc=sortbyfilter)
@@ -113,7 +117,7 @@ def browse():
         # Get the categories
         categories = get_db().hgetall("keybase:categories")
         return render_template('browse.html', title=TITLE, desc=DESC, categories=categories, keydocument=keydocument, page=page,
-                               per_page=per_page, pagination=pagination, category=category, asc=asc)
+                               per_page=per_page, pagination=pagination, category=category, asc=asc, privacy=prv)
     except RedisError as err:
         print(err)
         return redirect(url_for("document_bp.browse"))
@@ -145,6 +149,7 @@ def save():
             currentversion=currentversion,
             description="",
             keyword="",
+            tags="",
             creation=unixtime,
             updated=unixtime,
             processable=0,

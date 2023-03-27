@@ -69,6 +69,7 @@
                 });
             },
             minLength: 3,
+            delay: 500,
             select: function(event, ui) {
                 console.log(ui.item.id);
                 window.location.replace("/kb/" + ui.item.id + "/" + ui.item.pretty);

@@ -2,7 +2,6 @@
 {% set active_page = "landing" %}
 {% block content %}
 
-
 <div class="columns">
     <div class="column"></div>
     <div class="column is-three-fifths">
@@ -13,8 +12,11 @@
 
 <section class="hero">
     <div class="hero-body has-text-centered">
-        <div class="container has-text-grey is-size-4 has-text-weight-medium">
-            No result
+        <div class="container has-text-grey has-text-weight-medium">
+            {% if noresultmsg is not none %}
+            <p class="is-size-4">You searched for {{noresultmsg}}</p>
+            {% endif %}
+            <p class="is-size-3">No result</p>
         </div>
     </div>
 </section>

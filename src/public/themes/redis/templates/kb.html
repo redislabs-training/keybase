@@ -6,16 +6,7 @@
 
 <div class="columns" style="mt-0">
     <div class="column is-8">
-        <div class="columns mb-0">
-            <div class="column is-10">
-                <h1 id="name" class="title is-4 mb-0"></h1>
-            </div>
-            <div class="column">
-                {% if document.catid is not none and document.catid|length > 0 %}
-                <a class="tag is-danger is-light" href="{{ url_for('public_bp.public',cat=document.catid) }}">{{document.catname}}</a>
-                {% endif %}
-            </div>
-        </div>
+        <h1 id="name" class="title is-4 mb-2"></h1>
         {% include 'doctags.html' %}
         <span class="is-size-7 has-text-weight-medium">Last update: {{document['updated']}}</span>
         <div class="liner"></div>
@@ -23,8 +14,6 @@
     </div>
     <div class="column">
         {% include 'recommendations.html' %}
-        {% if current_user.is_authenticated %}
-        {% endif %}
     </div>
 </div>
 

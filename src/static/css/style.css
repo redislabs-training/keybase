@@ -111,3 +111,7 @@
     position: absolute;
     width: 1px;
 }
+
+.warning{
+    color: #ff3860;
+}

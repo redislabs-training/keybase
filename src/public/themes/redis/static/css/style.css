@@ -6,13 +6,35 @@ html, th, td{
     background-color: #f8f9f9;
 }
 
+.tile{
+    background-color: #f8f9f9;
+}
+
+.tile img{
+    background-color: #f8f9f9;
+    height:60px;
+}
+
 .toastui-editor-contents h2{
     color:#3f5e85;
 }
 
+input.searchbar {
+  background-image: url("/theme/images/magnifyingglass.svg");
+  background-size: 1.2em;
+  background-repeat: no-repeat;
+  background-position: 13px center;
+}
+
+input.smallsearchbar {
+  background-image: url("/theme/images/magnifyingglass.svg");
+  background-size: 1.2em;
+  background-repeat: no-repeat;
+  background-position: 8px center;
+}
+
 section .navbar-brand img {
   max-height:none;
-  height: 35px;
   border: 0;
   margin: 0;
   padding: 0;
@@ -20,6 +42,11 @@ section .navbar-brand img {
 
 .navbar{
   border-bottom: 1px solid #BBB;
+  height:78px;
+}
+
+.navbar-brand{
+  margin: 0 0rem 0 2rem;
 }
 
 .liner{

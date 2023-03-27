@@ -9,12 +9,34 @@
         </div>
         <div class="field">
             <textarea id="description" class="is-small textarea" placeholder="Description (max 160 cc)">{{document.description}}</textarea>
+            <span id="remaining">155 remaining</span>
         </div>
         <button id="addmetadata" class="ml-1 button is-info is-small" type="button">Save</button>
     </div>
 </div>
 
 <script>
+    function textChecker(box, msg, size){
+        var maxlength = size;
+        var currentlength = $(box).val().length;
+        var remaining = maxlength-currentlength;
+        $(msg).html(remaining+" remaining");
+        if (remaining<0){
+            $(msg).addClass('warning');
+        }
+        else{
+            $(msg).removeClass('warning');
+        }
+    }
+
+    $(function(){
+        $("#description").keyup(function(){
+            textChecker("#description", "#remaining", 155);
+      });
+    });
+
+    textChecker("#description", "#remaining", 155);
+
 	$("#addmetadata").click(function(e){
 		e.preventDefault();
 	    $.ajax({

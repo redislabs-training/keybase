@@ -3,8 +3,6 @@
 
 {% block content %}
 
-
-
 <div class="columns">
     <div class="column"></div>
     <div class="column is-three-fifths">
@@ -24,36 +22,54 @@
 <div class="pt-6">
     <div class="tile is-ancestor">
       <div class="tile is-parent">
-        <article class="tile is-child box">
-            <a style="display:block;" class="has-text-centered is-size-6" href="{{ url_for('public_bp.public',q='', cat='2o9qogwfm6') }}">Redis Stack</a>
+        <article class="tile is-child">
+            <a style="display:block;justify-content: center;align-items:center;" class="has-text-centered is-size-6" href="{{ url_for('public_bp.public',q='', cat='2o9qogwfm6') }}">
+                <img src="{{ url_for('public_bp.static',filename='images/redisstackicon.svg') }}">
+                <span class="has-text-black" style="display: block;">Redis Stack</span>
+            </a>
         </article>
       </div>
       <div class="tile is-parent">
-        <article class="tile is-child box">
-          <a style="display:block;" class="has-text-centered is-size-6" href="{{ url_for('public_bp.public',q='', cat='1cmzkcxg2e') }}">Redis Enterprise</a>
+        <article class="tile is-child">
+          <a style="display:block;" class="has-text-centered is-size-6" href="{{ url_for('public_bp.public',q='', cat='1cmzkcxg2e') }}">
+                <img src="{{ url_for('public_bp.static',filename='images/redisenterpriseicon.svg') }}">
+                <span class="has-text-black" style="display: block;">Redis Enterprise</span>
+          </a>
         </article>
       </div>
       <div class="tile is-parent">
-        <article class="tile is-child box">
-          <a style="display:block;" class="has-text-centered is-size-6" href="{{ url_for('public_bp.public',q='', cat='1x5z2h4q4d') }}">Redis Cloud</a>
+        <article class="tile is-child">
+          <a style="display:block;" class="has-text-centered is-size-6" href="{{ url_for('public_bp.public',q='', cat='1x5z2h4q4d') }}">
+            <img src="{{ url_for('public_bp.static',filename='images/rediscloudicon.svg') }}">
+            <span class="has-text-black" style="display: block;">Redis Cloud</span>
+          </a>
         </article>
       </div>
     </div>
 
     <div class="tile is-ancestor">
       <div class="tile is-parent">
-        <article class="tile is-child box">
-          <a style="display:block;" class="has-text-centered is-size-6" href="{{ url_for('public_bp.public',q='', cat='2kkfitpubo') }}">Redis Enterprise on Kubernetes</a>
+        <article class="tile is-child">
+          <a style="display:block;" class="has-text-centered is-size-6" href="{{ url_for('public_bp.public',q='', cat='2kkfitpubo') }}">
+            <img src="{{ url_for('public_bp.static',filename='images/kubernetesicon.svg') }}">
+            <span class="has-text-black" style="display: block;">Redis on Kubernetes</span>
+          </a>
         </article>
       </div>
       <div class="tile is-parent">
-        <article class="tile is-child box">
-          <a style="display:block;" class="has-text-centered is-size-6" href="{{ url_for('public_bp.public',q='', cat='116wz2xd3k') }}">RedisInsight</a>
+        <article class="tile is-child">
+          <a style="display:block;" class="has-text-centered is-size-6" href="{{ url_for('public_bp.public',q='', cat='116wz2xd3k') }}">
+            <img src="{{ url_for('public_bp.static',filename='images/redisinsighticon.svg') }}">
+            <span class="has-text-black" style="display: block;">RedisInsight</span>
+          </a>
         </article>
       </div>
       <div class="tile is-parent">
-        <article class="tile is-child box">
-          <a style="display:block;" class="has-text-centered is-size-6" href="{{ url_for('public_bp.public',q='', cat='2eozu9ktgf') }}">Client Libraries</a>
+        <article class="tile is-child">
+          <a style="display:block;" class="has-text-centered is-size-6" href="{{ url_for('public_bp.public',q='', cat='2eozu9ktgf') }}">
+            <img src="{{ url_for('public_bp.static',filename='images/clientlibrariesicon.svg') }}">
+            <span class="has-text-black" style="display: block;">Client Libraries</span>
+          </a>
         </article>
       </div>
     </div>

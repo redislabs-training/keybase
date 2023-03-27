@@ -30,7 +30,7 @@ def load_user(user_id):
 @login_manager.unauthorized_handler
 def unauthorized_callback():
     if not current_user.is_authenticated:
-        if request.endpoint == "document_bp.doc" and not current_user.is_authenticated:
+        if request.endpoint == "public_bp.kb" and not current_user.is_authenticated:
             print("post-login doc is " + request.path)
             flash(request.path, 'wanted')
         return render_template('index.html', next=request.endpoint),401
@@ -39,7 +39,7 @@ def unauthorized_callback():
 @okta_bp.before_request
 def check_valid_login():
     # save wanted url if not authenticated
-    if request.endpoint == "document_bp.doc" and not current_user.is_authenticated:
+    if request.endpoint == "public_bp.kb" and not current_user.is_authenticated:
         print("post-login doc is " + request.path)
         flash(request.path, 'wanted')
 
@@ -157,7 +157,7 @@ def callback():
 @okta_bp.route("/logout", methods=["GET", "POST"])
 def logout():
     logout_user()
-    return redirect(url_for('main_bp.index'))
+    return redirect(url_for('public_bp.landing'))
 
 
 def getUserGroups():

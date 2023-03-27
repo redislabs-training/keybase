@@ -5,7 +5,7 @@ from redis import RedisError
 from datetime import datetime
 import urllib.parse
 from redis.commands.search.query import Query
-from flask_login import (login_required)
+from flask_login import (current_user,login_required)
 from src.common.config import get_db
 from src.common.utils import pretty_title
 from flask_breadcrumbs import register_breadcrumb, default_breadcrumb_root
@@ -26,13 +26,12 @@ def get_bread_path(*args, **kwargs):
         if cat[0] is not None:
             catname = get_db().hget('keybase:categories', cat[0])
             return [{'text': 'home', 'url': url_for("public_bp.landing")},
-                    {'text': catname, 'url':url_for("public_bp.public", cat=cat[0])},
-                    {'text': 'kb', 'url':''}]
+                    {'text': catname, 'url':url_for("public_bp.public", cat=cat[0])}]
 
     # Search can come with a category, but let's consider a pure search to define the breadcrumb
     if flask.request.args.get('q'):
         return [{'text': 'home', 'url': url_for("public_bp.landing")},
-                {'text': 'search', 'url':''}]
+                {'text': 'search: "' + urllib.parse.unquote(flask.request.args.get('q')) + '"', 'url':''}]
 
     if flask.request.args.get('cat'):
         catname = get_db().hget("keybase:categories", flask.request.args.get('cat'))
@@ -46,12 +45,16 @@ def get_bread_path(*args, **kwargs):
 
     return [{'text': 'home', 'url': url_for("public_bp.landing")}]
 
-@public_bp.route('/landing', methods=['GET'])
+@public_bp.route('/', methods=['GET'])
 def landing():
+    if not current_user.is_authenticated:
+        return render_template('index.html')
+
     categories = get_db().hgetall("keybase:categories")
     return render_template('landing.html', categories=categories)
 
 @public_bp.route('/search', methods=['GET'])
+@login_required
 def search():
     # Sanitize input for RediSearch
     query = urllib.parse.unquote(request.args.get('q')).translate(str.maketrans('', '', "\"@!{}()|-=>"))
@@ -59,7 +62,7 @@ def search():
     rs = get_db().ft("document_idx")\
             .search(Query(query + " @privacy:{public} -@state:{draft}")
             .return_field("currentversion_name")
-            .sort_by("creation", asc=False)
+            .sort_by("updated", asc=False)
             .paging(0, 10))
 
     results = []
@@ -74,8 +77,8 @@ def search():
 
 
 @public_bp.route('/public', methods=['GET'])
-#@register_breadcrumb(public_bp, '.', 'Home')
 @register_breadcrumb(public_bp, '.', '', dynamic_list_constructor=get_bread_path)
+@login_required
 def public():
     TITLE = "List documents"
     DESC = "Listing documents"
@@ -85,6 +88,7 @@ def public():
     updated = []
     keydocument = None
     pagination = None
+    noresultmsg = None
     rs = None
     category = ""
     asc = 0
@@ -100,6 +104,7 @@ def public():
 
             # Sanitized input for RediSearch
             if flask.request.args.get('q'):
+                noresultmsg = urllib.parse.unquote(flask.request.args.get('q'))
                 queryfilter = urllib.parse.unquote(flask.request.args.get('q')).translate(str.maketrans('', '', "\"@!{}()|-=>"))
                 queryfilter = "@currentversion_name_fts|currentversion_content_fts:'*" + queryfilter + "*'"
             # If the category is good, can be processed and set in the UI
@@ -140,7 +145,7 @@ def public():
         else:
             # Get the categories
             categories = get_db().hgetall("keybase:categories")
-            return render_template('noresults.html', title="No result found", desc="No result found", categories=categories)
+            return render_template('noresults.html', title="No result found", desc="No result found", categories=categories, noresultmsg=noresultmsg)
 
     except RedisError as err:
         print(err)
@@ -150,6 +155,7 @@ def public():
 @public_bp.route('/kb/<id>', defaults={'prettyurl': None})
 @public_bp.route('/kb/<id>/<prettyurl>')
 @register_breadcrumb(public_bp, '.', '', dynamic_list_constructor=get_bread_path)
+@login_required
 def kb(id, prettyurl):
     keys = []
     names = []

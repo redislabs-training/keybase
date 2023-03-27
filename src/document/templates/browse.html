@@ -33,10 +33,10 @@
         </p>
         <p class="control">
                 <span class="select">
-                  <select name="vis">
-                    <option {% if visibility == "all" %} selected{% endif %} value="{{all}}">all</option>
-                    <option {% if visibility == "internal" %} selected{% endif %} value="{{all}}">internal</option>
-                    <option {% if visibility == "public" %} selected{% endif %} value="{{all}}">public</option>
+                  <select name="privacy">
+                    <option {% if privacy=="all" %} selected{% endif %} value="all">all</option>
+                    <option {% if privacy=="internal" %} selected{% endif %} value="internal">internal</option>
+                    <option {% if privacy=="public" %} selected{% endif %} value="public">public</option>
                   </select>
                 </span>
         </p>
@@ -51,6 +51,7 @@
         var qs = {
             q    : encodeURIComponent($("input").val()),
             cat  : $('select[name="cat"]').val(),
+            prv  : $('select[name="privacy"]').val(),
             asc  : $('select[name="asc"]').val()
         };
         window.location.replace("{{ url_for('document_bp.browse') }}?" + $.param(qs));
