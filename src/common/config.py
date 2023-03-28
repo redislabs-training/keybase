@@ -1,15 +1,18 @@
 import redis
-from flask import g
+import logging
+
+from flask import redirect, url_for
+
+logging.basicConfig(filename="/tmp/rediskb.log")
 
 REDIS_CFG = {   "host" : "",
-                "port" : 6380,
+                "port" : 6379,
                 "password" : "",
                 "ssl" : False,
                 "ssl_keyfile" : '', 
                 "ssl_certfile" : '', 
                 "ssl_cert_reqs" : '', 
                 "ssl_ca_certs" : ''} 
-SIGNUP_CFG = 'debug'
 
 okta = {
     "client_id": "",
@@ -24,26 +27,16 @@ okta = {
 }
 
 def get_db():
-    # Database Connection if there is none yet for the current application context
-    host = REDIS_CFG["host"]
-    port = REDIS_CFG["port"]
-    pwd = REDIS_CFG["password"]
-    ssl = REDIS_CFG["ssl"]
-    ssl_keyfile = REDIS_CFG["ssl_keyfile"]
-    ssl_certfile = REDIS_CFG["ssl_certfile"]
-    ssl_cert_reqs = REDIS_CFG["ssl_cert_reqs"]
-    ssl_ca_certs = REDIS_CFG["ssl_ca_certs"]
-
-    if not hasattr(g, 'redis'):
-        g.redis = redis.StrictRedis(host=host,
-                                    port=port,
-                                    password=pwd,
-                                    db=0,
-                                    ssl=ssl,
-                                    ssl_keyfile=ssl_keyfile,
-                                    ssl_certfile=ssl_certfile,
-                                    ssl_ca_certs=ssl_ca_certs,
-                                    ssl_cert_reqs=ssl_cert_reqs,
-                                    decode_responses=True)
-
-    return g.redis
+    try:
+        return redis.StrictRedis(host=REDIS_CFG["host"],
+                                port=REDIS_CFG["port"],
+                                password=REDIS_CFG["password"],
+                                db=0,
+                                ssl=REDIS_CFG["ssl"],
+                                ssl_keyfile=REDIS_CFG["ssl_keyfile"],
+                                ssl_certfile=REDIS_CFG["ssl_certfile"],
+                                ssl_ca_certs=REDIS_CFG["ssl_ca_certs"],
+                                ssl_cert_reqs=REDIS_CFG["ssl_cert_reqs"],
+                                decode_responses=True)
+    except redis.exceptions.ConnectionError:
+        return redirect(url_for("main_bp.error-page"))

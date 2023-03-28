@@ -43,25 +43,30 @@
                 </div>
 
                 <div id="navbarBasicExample" class="navbar-menu is-expanded">
-                    <div class="navbar-start" style="flex: 0 0 15%;">
+                    <div class="navbar-start" style="flex: 0 0 20%;">
                     </div>
 
                     {% if "landing" != active_page %}
                     <!--Three values: flex-grow | flex-shrink | flex-basis -->
-                    <div class="navbar-search" style="flex: 2 1 45%;">
+                    <div class="navbar-search" style="flex: 2 1 35%;">
                         {% include 'smallsearchbar.html' %}
                     </div>
                     {% endif %}
 
-                    <div class="navbar-end" style="flex: 0 0 25%;">
+                    <div class="navbar-end" style="flex: 0 0 30%;">
                         {% if current_user.is_authenticated %}
                         <a href="{{ url_for('document_bp.browse') }}" class="navbar-item">
                             Go to Admin portal
                         </a>
                         {% endif %}
+                        <a class="try-cloud-link" target="" href="https://redis.com/try-free/">
+                            Try Redis Cloud
+                        </a>
+                        <!--
                         <a href="https://redis.com/try-free/" class="navbar-item">
                             <span style="font-weight: 500;font-size: .875rem;">Try Redis Cloud</span>
                         </a>
+                        -->
                     </div>
               </div>
             </nav>

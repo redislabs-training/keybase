@@ -7,7 +7,7 @@ import urllib.parse
 from redis.commands.search.query import Query
 from flask_login import (current_user,login_required)
 from src.common.config import get_db
-from src.common.utils import pretty_title
+from src.common.utils import pretty_title, parse_query_string
 from flask_breadcrumbs import register_breadcrumb, default_breadcrumb_root
 
 public_bp = Blueprint('public_bp', __name__,
@@ -16,7 +16,6 @@ public_bp = Blueprint('public_bp', __name__,
                         static_url_path='/theme')
 
 default_breadcrumb_root(public_bp, '.')
-
 
 def get_bread_path(*args, **kwargs):
     pathlist = list(filter(None,flask.request.path.split('/')))
@@ -47,18 +46,18 @@ def get_bread_path(*args, **kwargs):
 
 @public_bp.route('/', methods=['GET'])
 def landing():
-    if not current_user.is_authenticated:
-        return render_template('index.html')
+    #if not current_user.is_authenticated:
+    #    return render_template('index.html')
 
     categories = get_db().hgetall("keybase:categories")
     return render_template('landing.html', categories=categories)
 
 @public_bp.route('/search', methods=['GET'])
-@login_required
+#@login_required
 def search():
     # Sanitize input for RediSearch
-    query = urllib.parse.unquote(request.args.get('q')).translate(str.maketrans('', '', "\"@!{}()|-=>"))
-    query = "@currentversion_name_fts|currentversion_content_fts:'*" + query + "*'"
+    queryfilter = parse_query_string(flask.request.args.get('q'))
+    query = "@currentversion_name_fts|currentversion_content_fts:'" + queryfilter + "'"
     rs = get_db().ft("document_idx")\
             .search(Query(query + " @privacy:{public} -@state:{draft}")
             .return_field("currentversion_name")
@@ -78,7 +77,7 @@ def search():
 
 @public_bp.route('/public', methods=['GET'])
 @register_breadcrumb(public_bp, '.', '', dynamic_list_constructor=get_bread_path)
-@login_required
+#@login_required
 def public():
     TITLE = "List documents"
     DESC = "Listing documents"
@@ -105,8 +104,8 @@ def public():
             # Sanitized input for RediSearch
             if flask.request.args.get('q'):
                 noresultmsg = urllib.parse.unquote(flask.request.args.get('q'))
-                queryfilter = urllib.parse.unquote(flask.request.args.get('q')).translate(str.maketrans('', '', "\"@!{}()|-=>"))
-                queryfilter = "@currentversion_name_fts|currentversion_content_fts:'*" + queryfilter + "*'"
+                queryfilter = parse_query_string(flask.request.args.get('q'))
+                queryfilter = "@currentversion_name_fts|currentversion_content_fts:'" + queryfilter + "'"
             # If the category is good, can be processed and set in the UI
             if flask.request.args.get('cat'):
                 if get_db().hexists("keybase:categories", flask.request.args.get('cat')):
@@ -155,7 +154,7 @@ def public():
 @public_bp.route('/kb/<id>', defaults={'prettyurl': None})
 @public_bp.route('/kb/<id>/<prettyurl>')
 @register_breadcrumb(public_bp, '.', '', dynamic_list_constructor=get_bread_path)
-@login_required
+#@login_required
 def kb(id, prettyurl):
     keys = []
     names = []

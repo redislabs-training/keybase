@@ -10,9 +10,8 @@ from .document import Document, Version, CurrentVersion
 from pydantic import ValidationError
 from redis_om import NotFoundError
 
-
 from src.common.config import get_db
-from src.common.utils import get_analytics, pretty_title, track_request, requires_access_level, Role
+from src.common.utils import parse_query_string, get_analytics, pretty_title, track_request, requires_access_level, Role
 
 document_bp = Blueprint('document_bp', __name__,
                         template_folder='./templates')
@@ -32,8 +31,8 @@ def before_request():
 @login_required
 def autocomplete():
     # Sanitize input for RediSearch
-    query = urllib.parse.unquote(request.args.get('q')).translate(str.maketrans('', '', "\"@!{}()|-=>"))
-    query = "@currentversion_name_fts|currentversion_content_fts:'*" + query + "*'"
+    query = parse_query_string(flask.request.args.get('q'))
+    query = "@currentversion_name_fts|currentversion_content_fts:'" + query + "'"
     rs = get_db().ft("document_idx")\
             .search(Query(query + " @state:{published|review}")
             .return_field("currentversion_name")
@@ -77,8 +76,8 @@ def browse():
 
             # Sanitized input for RediSearch
             if flask.request.args.get('q'):
-                queryfilter = urllib.parse.unquote(flask.request.args.get('q')).translate(str.maketrans('', '', "\"@!{}()|-=>"))
-                queryfilter = "@currentversion_name_fts|currentversion_content_fts:'*" + queryfilter + "*'"
+                queryfilter = parse_query_string(flask.request.args.get('q'))
+                queryfilter = "@currentversion_name_fts|currentversion_content_fts:'" + queryfilter + "'"
             # If the category is good, can be processed and set in the UI
             if flask.request.args.get('cat'):
                 if get_db().hexists("keybase:categories", flask.request.args.get('cat')):
@@ -446,3 +445,28 @@ def doc(id, prettyurl):
     return render_template('view.html', title=TITLE, desc=DESC, docid=id, bookmarked=bookmarked, document=document,
                            suggestlist=suggestlist, analytics=analytics)
 
+
+@document_bp.route('/new/<doc>')
+@login_required
+@requires_access_level(Role.EDITOR)
+def new(doc):
+    TITLE = "New Document"
+    DESC = "New Document"
+    template = ""
+
+    if doc == 'case':
+        template = urllib.parse.quote(
+            "## Applies to:\n\n\n<br>\n## Executive Summary \n\n\n<br>\n<br>\n<br>\n## Introduction \n\n\n<br>\n<br>\n<br>\n## Analysis \n\n\n<br>\n<br>\n<br>\n## Alternatives and Decision Criteria \n\n\n<br>\n<br>\n<br>\n## Recommendations and Implementation Plan \n\n\n<br>\n<br>\n<br>\n## Conclusion \n\n\n<br>\n<br>\n<br>\n## References")
+    elif doc == 'troubleshooting':
+        template = urllib.parse.quote(
+            "## Applies to:\n\n\n<br>\n## Symptoms \n\n\n<br>\n<br>\n<br>\n## Changes \n\n\n<br>\n<br>\n<br>\n## Cause \n\n\n<br>\n<br>\n<br>\n## Solution \n\n\n<br>\n<br>\n<br>\n## References")
+    elif doc == 'design':
+        template = urllib.parse.quote(
+            "## Applies to:\n\n\n<br>\n## Purpose \n\n\n<br>\n<br>\n<br>\n## Scope \n\n\n<br>\n<br>\n<br>\n## Details \n\n\n<br>\n<br>\n<br>\n## References")
+    elif doc == 'howto':
+        template = urllib.parse.quote(
+            "## Applies to:\n\n\n<br>\n## Goal \n\n\n<br>\n<br>\n<br>\n## Solution \n\n\n<br>\n<br>\n<br>\n## References")
+    elif doc == 'qa':
+        template = urllib.parse.quote(
+            "## Applies to:\n\n\n<br>\n## Question \n\n\n<br>\n<br>\n<br>\n## Answer \n\n\n<br>\n<br>\n<br>\n## References")
+    return render_template('new.html', title=TITLE, desc=DESC, template=template)

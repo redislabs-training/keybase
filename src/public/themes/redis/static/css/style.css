@@ -10,6 +10,27 @@ html, th, td{
     background-color: #f8f9f9;
 }
 
+a.try-cloud-link{
+    align-items: center;
+    display: flex;
+    background-image: none;
+    border: 1px solid #5866F6;
+    padding: 0px 20px;
+    white-space: nowrap;
+    margin:13px;
+    font-weight: 500;
+    border-radius: 2px;
+    background-color: #FFFFFF;
+    color: #5866F6;
+    transition: background-color .6s;
+    transition: color .6s;
+}
+
+a.try-cloud-link:hover {
+    background-color: #5961FF;
+    color: #FFFFFF;
+}
+
 .tile img{
     background-color: #f8f9f9;
     height:60px;

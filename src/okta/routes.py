@@ -6,6 +6,8 @@ import flask
 from flask import flash, Blueprint, render_template, redirect, request, session, url_for
 import flask_login
 from flask_login import (LoginManager,current_user,logout_user,)
+import logging
+import json
 
 from src.okta.user import OktaUser
 from src.common.config import get_db, okta
@@ -76,7 +78,6 @@ def login():
         base_url=okta["auth_uri"],
         query_params=requests.compat.urlencode(query_params)
     )
-    print(request_uri)
 
     return redirect(request_uri)
 
@@ -119,8 +120,10 @@ def callback():
         auth=(okta["client_id"], okta["client_secret"]),
     ).json()
 
+
     # Get tokens and validate
     if not exchange.get("token_type"):
+        logging.error('Unsupported token type, exchange is ' + json.dumps(exchange))
         return "Unsupported token type. Should be 'Bearer'.", 403
     access_token = exchange["access_token"]
 

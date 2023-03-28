@@ -1,9 +1,13 @@
 import secrets
 
-from flask import Flask
+from flask import Flask, render_template
 from flask_cors import CORS
 from datetime import datetime
 from flask_breadcrumbs import Breadcrumbs
+from werkzeug.exceptions import HTTPException
+import redis
+
+from src.common.utils import track_errors
 
 
 def create_app():
@@ -55,4 +59,23 @@ def create_app():
     # from .auth.routes import auth_bp
     # app.register_blueprint(auth_bp)
 
+    @app.errorhandler(Exception)
+    def handle_exception(e):
+        # database error
+        if isinstance(e, redis.exceptions.ConnectionError):
+            return render_template('61.html'), 500
+
+        track_errors(e)
+        # pass through HTTP errors
+        if isinstance(e, HTTPException):
+            return render_template('404.html'), 404
+
+        # now you're handling non-HTTP exceptions only
+        return render_template('500.html'), 500
+
     return app
+
+
+
+
+

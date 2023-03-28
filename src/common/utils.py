@@ -4,10 +4,10 @@ from datetime import datetime
 from enum import IntEnum
 
 import shortuuid
-from flask import request
+from flask import request, Response
 from flask_login import current_user
 from functools import wraps
-from flask import Response
+import urllib.parse
 
 from src.common.config import get_db
 import re
@@ -18,6 +18,19 @@ def track_request():
         data = {'full_path': request.full_path, 'user': current_user.id}
         get_db().xadd("keybase:requests", data)
 
+
+def track_errors(e):
+    data = {'err': str(e),
+            'full_path': request.full_path,
+            'agent': request.headers.get('User-Agent')}
+    get_db().xadd("keybase:errors", data)
+
+
+def parse_query_string(q):
+    query = urllib.parse.unquote(q).translate(str.maketrans('', '', "\"@!{}()|-=<>[];.'")).strip()
+    if len(query) > 0:
+        query = "*" + query + "*"
+    return query
 
 class ShortUuidPk:
     def create_pk(self) -> str:
