@@ -1,0 +1,29 @@
+<form class="mt-6 mb-6" method="post" action="{{ url_for('public_bp.public') }}">
+    <div class="box p-2" style="border-radius: 9999px;">
+        <div class="field has-addons landing">
+            <div class="control has-icons-left has-icons-right is-expanded">
+                <input name="q" class="input searchbar is-rounded" type="text" placeholder="Search the knowledge base">
+                <!--
+                <span class="icon is-small is-left">
+                  <i class="fas fa-search"></i>
+                </span>
+                -->
+            </div>
+            {% if categories|length > 0 %}
+            <p class="control is-hidden-mobile">
+                <span class="select">
+                    <select name="cat" class="has-text-centered">
+                          <option value="all">all categories</option>
+                          {% for catid, catname in categories.items() %}
+                          <option {% if category == catid %} selected{% endif %} value="{{catid}}">{{catname}}</option>
+                          {% endfor %}
+                    </select>
+                </span>
+            </p>
+            {% endif %}
+            <div class="control">
+                <button type="submit" class="button is-link is-rounded">Search</button>
+            </div>
+        </div>
+    </div>
+</form>

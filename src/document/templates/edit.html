@@ -1,131 +1,36 @@
 {% extends "base.html" %}
 {% block content %}
 
-<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
-
 <div id="container">
-
 	<div class="field is-grouped">
 		<p class="control is-expanded">
 			<input class="input" id="name" type="text" placeholder="Document name">
 		</p>
 		<p class="control">
-			<button id="save" class="button is-info is-light" type="button">save</button> 
-			<button id="tags" class="button is-info is-light" type="button">tags</button> 
-			<button id="close" class="button is-info is-light" type="button">close</button> 
+			<button id="save" class="button is-info is-light" type="button">save</button>
+			<button id="close" class="button is-info is-light" type="button">close</button>
 			{% if current_user.is_admin() %}
-			<a id="publish" class="{% if not state == "draft" %}is-hidden {% endif%} button is-warning is-light" href="{{ url_for('document_bp.publish',id=id) }}">publish</a>
-			<a id="delete" class="button is-danger is-light" href="{{ url_for('document_bp.delete',id=id) }}">delete</a>
+			<a id="publish" class="{% if document.state != 'draft' and document.state != 'review' %} is-hidden {% endif%} button is-warning is-light" href="{{ url_for('document_bp.publish',id=document.pk) }}">publish</a>
+			<a id="delete" class="button is-danger is-light" href="{{ url_for('document_bp.delete',id=document.pk) }}">delete</a>
 			{% endif %}
 		</p>
-	  </div>
-	<div id="editor"></div>
-
-	<div class="modal">
-		<div class="modal-background"></div>
-		<div class="modal-card">
-		  <header class="modal-card-head">
-			<p class="modal-card-title">Tags</p>
-			<button id="closemodal" class="delete" aria-label="close"></button>
-		  </header>
-		  <section class="modal-card-body">
-            <div id="existingtags" class="field is-grouped is-grouped-multiline">
-			{% if tags is not none and tags|length > 0 %}
-            {% set tags = tags.split(',') %}
-            {% for tag in tags %}
-				<div class="control">
-					<div class="tags has-addons">
-                	<span class="tagname tag is-link is-light">{{tag}}</span>
-                	<a class="tag is-delete"></a>
-					</div>
-				</div>
-            {% endfor %}
-				<p id="notags" class="is-size-6 is-hidden">This document has no tags</p>
-            {% else %}
-                <p id="notags" class="is-size-6">This document has no tags</p>
-            {% endif %}
-            </div>
-			<div id="taglist" class="block tags"></div>
-		  </section>
-		  <footer class="modal-card-foot">
-			<div class="field is-grouped">
-				<input id="tagsearch" class="is-small input is-info mb-4" type="text" placeholder="Search an existing tag">
-				<button id="addtag" class="ml-1 button is-info is-small" type="button">Add</button>
-			</div>
-		  </footer>
+	</div>
+	<div class="columns">
+		<div class="column is-9">
+			<div id="editor"></div>
+		</div>
+		<div class="column is-3">
+			{% if current_user.is_admin() %}
+			{% include 'privacy.html' %}
+			{% endif %}
+			{% include 'taxonomy-categories.html' %}
+			{% include 'taxonomy-tags.html' %}
+			{% include 'metadata.html' %}
+			{% include 'versions.html' %}
 		</div>
 	</div>
-
 </div>
 
-<script>
-	$("#tags").click(function(e){
-		$(".modal").addClass("is-active");
-	})
-
-	$("#closemodal").click(function(e){
-		$(".modal").removeClass("is-active");
-	})
-
-	$(function() {
-            $("#tagsearch").autocomplete({
-                source:function(request, response) {
-					console.log(request.term)
-                    $.getJSON("{{url_for('admin_bp.tagsearch')}}",{
-                        q: encodeURIComponent(request.term), 
-                    }, function(data) {
-						console.log(data.matching_results)
-                        response(data.matching_results); 
-						//$('#taglist').empty();
-						//data.matching_results.forEach(function(tag) {
-						//	$('#taglist').append('<span class="tag is-link">'+tag+'</span>');
-						//})
-                    });
-                },
-                minLength: 3,
-                select: function(event, ui) {
-                    //console.log(ui.item.id); 
-                }
-            });
-        })
-
-		$("#addtag").click(function(e){
-		e.preventDefault();
-	    $.ajax({
-	    	type: "POST",
-	        url: "{{ url_for('document_bp.addtag')}}",
-	        data : {id:"{{id}}", tag:$("#tagsearch").val()},
-	        success: function(data) {
-				if (data["code"] == "success"){
-					$( "#notags" ).addClass("is-hidden")
-					$('#existingtags').append('<div class="control"><div class="tags has-addons"><span class="tag is-link is-light">'+$("#tagsearch").val()+'</span><a class="tag is-delete"></a></div></div>');
-				}
-            	$.notify(data["message"], data["code"]);
-	        }
-		});
-		return false;
-	});
-
-	$("#existingtags").on("click", ".is-delete", function(){
-		var clicked = $(this);
-	    $.ajax({
-	    	type: "POST",
-	        url: "{{ url_for('document_bp.deltag')}}",
-	        data : {id:"{{id}}", tag:clicked.siblings('span').text()},
-	        success: function(data) {
-				if (data["code"] == "success"){
-					clicked.closest('.control').remove();
-					if($('.tagname').length == 0){
-						$( "#notags" ).removeClass("is-hidden")
-					}
-				}
-            	$.notify(data["message"], data["code"]);
-	        }
-		});
-		return false;
-	});
-
-</script>
 
 <script>
     const editor = new toastui.Editor({
@@ -133,10 +38,10 @@
         initialEditType: 'wysiwyg',
         width: '500px',
 		height: '500px',
-        initialValue: decodeURIComponent("{{content}}")
+        initialValue: decodeURIComponent("{{document.editorversion.content}}")
       });
 
-	$( "#name" ).val(decodeURIComponent("{{name}}"));
+	$( "#name" ).val(decodeURIComponent("{{document.editorversion.name}}"));
 
 	var closeBtn = document.querySelector('#close');
 
@@ -149,7 +54,7 @@
 	    $.ajax({
 	    	type: "POST",
 	        url: "{{ url_for('document_bp.update')}}",
-	        data : {id:"{{id}}", content:encodeURIComponent(editor.getMarkdown()), name:encodeURIComponent($("#name").val())},
+	        data : {id:"{{document.pk}}", content:encodeURIComponent(editor.getMarkdown()), name:encodeURIComponent($("#name").val())},
 	        success: function(data) {
 	        	console.log(data);
             	$.notify(data["message"], "success");
@@ -168,11 +73,12 @@
 		$.ajax({
 			type: "POST",
 			url: "{{ url_for('document_bp.publish')}}",
-			data : {id:"{{id}}", content:encodeURIComponent(editor.getMarkdown()), name:encodeURIComponent($("#name").val())},
+			data : {id:"{{document.pk}}", content:encodeURIComponent(editor.getMarkdown()), name:encodeURIComponent($("#name").val())},
 			success: function(data) {
 				console.log(data);
 				$.notify(data["message"], "success");
 				$( "#publish" ).addClass("is-hidden")
+				location.reload(true)
 			}
 		});
 		return false;
@@ -180,7 +86,7 @@
 	  
 
 	  closeBtn.addEventListener("mousedown", function(e) {
-		window.location.replace("{{ url_for('document_bp.doc',id=id,prettyurl=pretty) }}");
+		window.location.replace("{{ url_for('document_bp.doc',id=document.pk,prettyurl=pretty) }}");
 	  }, true);
 
 	  $("#delete").click(function() {

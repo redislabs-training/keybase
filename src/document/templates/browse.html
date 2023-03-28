@@ -2,64 +2,109 @@
 {% set active_page = "browse" %}
 
 {% block content %}
+
+<form class="mb-4" method="post" action="{{ url_for('document_bp.browse') }}">
     <div class="field has-addons">
-        <div class="control is-expanded">
-          <input class="input" type="text" placeholder="Search the knowledge base">
+        <div class="control has-icons-left is-expanded">
+            <input name="q" class="input" type="text" placeholder="Search the knowledge base">
+            <span class="icon is-small is-left">
+              <i class="fas fa-search"></i>
+            </span>
         </div>
+        {% if categories|length > 0 %}
+        <p class="control">
+            <span class="select">
+                <select name="cat" style="width:150px;">
+                      <option value="all">all categories</option>
+                      {% for catid, catname in categories.items() %}
+                      <option {% if category == catid %} selected{% endif %} value="{{catid}}">{{catname}}</option>
+                      {% endfor %}
+                </select>
+            </span>
+        </p>
+        {% endif %}
+        <p class="control">
+                <span class="select">
+                  <select name="asc">
+                    <option {% if asc == 0 %}selected{% endif %} value="false">newer</option>
+                    <option {% if asc == 1 %}selected{% endif %} value="true">older</option>
+                  </select>
+                </span>
+        </p>
+        <p class="control">
+                <span class="select">
+                  <select name="privacy">
+                    <option {% if privacy=="all" %} selected{% endif %} value="all">all</option>
+                    <option {% if privacy=="internal" %} selected{% endif %} value="internal">internal</option>
+                    <option {% if privacy=="public" %} selected{% endif %} value="public">public</option>
+                  </select>
+                </span>
+        </p>
         <div class="control">
-          <a class="button is-info">
-            Search
-          </a>
+            <button type="submit" class="button is-info">Search</button>
         </div>
-      </div>
+    </div>
+</form>
 
-      <script type="text/javascript">
-        $(".button").click(function() {
-            window.location.replace("browse?q=" + encodeURIComponent($("input").val()));
-        })
+<script type="text/javascript">
+    function send_query(){
+        var qs = {
+            q    : encodeURIComponent($("input").val()),
+            cat  : $('select[name="cat"]').val(),
+            prv  : $('select[name="privacy"]').val(),
+            asc  : $('select[name="asc"]').val()
+        };
+        window.location.replace("{{ url_for('document_bp.browse') }}?" + $.param(qs));
+        return false;
+    }
 
-        $(".input").on('keyup', function (e) {
-            if (e.key === 'Enter' || e.keyCode === 13) {
-                window.location.replace("browse?q=" + encodeURIComponent($("input").val()));
+    $(".button").click(function() {
+        return send_query();
+    })
+
+    $(".input").on('keyup', function (e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            return send_query();
+        }
+    });
+
+    $(function() {
+        $(".input").autocomplete({
+            source:function(request, response) {
+                $.getJSON("{{url_for('document_bp.autocomplete')}}",{
+                    q: encodeURIComponent(request.term),
+                }, function(data) {
+                    response(data.matching_results);
+                });
+            },
+            minLength: 3,
+            select: function(event, ui) {
+                console.log(ui.item.id);
+                window.location.replace("doc/" + ui.item.id + "/" + ui.item.pretty);
             }
         });
+    })
+</script>
 
-        $(function() {
-            $(".input").autocomplete({
-                source:function(request, response) {
-                    $.getJSON("{{url_for('document_bp.autocomplete')}}",{
-                        q: encodeURIComponent(request.term), 
-                    }, function(data) {
-                        response(data.matching_results); 
-                    });
-                },
-                minLength: 3,
-                select: function(event, ui) {
-                    console.log(ui.item.id); 
-                    window.location.replace("doc/" + ui.item.id + "/" + ui.item.pretty);
-                }
-            });
-        })
-      </script>
-      
-    {% if keydocument is not none %}
-    {% for key, name, pretty, creation in keydocument %}
-        <a style="display:block;" class="is-size-6" href="{{ url_for('document_bp.doc',id=key,prettyurl=pretty) }}">
-            {{name}}
-        </a>
-        <span class="is-size-7 has-text-weight-light has-text-grey">created: {{creation}}</span>
-        <div style="border-top: .05rem solid #dbdbdb;"></div>
-    {% endfor %}
+{% if keydocument is not none %}
 
-    {% if pagination is not none %}
-    <div class="mt-4 mb-6">
-      {{ pagination.links }}
-    </div>
-    {% endif %}
+{% for key, name, pretty, creation in keydocument %}
+<a style="display:block;" class="is-size-6" href="{{ url_for('document_bp.doc',id=key,prettyurl=pretty) }}">
+    {{name}}
+</a>
+<span class="is-size-7 has-text-weight-light has-text-grey">created: {{creation}}</span>
+<div style="border-top: .05rem solid #dbdbdb;"></div>
+{% endfor %}
 
-    {% else %}
-        No result found, refine your search
-    {% endif %}
+{% if pagination is not none %}
+<div class="mt-4 mb-6">
+    {{ pagination.links }}
+</div>
+{% endif %}
+
+{% else %}
+No result found, refine your search
+{% endif %}
 {% endblock %}
 
 

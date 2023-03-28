@@ -4,7 +4,7 @@
   <div class="tabs is-toggle is-centered">
     <ul>
       <li><a href="{{ url_for('admin_bp.tools') }}">Users</a></li>
-      <li><a href="{{ url_for('admin_bp.tags') }}">Tags</a></li>
+      <li><a href="{{ url_for('admin_bp.tags') }}">Misc</a></li>
       <li class="is-active"><a>Backup</a></li>
     </ul>
   </div>
@@ -58,7 +58,7 @@
       fd.append('file',files[0]);
   
       $.ajax({
-      url: "{{ url_for('admin_bp.restore')}}",
+      url: "{{ url_for('admin_bp.jimport')}}",
       type: 'post',
       data: fd,
       contentType: false,

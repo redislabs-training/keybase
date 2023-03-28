@@ -1,16 +1,29 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <div class="tabs is-toggle is-centered">
-    <ul>
-      <li><a href="{{ url_for('admin_bp.tools') }}">Users</a></li>
-      <li class="is-active"><a>Tags</a></li>
-      <li><a href="{{ url_for('admin_bp.data') }}">Backup</a></li>
-    </ul>
+<div class="tabs is-toggle is-centered">
+  <ul>
+    <li><a href="{{ url_for('admin_bp.tools') }}">Users</a></li>
+    <li class="is-active"><a>Misc</a></li>
+    <li><a href="{{ url_for('admin_bp.data') }}">Backup</a></li>
+  </ul>
+</div>
+
+<div class="columns">
+  <div class="column is-one-quarter">
+    <h1 class="subtitle">Manage tags</h1>
   </div>
 
-  <div class="columns">
-    <div class="column is-half">
+  <div class="column">
+    <div class="widget box">
+      {% if tags|length == 0 %}
+      There is not tag, create one
+      {% endif %}
+      {% for tag in tags %}
+      <span class="mb-1 tag is-link is-light">{{tag}}</span>
+      {% endfor %}
+    </div>
+    <div class="widget box">
       <form method="post" action="{{ url_for('admin_bp.tag') }}" class="navbar-form navbar-right">
         <div class="field">
           <label class="label">New tag</label>
@@ -20,7 +33,7 @@
           <div class="field">
             <label class="label">Description of the tag</label>
             <div class="control">
-              <textarea name="description" class="textarea" placeholder="Textarea"></textarea>
+              <textarea name="description" class="textarea" placeholder="Description of the tag"></textarea>
             </div>
           </div>
           <p class="control">
@@ -28,16 +41,44 @@
           </p>
         </div>
       </form>
-      
-    </div>
-    <div class="column">
-      <label class="label">All the tags</label>
-      {% for tag in tags %}
-      <span class="mb-1 tag is-link is-light">{{tag}}</span>
-      {% endfor %}
     </div>
   </div>
+</div>
+
+
+<div class="columns">
+  <div class="column is-one-quarter">
+    <h1 class="subtitle">Manage categories</h1>
+  </div>
+
+  <div class="column">
+    <div class="widget box">
+      {% if categories|length == 0 %}
+      There is not category, create one
+      {% endif %}
+      {% for catid, catname in categories.items() %}
+      <span class="mb-1 tag is-link is-light">{{catname}}</span>
+      {% endfor %}
+    </div>
+    <div class="widget box">
+      <form method="post" action="{{ url_for('admin_bp.createcategory') }}" class="navbar-form navbar-right">
+        <div class="field">
+          <label class="label">New category</label>
+          <div class="field">
+          <div class="control">
+            <input name="category" class="input" type="text" placeholder="New category">
+          </div>
+          </div>
+          <p class="control">
+            <button class="button is-link">Create</button>
+          </p>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 
 
-  {% endblock %}
+
+{% endblock %}

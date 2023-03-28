@@ -3,11 +3,13 @@ import secrets
 import requests
 import base64
 import flask
-from flask import Flask, flash, Blueprint, g, render_template, redirect, request, session, url_for
+from flask import flash, Blueprint, render_template, redirect, request, session, url_for
 import flask_login
-from flask_login import (LoginManager,current_user,login_required,login_user,logout_user,)
+from flask_login import (LoginManager,current_user,logout_user,)
+import logging
+import json
 
-from src.user import User
+from src.okta.user import OktaUser
 from src.common.config import get_db, okta
 
 okta_bp = Blueprint('okta_bp', __name__,
@@ -25,12 +27,12 @@ def on_load(state):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.get(user_id)
+    return OktaUser.get(user_id)
 
 @login_manager.unauthorized_handler
 def unauthorized_callback():
     if not current_user.is_authenticated:
-        if request.endpoint == "document_bp.doc" and not current_user.is_authenticated:
+        if request.endpoint == "public_bp.kb" and not current_user.is_authenticated:
             print("post-login doc is " + request.path)
             flash(request.path, 'wanted')
         return render_template('index.html', next=request.endpoint),401
@@ -39,7 +41,7 @@ def unauthorized_callback():
 @okta_bp.before_request
 def check_valid_login():
     # save wanted url if not authenticated
-    if request.endpoint == "document_bp.doc" and not current_user.is_authenticated:
+    if request.endpoint == "public_bp.kb" and not current_user.is_authenticated:
         print("post-login doc is " + request.path)
         flash(request.path, 'wanted')
 
@@ -76,7 +78,7 @@ def login():
         base_url=okta["auth_uri"],
         query_params=requests.compat.urlencode(query_params)
     )
-    print(request_uri)
+
     return redirect(request_uri)
 
 
@@ -118,8 +120,10 @@ def callback():
         auth=(okta["client_id"], okta["client_secret"]),
     ).json()
 
+
     # Get tokens and validate
     if not exchange.get("token_type"):
+        logging.error('Unsupported token type, exchange is ' + json.dumps(exchange))
         return "Unsupported token type. Should be 'Bearer'.", 403
     access_token = exchange["access_token"]
 
@@ -133,11 +137,11 @@ def callback():
     user_name = userinfo_response["name"]
 
     user = None
-    if not User.exists(unique_id):
+    if not OktaUser.exists(unique_id):
         # default user is a viewer
-        user = User.create(unique_id, user_given_name, user_name, user_email)
+        user = OktaUser.create(unique_id, user_given_name, user_name, user_email)
     else:
-        user = User.update(unique_id, user_given_name, user_name, user_email)
+        user = OktaUser.update(unique_id, user_given_name, user_name, user_email)
 
     # Now create the session
     flask_login.login_user(user)
@@ -156,7 +160,7 @@ def callback():
 @okta_bp.route("/logout", methods=["GET", "POST"])
 def logout():
     logout_user()
-    return redirect(url_for('main_bp.index'))
+    return redirect(url_for('public_bp.landing'))
 
 
 def getUserGroups():

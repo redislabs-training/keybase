@@ -2,6 +2,32 @@
 
 .box{border-radius: 3px;box-shadow: rgba(0, 0, 0, 0.06) 0px 0px 1.6rem;}
 
+.navbar{
+  border-bottom: 1px solid #BBB;
+}
+
+.settings{
+    border: 1px solid #dadde6;
+    border-radius: 4px;
+    margin-bottom:12px;
+    font-size:13px;
+    padding:0px;
+}
+
+.settings-header{
+    padding: 10px 10px 0px;
+    background-color:#f7f9fc;
+    height:45px;
+    border-radius: 3px 3px 0 0;
+    border-bottom: 1px solid #dadde6;
+}
+
+.settings-item{
+    border-bottom: 1px solid #dadde6;
+    padding:6px;
+    font-size:12px;
+}
+
 .signinbox {
     margin-top:200px;
     position: absolute;
@@ -84,4 +110,8 @@
     padding: 0;
     position: absolute;
     width: 1px;
+}
+
+.warning{
+    color: #ff3860;
 }

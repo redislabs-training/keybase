@@ -4,7 +4,7 @@
   <div class="tabs is-toggle is-centered">
     <ul>
       <li class="is-active"><a>Users</a></li>
-      <li><a href="{{ url_for('admin_bp.tags') }}">Tags</a></li>
+      <li><a href="{{ url_for('admin_bp.tags') }}">Misc</a></li>
       <li><a href="{{ url_for('admin_bp.data') }}">Backup</a></li>
     </ul>
   </div>
@@ -26,6 +26,13 @@
     </div>
   </div>
   {% endfor %}
+
+  {% if pagination is not none %}
+  <div class="mt-4 mb-6">
+      {{ pagination.links }}
+  </div>
+  {% endif %}
+
   {% else %}
       No users in the system
   {% endif %}

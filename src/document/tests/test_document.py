@@ -1,60 +1,14 @@
-from src.application import create_app
-from src.user import User
-import json, pytest, flask_login
-from src.common.config import get_db, REDIS_CFG
-from flask import template_rendered
-from contextlib import contextmanager
-
-@pytest.fixture
-def captured_templates(create_flask_app):
-    recorded = []
-    def record(sender, template, context, **extra):
-        recorded.append((template, context))
-    template_rendered.connect(record, create_flask_app)
-    try:
-        yield recorded
-    finally:
-        template_rendered.disconnect(record, create_flask_app)
-
-
-@pytest.fixture
-def prepare_db():
-    get_db().execute_command('FT.CREATE document_idx ON HASH PREFIX 1 keybase:kb SCHEMA name TEXT content TEXT creation NUMERIC SORTABLE update NUMERIC SORTABLE state TAG owner TEXT processable TAG tags TAG content_embedding VECTOR HNSW 6 TYPE FLOAT32 DIM 768 DISTANCE_METRIC COSINE')
-    get_db().execute_command('FT.CREATE user_idx ON HASH PREFIX 1 keybase:okta SCHEMA name TEXT group TEXT')
-
-
-@pytest.fixture
-def user_auth():
-    REDIS_CFG['port'] = 6379
-    get_db().flushall()
-    user = User.create("00000000000000000000", "test_name", "test_username", "test_mail")
-    flask_login.login_user(user)
-    yield user
-    get_db().delete("keybase:okta:00000000000000000000")
+from src.okta.user import OktaUser
+import json, flask_login
+from src.common.config import REDIS_CFG
 
 
 def user2_auth():
     REDIS_CFG['port'] = 6379
-    user = User.create("11111111111111111111", "test_name", "test_username", "test_mail")
+    user = OktaUser.create("11111111111111111111", "test_name", "test_username", "test_mail")
     flask_login.logout_user()
     flask_login.login_user(user)
     return user
-
-
-@pytest.fixture
-def create_flask_app():
-    flask_app = create_app()
-    with flask_app.app_context():
-        with flask_app.test_request_context():
-            #flask_login.login_required(False)
-            yield flask_app
-
-
-@pytest.fixture
-def test_client(create_flask_app):
-    # Create a test client using the Flask application configured for testing
-    with create_flask_app.test_client() as test_client:
-        yield test_client
 
 
 def test_document_browse_not_authenticated(test_client):
@@ -110,39 +64,33 @@ def test_document_save_route_draft_viewers_forbidden(test_client, user_auth):
     assert response.status_code == 403
 
 
-def test_document_save_route_draft_as_editor(test_client, user_auth):
+def test_document_draft_as_editor_allowed(test_client, user_auth, create_document):
     # Viewer can't see a draft
     user_auth.set_group("editor")
     response = test_client.post("/save", data={'name': 'my name is...', 'content': 'my content is...'})
     assert response.status_code == 200
 
 
-def test_document_save_route_draft_see_own_drafts(test_client, user_auth):
+def test_document_draft_see_own_drafts(test_client, user_auth, create_document):
     # If you create a draft, you can see it
-    user_auth.set_group("editor")
-    response = test_client.post("/save", data={'name': 'my name is...', 'content': 'my content is...'})
-    doc_id = json.loads(response.data)['id']
+    doc_id = create_document
     response = test_client.get("/doc/{}".format(doc_id))
     assert response.status_code == 200
 
 
-def test_document_save_route_draft_others_drafts_forbidden(test_client, user_auth):
+def test_document_draft_others_drafts_forbidden(test_client, user_auth, create_document):
     # The editor creates a draft
-    user_auth.set_group("editor")
-    response = test_client.post("/save", data={'name': 'my name is...', 'content': 'my content is...'})
-    doc_id = json.loads(response.data)['id']
+    doc_id = create_document
 
-    # Authenticating as another user, can't see own drafts
+    # Authenticating as another user, can't see others' drafts
     user2_auth()
     response = test_client.get("/doc/{}".format(doc_id))
     assert response.status_code == 403
 
 
-def test_document_save_route_published_as_viewer(test_client, user_auth):
-    # create the document
+def test_document_publish_viewer_allowed(test_client, user_auth, create_document):
+    doc_id = create_document
     user_auth.set_group("admin")
-    response = test_client.post("/save", data={'name': 'my name is...', 'content': 'my content is...'})
-    doc_id = json.loads(response.data)['id']
 
     # Publish the document by id, need to pass the name and the content of the document too
     # It is a save and publish feature, in reality
@@ -158,62 +106,76 @@ def test_document_save_route_published_as_viewer(test_client, user_auth):
     assert response.status_code == 200
 
 
-def test_document_create_tag_not_exists(test_client, user_auth):
-    # create the document
-    user_auth.set_group("editor")
-    response = test_client.post("/save", data={'name': 'my name is...', 'content': 'my content is...'})
-    doc_id = json.loads(response.data)['id']
-
-    response = test_client.post("/addtag", data={'id': doc_id, 'tag': 'oss'})
+def test_document_publish_just_once(test_client, user_auth, create_document):
+    doc_id = create_document
+    user_auth.set_group("admin")
+    response = test_client.post("/publish", data=dict(id=doc_id, name='my name is...', content='my content is...'))
     assert response.status_code == 200
-    assert json.loads(response.data)['message'] == "The tag does not exist"
-
-
-def test_document_create_add_only_preexisting_tag(test_client, user_auth):
-    # create the document
-    user_auth.set_group("editor")
-    response = test_client.post("/save", data={'name': 'my name is...', 'content': 'my content is...'})
-    doc_id = json.loads(response.data)['id']
-
-    response = test_client.post("/addtag", data={'id': doc_id, 'tag': 'oss'})
-    assert response.status_code == 200
-    assert json.loads(response.data)['message'] == "The tag does not exist"
-
-
-def test_document_create_editor_cannot_add_tags(test_client, user_auth):
-    # create the document
-    user_auth.set_group("editor")
-    response = test_client.post("/tag", data={'tag': 'oss', 'description':''})
+    response = test_client.post("/publish", data=dict(id=doc_id, name='my name is...', content='my content is...'))
     assert response.status_code == 403
+    assert json.loads(response.data)['message'] == "Document already published"
 
 
-def test_document_create_admin_can_add_tags(test_client, user_auth):
-    # create the tag
-    user_auth.set_group("admin")
-
-    response = test_client.post("/tag", data={'tag': 'oss', 'description':''})
-    # if all fine, redirect. TODO: make this an api and test better
-    assert response.status_code == 302
-
-    # search the tag
-    response = test_client.get("/tagsearch", query_string={'q': 'oss'})
+def test_document_add_tag_tag_not_existing(test_client, user_auth, create_document):
+    doc_id = create_document
+    response = test_client.post("/addtag", data={'id': doc_id, 'tag': 'oss'})
     assert response.status_code == 200
-    assert json.loads(response.data)['matching_results'] == ["oss"]
+    assert json.loads(response.data)['message'] == "The tag does not exist"
 
 
-def test_document_and_tag_creation_tag_document(test_client, user_auth):
-    # create the document
+def test_document_add_tag_document_not_existing(test_client, user_auth):
+    user_auth.set_group("editor")
+    response = test_client.post("/addtag", data={'id': "1xmkzwa8w5", 'tag': 'oss'})
+    assert response.status_code == 404
+    assert json.loads(response.data)['message'] == "The document does not exist"
+
+
+def test_document_add_tag_user_not_authorized(test_client, user_auth):
+    response = test_client.post("/addtag", data={'id': "1xmkzwa8w5", 'tag': 'oss'})
+    assert response.status_code == 403
+    assert response.data == b"Unauthorized"
+
+
+def test_document_del_tag_user_not_authorized(test_client, user_auth):
+    response = test_client.post("/deltag", data={'id': "1xmkzwa8w5", 'tag': 'oss'})
+    assert response.status_code == 403
+    assert response.data == b"Unauthorized"
+
+
+def test_document_del_tag_document_not_existing(test_client, create_document):
+    response = test_client.post("/deltag", data={'id': "1xmkzwa8w5", 'tag': 'oss'})
+    assert response.status_code == 404
+    assert json.loads(response.data)['message'] == "The document does not exist"
+
+
+def test_document_del_tag_document_success(test_client, create_document):
+    doc_id = create_document
+    test_client.post("/addtag", data={'id': doc_id, 'tag': 'oss'})
+    response = test_client.post("/deltag", data={'id': doc_id, 'tag': 'oss'})
+    assert response.status_code == 200
+    assert json.loads(response.data)['message'] == "The tag has been removed"
+    assert json.loads(response.data)['tags'] == []
+
+
+def test_document_add_tag_retag_document(test_client, user_auth, create_document):
+    doc_id = create_document
     user_auth.set_group("admin")
-    response = test_client.post("/save", data={'name': 'my name is...', 'content': 'my content is...'})
-    doc_id = json.loads(response.data)['id']
 
     # create the tag
     test_client.post("/tag", data={'tag': 'oss', 'description':''})
+    test_client.post("/tag", data={'tag': 'troubleshooting', 'description': ''})
 
     # tag the document
     response = test_client.post("/addtag", data={'id': doc_id, 'tag': 'oss'})
     assert response.status_code == 200
     assert json.loads(response.data)['message'] == "The tag has been added"
+    assert json.loads(response.data)['tags'] == ['oss']
+
+    # tag the document
+    response = test_client.post("/addtag", data={'id': doc_id, 'tag': 'troubleshooting'})
+    assert response.status_code == 200
+    assert json.loads(response.data)['message'] == "The tag has been added"
+    assert json.loads(response.data)['tags'] == ['oss', 'troubleshooting']
 
     # retag the document
     response = test_client.post("/addtag", data={'id': doc_id, 'tag': 'oss'})
@@ -228,25 +190,145 @@ def test_document_autocomplete_authenticated_index_created(test_client, user_aut
     doc_id = json.loads(response.data)['id']
     test_client.post("/publish", data=dict(id=doc_id, name='my name is...', content='my content is...'))
 
-    response = test_client.get("/autocomplete", query_string={"q": "content"});
+    response = test_client.get("/autocomplete", query_string={"q": "content"})
     assert response.status_code == 200
     assert json.loads(response.data)['matching_results'][0] ==  {'id': doc_id, 'label': 'my name is...', 'pretty': 'my-name-is', 'value': 'my name is...'}
 
 
-def test_document_browse_authenticated_index_created(test_client, user_auth, prepare_db, captured_templates):
+def test_document_save_authenticated_index_created(test_client, user_auth, prepare_db, captured_templates):
     # create the document
     user_auth.set_group("admin")
     response = test_client.post("/save", data={'name': 'my name is...', 'content': 'my content is...'})
     doc_id = json.loads(response.data)['id']
     test_client.post("/publish", data=dict(id=doc_id, name='my name is...', content='my content is...'))
 
-    response = test_client.get("/browse", query_string={"q": "content"});
+    response = test_client.get("/browse", query_string={"q": "content"})
     assert response.status_code == 200
     assert len(captured_templates) == 1
     template, context = captured_templates[0]
     assert template.name == "browse.html"
     assert "keydocument" in context
     #keys,names,pretty,creations = zip(*context['keydocument'])
+
+
+def test_document_not_existing(test_client, user_auth, prepare_db):
+    response = test_client.get("/doc/{}".format("1xmkzwa8w5"))
+    assert response.status_code == 404
+
+
+def test_document_save_delete_not_authorized(test_client, create_document):
+    response = test_client.get("/doc/{}".format(create_document))
+    assert response.status_code == 200
+    response = test_client.get("/delete/{}".format(create_document))
+    assert response.status_code == 403
+
+
+def test_document_save_delete_authorized(test_client, user_auth, create_document):
+    doc_id = create_document
+    user_auth.set_group("admin")
+    response = test_client.get("/doc/{}".format(doc_id))
+    assert response.status_code == 200
+    response = test_client.get("/delete/{}".format(doc_id))
+    assert response.status_code == 302
+    response = test_client.get("/doc/{}".format(doc_id))
+    assert response.status_code == 404
+
+
+def test_document_update_name_content_success(test_client, user_auth, create_document):
+    doc_id = create_document
+    response = test_client.post("/update", data={'id': doc_id, 'name': 'new name is...', 'content': 'new content is...'})
+
+
+def test_document_update_name_content_user_not_authorized(test_client, user_auth, create_document):
+    user_auth.set_group("viewer")
+    doc_id = create_document
+    response = test_client.post("/update", data={'id': doc_id, 'name': 'new name is...', 'content': 'new content is...'})
+    assert response.status_code == 403
+    assert response.data == b"Unauthorized"
+
+
+def test_document_edit_viewer_not_allowed(test_client, user_auth, create_document):
+    doc_id = create_document
+    user_auth.set_group("viewer")
+    response = test_client.get("/edit/{}".format(doc_id))
+    assert response.status_code == 403
+    assert response.data == b"Unauthorized"
+
+
+def test_document_edit_editor_allowed(test_client, user_auth, create_document, captured_templates):
+    doc_id = create_document
+    response = test_client.get("/edit/{}".format(doc_id))
+    assert response.status_code == 200
+
+    assert len(captured_templates) == 1
+    template, context = captured_templates[0]
+    assert template.name == "edit.html"
+
+
+def test_document_privacy_document_missing(test_client, user_auth, create_document):
+    create_document
+    user_auth.set_group("admin")
+    response = test_client.post("/setprivacy", data={'id': '42f43f23f', 'privacy': 'internal'})
+    assert response.status_code == 404
+
+def test_document_privacy_forbidden(test_client, create_document, user_auth):
+    doc_id = create_document
+    response = test_client.post("/setprivacy", data={'id': doc_id, 'privacy': 'internal'})
+    assert response.status_code == 403
+    user_auth.set_group("viewer")
+    response = test_client.post("/setprivacy", data={'id': doc_id, 'privacy': 'internal'})
+    assert response.status_code == 403
+
+def test_document_privacy_allowed(test_client, create_document, user_auth):
+    doc_id = create_document
+    user_auth.set_group("admin")
+    response = test_client.post("/setprivacy", data={'id': doc_id, 'privacy': 'internal'})
+    assert response.status_code == 200
+    response = test_client.post("/setprivacy", data={'id': doc_id, 'privacy': 'public'})
+    assert response.status_code == 200
+
+def test_document_privacy_wrong_class(test_client, create_document, user_auth):
+    doc_id = create_document
+    user_auth.set_group("admin")
+    response = test_client.post("/setprivacy", data={'id': doc_id, 'privacy': 'wrongvalue'})
+    assert response.status_code == 500
+
+def test_document_metadata_description_exceeding(test_client, create_document):
+    doc_id = create_document
+    response = test_client.post("/addmetadata", data={'id': doc_id,
+                                                        'keyword': 'redis,real-time',
+                                                      'description': 'Welcome to the Redis Knowledge Base! In this portal, you will find troubleshooting guides, articles, tutorials, and more for all the Redis solutions and clients. But too long!'})
+    assert response.status_code == 500
+
+def test_document_metadata_keywords_exceeding(test_client, create_document):
+    doc_id = create_document
+    response = test_client.post("/addmetadata", data={'id': doc_id,
+                                                        'keyword': 'redis,database,real-time,microservices,timeseries,graph,capabilities,cache,caching,probabilistic,in-memory,persistent,service,sentinel,replication,high-availability',
+                                                      'description': 'Welcome to the Redis Knowledge Base! In this portal, you will find guides, articles, tutorials, and more for all the Redis solutions and clients!'})
+    assert response.status_code == 500
+
+
+def test_document_metadata_document_missing(test_client, create_document):
+    doc_id = create_document
+    response = test_client.post("/addmetadata", data={'id': 'f3f4234f2',
+                                                        'keyword': 'redis,real-time',
+                                                      'description': 'Welcome to the Redis Knowledge Base! In this portal, you will find guides, articles, tutorials, and more for all the Redis solutions and clients.'})
+    assert response.status_code == 404
+
+def test_document_metadata_allowed(test_client, create_document):
+    doc_id = create_document
+    response = test_client.post("/addmetadata", data={'id': doc_id,
+                                                        'keyword': 'redis,real-time',
+                                                      'description': 'Welcome to the Redis Knowledge Base! In this portal, you will find guides, articles, tutorials, and more for all the Redis solutions and clients.'})
+    assert response.status_code == 200
+
+
+
+
+# def test_document_category_not_existing
+# def test_document_category_forbidden
+# def test_document_category_allowed
+
 
 
 #flask_app.config['LOGIN_DISABLED'] = True

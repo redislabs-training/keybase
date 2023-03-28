@@ -1,0 +1,88 @@
+<div class="settings">
+    <div class="settings-header">
+        <p class="is-size-6">tags</p>
+    </div>
+    <div class="settings-item">
+        <div id="existingtags" class="field is-grouped is-grouped-multiline">
+            {% if document.tags is not none and document.tags|length > 0 %}
+            {% set tags = document.tags.split('|') %}
+            {% for tag in tags %}
+            <div class="control">
+                <div class="tags has-addons">
+                    <span class="tagname tag is-link is-light">{{tag}}</span>
+                    <a class="tag is-delete"></a>
+                </div>
+            </div>
+            {% endfor %}
+            <p id="notags" class="is-size-7 is-hidden">This document has no tags</p>
+            {% else %}
+            <p id="notags" class="is-size-7 mb-2">This document has no tags</p>
+            {% endif %}
+        </div>
+        <div id="taglist" class="tags mb-0"></div>
+        <div class="field is-grouped">
+            <input id="tagsearch" class="is-small input mb-3" type="text" placeholder="Search an existing tag">
+            <button id="addtag" class="ml-1 button is-info is-small" type="button">Add</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    	$(function() {
+            $("#tagsearch").autocomplete({
+                source:function(request, response) {
+					console.log(request.term)
+                    $.getJSON("{{url_for('admin_bp.tagsearch')}}",{
+                        q: encodeURIComponent(request.term),
+                    }, function(data) {
+						console.log(data.matching_results)
+                        response(data.matching_results);
+						//$('#taglist').empty();
+						//data.matching_results.forEach(function(tag) {
+						//	$('#taglist').append('<span class="tag is-link">'+tag+'</span>');
+						//})
+                    });
+                },
+                minLength: 3,
+                select: function(event, ui) {
+                    //console.log(ui.item.id);
+                }
+            });
+        })
+
+		$("#addtag").click(function(e){
+		e.preventDefault();
+	    $.ajax({
+	    	type: "POST",
+	        url: "{{ url_for('document_bp.addtag')}}",
+	        data : {id:"{{document.pk}}", tag:$("#tagsearch").val()},
+	        success: function(data) {
+				if (data["code"] == "success"){
+					$( "#notags" ).addClass("is-hidden")
+					$('#existingtags').append('<div class="control"><div class="tags has-addons"><span class="tag is-link is-light">'+$("#tagsearch").val()+'</span><a class="tag is-delete"></a></div></div>');
+				}
+            	$.notify(data["message"], data["code"]);
+	        }
+		});
+		return false;
+	});
+
+	$("#existingtags").on("click", ".is-delete", function(){
+		var clicked = $(this);
+	    $.ajax({
+	    	type: "POST",
+	        url: "{{ url_for('document_bp.deltag')}}",
+	        data : {id:"{{document.pk}}", tag:clicked.siblings('span').text()},
+	        success: function(data) {
+				if (data["code"] == "success"){
+					clicked.closest('.control').remove();
+					if($('.tagname').length == 0){
+						$( "#notags" ).removeClass("is-hidden")
+					}
+				}
+            	$.notify(data["message"], data["code"]);
+	        }
+		});
+		return false;
+	});
+</script>

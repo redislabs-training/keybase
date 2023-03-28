@@ -12,7 +12,7 @@
     </a>
     {% endif %}
 
-    <h1 id="name" class="title is-4" style="margin-bottom:0em; display:inline;"></h1>
+    <h1 id="name" class="title is-4 mt-4" style="margin-bottom:0em; display:inline;"></h1>
 
     <div class="columns" style="margin-top:0px;">
         <!--content column-->
@@ -35,11 +35,28 @@
                     <p class="is-size-6">creating recommendations...</p>
                 {% endif %}
             </div>
+            {% if "draft" == document.state %}
+            <div class="widget box">
+                <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Info</h4>
+                <p class="draft is-size-6">
+                    This document is a draft and is not listed among the published documents but only as a draft owned by the editor.
+                    The system administrator only can publish the document.
+                </p>
+            </div>
+            {% endif%}
+            {% if "review" == document.state %}
+            <div class="widget box">
+                <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Info</h4>
+                <p class="draft is-size-6">
+                    This document is published but there is a more recent private review.
+                </p>
+            </div>
+            {% endif%}
             <div class="widget box">
                 <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Tags</h4>
-                {% if document[4] is not none and document[4]|length > 0 %}
+                {% if document.tags is not none and document.tags|length > 0 %}
                 <div class="tags">
-                {% set tags = document[4].split(',') %}
+                {% set tags = document.tags.split('|') %}
                 {% for tag in tags %}
                 <a class="tag is-link is-light" href="{{ url_for('document_bp.browse',tag=tag) }}">{{tag}}</a>
                 {% endfor %}
@@ -81,29 +98,87 @@
                 </script>
             </div>
             {% endif %}
-            {% if current_user.is_editor() %}
             <div class="widget box">
                 <h4 class="title is-6 mb-2" style="margin-bottom:0em;">Actions</h4>
-                <p>
-                    <a class="is-size-6" style="display:inline;" href="{{ url_for('document_bp.edit',id=docid) }}">Edit</a>
-                </p>
+                    {% if current_user.is_editor() %}
+                    <p>
+                        <a class="is-size-6" style="display:inline;" href="{{ url_for('document_bp.edit',id=docid) }}">Edit the document</a>
+                    </p>
+                    {% endif %}
+                    <p>
+                        <a id="feedback" class="is-size-6" style="display:inline;">Leave a feedback</a>
+                    </p>
             </div>
-            {% endif %}
-            {% if "draft" == document[2] %} 
-            <div class="widget box">
-                <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Info</h4>
-                <p class="draft is-size-6">
-                    This document has been modified and is not listed among the published documents but only as a draft owned by the editor. 
-                    The system administrator only can publish the document.
-                </p>
-            </div>
-            {% endif%}
         </div>
         <!--end navigator column-->
+
+        <div class="modal feedbackmodal">
+            <div class="modal-background"></div>
+            <div class="modal-card">
+              <header class="modal-card-head">
+                  <p class="modal-card-title">
+                      <span style="font-weight: bold;" class="is-size-6">Post a feedback on this document</span>
+                  </p>
+                <button id="feedbackclosemodal" class="delete" aria-label="close"></button>
+              </header>
+              <section class="modal-card-body">
+                  <div class="feedbackbody">
+                      <div class="field">
+                          <label class="label">Description</label>
+                          <input id="feedbackdescription" class="input" type="text" placeholder="Feedback short description" autocomplete="off">
+                      </div>
+                    <div class="field">
+                        <label class="label">Message</label>
+                        <div class="control">
+                        <textarea id="feedbackmessage" class="textarea" placeholder="Input your feedback" autocomplete="off"></textarea>
+                      </div>
+                    </div>
+                    <div class="field is-grouped is-grouped-right">
+                      <div class="control">
+                        <button id="postfeedback" class="button is-link is-small">Submit</button>
+                      </div>
+                      <div class="control">
+                        <button id="cancelfeedback" class="button is-light is-small">Cancel</button>
+                      </div>
+                    </div>
+                  </div>
+              </section>
+              <footer class="modal-card-foot">
+              </footer>
+            </div>
+        </div>
 
     </div>
 
 <script>
+	$("#feedback").click(function(e){
+		$(".feedbackmodal").addClass("is-active");
+	})
+
+	$("#postfeedback").click(function(e){
+		e.preventDefault();
+	    $.ajax({
+	    	type: "POST",
+	        url: "{{ url_for('feedback_bp.comment')}}",
+	        data : {pk:"{{docid}}", desc:encodeURIComponent($("#feedbackdescription").val()), msg:encodeURIComponent($("#feedbackmessage").val())},
+	        success: function(data) {
+	            $.notify(data["message"], data["code"]);
+	            $('.feedbackbody').replaceWith( '<h2 class="is-size-6 has-text-centered">Your feedback has been recorded</h2>' );
+	        },
+            error: function (jqXHR, textStatus, errorThrown) {
+                $.notify(JSON.parse(jqXHR.responseText)['message'], 'error');
+            }
+		})
+	})
+
+	$("#feedbackclosemodal,#cancelfeedback").click(function(e){
+		$(".feedbackmodal").removeClass("is-active");
+	})
+
+	$("#feedbackclosemodal,#cancelfeedback").click(function(e){
+		$(".feedbackmodal").removeClass("is-active");
+	})
+
     $("#bookmark").click(function(event){
         event.preventDefault();
         $.ajax({
@@ -119,7 +194,7 @@
         return false; 
     });
 
-    $( "#name" ).text(decodeURIComponent("{{document[0]}}"));  
+    $( "#name" ).text(decodeURIComponent("{{document.currentversion.name}}"));
       const viewer = toastui.Editor.factory({
         el: document.querySelector('#editor'),
         viewer: true,
@@ -129,15 +204,9 @@
             contenteditable: 'false',
             rel: 'noopener noreferrer'
         },
-        initialValue: decodeURIComponent("{{document[1]}}")
+        initialValue: decodeURIComponent("{{document.currentversion.content}}")
         });
 
-    $("#delete").click(function() {
-        if (confirm("Confirm the deletion of the document!") == true) {
-            return true;
-        } else {
-            return false;
-    }})
 
 </script>
 {% endblock %}

@@ -2,24 +2,23 @@ from flask import Flask, flash, Blueprint, g, render_template, redirect, request
 from flask_login import (LoginManager, current_user, login_required)
 import hashlib, time
 
-from src.user import User
+from src.auth.authuser import AuthUser
 from src.common.config import get_db
 
 auth_bp = Blueprint('auth_bp', __name__,
                     template_folder='./templates')
 
 login_manager = LoginManager()
+login_manager.login_view = "okta_bp.login"
 
 
 @auth_bp.record_once
 def on_load(state):
     login_manager.init_app(state.app)
 
-
 @login_manager.user_loader
 def load_user(user_id):
-    return User.get(user_id)
-
+    return AuthUser.get(user_id)
 
 @login_manager.unauthorized_handler
 def unauthorized_callback():
@@ -27,6 +26,19 @@ def unauthorized_callback():
         if request.endpoint == "document_bp.doc" and not current_user.is_authenticated:
             print("post-login doc is " + request.path)
             flash(request.path, 'wanted')
+        return render_template('index.html', next=request.endpoint),401
+
+
+@auth_bp.before_request
+def check_valid_login():
+    # save wanted url if not authenticated
+    if request.endpoint == "document_bp.doc" and not current_user.is_authenticated:
+        print("post-login doc is " + request.path)
+        flash(request.path, 'wanted')
+
+    # endpoints used for authentication
+    endpoint_group = ('static', 'okta_bp.login', 'okta_bp.callback')
+    if not request.endpoint in endpoint_group and not current_user.is_authenticated:
         return render_template('index.html', next=request.endpoint)
 
 
