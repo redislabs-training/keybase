@@ -123,7 +123,7 @@ def callback():
 
     # Get tokens and validate
     if not exchange.get("token_type"):
-        current_app.error('Unsupported token type, exchange is ' + json.dumps(exchange))
+        current_app.logger.error('Unsupported token type, exchange is ' + json.dumps(exchange))
         return "Unsupported token type. Should be 'Bearer'.", 403
     access_token = exchange["access_token"]
 
@@ -170,7 +170,7 @@ def logout():
 def getUserGroups():
     # Get groups
     # https://developer.okta.com/docs/guides/create-an-api-token/main/
-    # Tokens are valid for 30 days from creation or last use
+    # Tokens are valid for 30 days from creation or last use
     api_token = okta["api_token"]
     usergroups_response = requests.get(okta["groups_uri"].format(unique_id),
                                         headers={'Accept':'application/json',

@@ -1,27 +1,17 @@
 import redis
+import os
 from flask import redirect, url_for
 
 
-REDIS_CFG = {   "host" : "",
-                "port" : 6379,
-                "password" : "",
+# Redis
+REDIS_CFG = {   "host" : os.getenv('DB_SERVICE'),
+                "port" : int(os.getenv('DB_PORT')),
+                "password" : os.getenv('DB_PWD'),
                 "ssl" : False,
-                "ssl_keyfile" : '', 
-                "ssl_certfile" : '', 
-                "ssl_cert_reqs" : '', 
-                "ssl_ca_certs" : ''} 
-
-okta = {
-    "client_id": "",
-    "client_secret": "",
-    "api_token" : "",
-    "auth_uri": "https://dev-XXX.okta.com/oauth2/default/v1/authorize",
-    "token_uri": "https://dev-XXX.okta.com/oauth2/default/v1/token",
-    "issuer": "https://dev-XXX.okta.com/oauth2/default",
-    "userinfo_uri": "https://dev-XXX.okta.com/oauth2/default/v1/userinfo",
-    "redirect_uri": "http://XXX/authorization-code/callback",
-    "groups_uri" : "https://dev-XXX.okta.com/api/v1/users/{}/groups"
-}
+                "ssl_keyfile" : '',
+                "ssl_certfile" : '',
+                "ssl_cert_reqs" : '',
+                "ssl_ca_certs" : ''}
 
 def get_db():
     try:
@@ -37,3 +27,22 @@ def get_db():
                                 decode_responses=True)
     except redis.exceptions.ConnectionError:
         return redirect(url_for("main_bp.error-page"))
+
+# Okta
+OKTA_BASE=os.getenv('OKTA_BASE')
+OKTA_CALLBACK_URL=os.getenv('OKTA_CALLBACK_URL')
+OKTA_CLIENT_ID=os.getenv('OKTA_CLIENT_ID')
+OKTA_CLIENT_SECRET=os.getenv('OKTA_CLIENT_SECRET')
+OKTA_API_TOKEN=os.getenv('OKTA_API_TOKEN')
+
+okta = {
+    "client_id": OKTA_CLIENT_ID,
+    "client_secret": OKTA_CLIENT_SECRET,
+    "api_token" : OKTA_API_TOKEN,
+    "auth_uri": "https://{}/oauth2/default/v1/authorize".format(OKTA_BASE),
+    "token_uri": "https://{}/oauth2/default/v1/token".format(OKTA_BASE),
+    "issuer": "https://{}/oauth2/default",
+    "userinfo_uri": "https://{}/oauth2/default/v1/userinfo".format(OKTA_BASE),
+    "redirect_uri": OKTA_CALLBACK_URL,
+    "groups_uri" : "https://" + OKTA_BASE + "/api/v1/users/{}/groups"
+}
