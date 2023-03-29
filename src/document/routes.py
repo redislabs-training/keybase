@@ -434,6 +434,7 @@ def doc(id, prettyurl):
         res = get_db().eval(
             "local vector = redis.call('HMGET',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','vss_idx','@state:{published|review}=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres",
             1, *keys_and_args)
+
         it = iter(res[1:])
         for x in it:
             keys.append(str(x.split(':')[-1]))

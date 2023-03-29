@@ -6,8 +6,8 @@ import flask
 from flask import flash, Blueprint, render_template, redirect, request, session, url_for
 import flask_login
 from flask_login import (LoginManager,current_user,logout_user,)
-import logging
 import json
+from flask import current_app
 
 from src.okta.user import OktaUser
 from src.common.config import get_db, okta
@@ -123,7 +123,7 @@ def callback():
 
     # Get tokens and validate
     if not exchange.get("token_type"):
-        logging.error('Unsupported token type, exchange is ' + json.dumps(exchange))
+        current_app.error('Unsupported token type, exchange is ' + json.dumps(exchange))
         return "Unsupported token type. Should be 'Bearer'.", 403
     access_token = exchange["access_token"]
 
@@ -146,6 +146,9 @@ def callback():
     # Now create the session
     flask_login.login_user(user)
 
+    # Log the event
+    current_app.logger.info('User logged in successfully: {}'.format(current_user.id))
+
     # Store authentications in a time series
     get_db().ts().add("keybase:authentications", "*", 1, duplicate_policy='first')
 
@@ -159,6 +162,7 @@ def callback():
 
 @okta_bp.route("/logout", methods=["GET", "POST"])
 def logout():
+    current_app.logger.info('User logged out: {}'.format(current_user.id))
     logout_user()
     return redirect(url_for('public_bp.landing'))
 

@@ -6,7 +6,7 @@ from datetime import datetime
 from flask_breadcrumbs import Breadcrumbs
 from werkzeug.exceptions import HTTPException
 import redis
-
+import logging
 from src.common.utils import track_errors
 
 
@@ -59,6 +59,10 @@ def create_app():
     # from .auth.routes import auth_bp
     # app.register_blueprint(auth_bp)
 
+    gunicorn_error_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers.extend(gunicorn_error_logger.handlers)
+    app.logger.setLevel(logging.INFO)
+
     @app.errorhandler(Exception)
     def handle_exception(e):
         # database error
@@ -73,6 +77,7 @@ def create_app():
         # now you're handling non-HTTP exceptions only
         return render_template('500.html'), 500
 
+    app.logger.info('Redis Knowledge Base started!')
     return app
 
 
