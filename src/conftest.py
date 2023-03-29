@@ -1,7 +1,8 @@
 from flask import template_rendered
 from src.application import create_app
 from redis_om import (Migrator)
-from src.common.config import get_db, REDIS_CFG
+from src.common.config import REDIS_CFG
+from src.common.utils import get_db
 import pytest, json, flask_login
 from src.okta.user import OktaUser
 

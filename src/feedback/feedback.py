@@ -3,8 +3,7 @@ from typing import Optional
 from redis_om import (JsonModel, Field)
 from enum import Enum
 
-from src.common.config import get_db
-from src.common.utils import ShortUuidPk
+from src.common.utils import ShortUuidPk, get_db
 
 
 # Indexing is not yet allows by redis-om

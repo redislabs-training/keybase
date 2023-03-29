@@ -1,7 +1,7 @@
 from flask import Blueprint, Response, request, jsonify
 from functools import wraps
 
-from src.common.config import get_db
+from src.common.utils import get_db
 
 api_bp = Blueprint('api_bp', __name__)
 

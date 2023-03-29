@@ -10,8 +10,8 @@ import base64
 
 from src.common.utils import ShortUuidPk
 from src.document.document import Document
-from src.common.utils import requires_access_level, Role
-from src.common.config import get_db, REDIS_CFG
+from src.common.utils import requires_access_level, Role, get_db
+from src.common.config import REDIS_CFG
 
 admin_bp = Blueprint('admin_bp', __name__,
                      template_folder='./templates')

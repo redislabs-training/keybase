@@ -3,7 +3,7 @@ from flask_login import (LoginManager, current_user, login_required)
 import hashlib, time
 
 from src.auth.authuser import AuthUser
-from src.common.config import get_db
+from src.common.utils import get_db
 
 auth_bp = Blueprint('auth_bp', __name__,
                     template_folder='./templates')

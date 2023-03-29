@@ -1,7 +1,6 @@
 from flask_login import UserMixin
 import time
-from src.common.config import get_db
-from src.common.utils import Role
+from src.common.utils import Role, get_db
 
 # Simulate user database
 USERS_DB = {}

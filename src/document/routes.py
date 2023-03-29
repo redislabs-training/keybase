@@ -10,8 +10,7 @@ from .document import Document, Version, CurrentVersion
 from pydantic import ValidationError
 from redis_om import NotFoundError
 
-from src.common.config import get_db
-from src.common.utils import parse_query_string, get_analytics, pretty_title, track_request, requires_access_level, Role
+from src.common.utils import get_db, parse_query_string, get_analytics, pretty_title, track_request, requires_access_level, Role
 
 document_bp = Blueprint('document_bp', __name__,
                         template_folder='./templates')

@@ -8,7 +8,7 @@ from flask import Flask
 
 # In production uncomment this line and set the keybase folder path
 #sys.path.append('/Users/mortensi/PycharmProjects/keybase/')
-from src.common.config import get_db
+from src.common.utils import get_db
 
 # Or set the PYTHONPATH environment variables
 # export PYTHONPATH="/Users/mortensi/PycharmProjects/keybase/"

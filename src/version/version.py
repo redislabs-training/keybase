@@ -1,6 +1,6 @@
 from redis_om import (EmbeddedJsonModel, Field)
 from typing import Optional
-from src.common.config import get_db
+from src.common.utils import get_db
 
 # Note. Redis OM EmbeddedJsonModel timestamps cannot have ints.
 # "In this Preview release, list and tuple fields can only contain strings"

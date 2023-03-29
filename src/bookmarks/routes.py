@@ -3,7 +3,7 @@ from flask_login import (current_user, login_required)
 from datetime import datetime
 from redis_om import NotFoundError
 
-from src.common.config import get_db
+from src.common.utils import get_db
 from src.common.utils import pretty_title, track_request
 from src.document.document import Document
 

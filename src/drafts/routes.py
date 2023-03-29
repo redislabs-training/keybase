@@ -4,9 +4,7 @@ from datetime import datetime
 from flask import Blueprint, render_template
 from flask_login import (current_user, login_required)
 
-from src.common.config import get_db
-from src.common.utils import pretty_title, track_request
-from src.common.utils import requires_access_level, Role
+from src.common.utils import get_db, pretty_title, track_request, requires_access_level, Role
 from src.document.document import Document
 
 

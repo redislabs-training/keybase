@@ -10,7 +10,8 @@ import json
 from flask import current_app
 
 from src.okta.user import OktaUser
-from src.common.config import get_db, okta
+from src.common.config import okta
+from src.common.utils import get_db
 
 okta_bp = Blueprint('okta_bp', __name__,
                         template_folder='./templates')
