@@ -1,4 +1,6 @@
 import hashlib
+import logging
+import json
 import secrets
 import requests
 import base64
@@ -107,7 +109,7 @@ def callback():
 
     query_params = {'grant_type': 'authorization_code',
                     'code': code,
-                    'redirect_uri': request.base_url,
+                    'redirect_uri': okta["redirect_uri"],
                     'code_verifier': session['code_verifier'],
                     }
     query_params = requests.compat.urlencode(query_params)
@@ -118,9 +120,12 @@ def callback():
         auth=(okta["client_id"], okta["client_secret"]),
     ).json()
 
+
+    logging.debug("okta_response = {}".format(json.dumps(exchange)))
+
     # Get tokens and validate
     if not exchange.get("token_type"):
-        return "Unsupported token type. Should be 'Bearer'.", 403
+        return "Unsupported token type in {}.".format(json.dumps(exchange)), 403
     access_token = exchange["access_token"]
 
     # Authorization flow successful, get userinfo and login user

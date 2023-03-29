@@ -3,7 +3,7 @@ WORKDIR ./
 COPY . /
 
 RUN pip install --no-cache-dir -r requirements.txt
-ENV GUNICORN_CMD_ARGS="--workers 1 --bind 0.0.0.0:8000 --log-level debug"
+ENV GUNICORN_CMD_ARGS="--workers 1 --bind 0.0.0.0:8000 --log-level debug --capture-output --error-logfile ./gunicorn.log"
 EXPOSE 8000
 
 CMD [ "gunicorn", "wsgi:create_app()" ]
