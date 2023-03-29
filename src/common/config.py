@@ -1,8 +1,6 @@
 import redis
-import logging
 from flask import redirect, url_for
 
-logging.basicConfig(filename="/tmp/rediskb.log")
 
 REDIS_CFG = {   "host" : "",
                 "port" : 6379,
