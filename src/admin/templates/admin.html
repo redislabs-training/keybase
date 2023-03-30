@@ -9,6 +9,33 @@
     </ul>
   </div>
 
+
+    <form class="mb-4" method="post" action="{{ url_for('admin_bp.tools') }}">
+        <div class="field has-addons">
+            <div class="control has-icons-left is-expanded">
+                <input name="q" class="input" type="text" placeholder="Find users">
+                <span class="icon is-small is-left">
+                  <i class="fas fa-search"></i>
+                </span>
+            </div>
+            <p class="control">
+                <span class="select">
+                    <select name="role" style="width:150px;">
+                          <option {% if role=="all" %} selected{% endif %} value="all">all roles</option>
+                          <option {% if role=="viewer" %} selected{% endif %} value="viewer">viewers</option>
+                          <option {% if role=="editor" %} selected{% endif %} value="editor">editors</option>
+                          <option {% if role=="admin" %} selected{% endif %} value="admin">admins</option>
+                    </select>
+                </span>
+            </p>
+            <div class="control">
+                <button type="submit" class="button is-info">Search</button>
+            </div>
+        </div>
+    </form>
+
+
+
   {% if users is not none %}
   {% for key, name, group, email in users %}
   <div class="columns">
@@ -26,6 +53,9 @@
     </div>
   </div>
   {% endfor %}
+  {% else %}
+      No users in the system
+  {% endif %}
 
   {% if pagination is not none %}
   <div class="mt-4 mb-6">
@@ -33,9 +63,6 @@
   </div>
   {% endif %}
 
-  {% else %}
-      No users in the system
-  {% endif %}
 
   <script>
     $( "select" )
