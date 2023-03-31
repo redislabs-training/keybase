@@ -41,24 +41,6 @@ docker run -p 6379:6379 redis/redis-stack
 
 > **Redis Stack Server** combines open source Redis with RediSearch, RedisJSON, RedisGraph, RedisTimeSeries, and RedisBloom. Redis Stack also includes RedisInsight, a visualization tool for understanding and optimizing Redis data.
 
-1. Configure the Redis database credentials in the `config.py` file.
-2. Create the index (documents are stored in Hashes).
-
-```
-FT.CREATE document_idx ON HASH PREFIX 1 "keybase:kb" SCHEMA name TEXT content TEXT creation NUMERIC SORTABLE update NUMERIC SORTABLE state TAG owner TEXT processable TAG tags TAG content_embedding VECTOR HNSW 6 TYPE FLOAT32 DIM 768 DISTANCE_METRIC COSINE
-```
-
-3. Create also the index for users.
-
-```
-FT.CREATE user_idx ON HASH PREFIX 1 "keybase:okta" SCHEMA name TEXT group TEXT
-```
-
-4. Finally, consider that Vector Similarity syntax will need the following syntax dialect. Then set it:
-
-```
-FT.CONFIG SET DEFAULT_DIALECT 2
-```
 
 ### 3. Okta Authentication
 
@@ -76,17 +58,53 @@ You can test the Okta integration with a [Okta Developer Edition](https://develo
 
 ### 4. Keybase execution
 
+Before starting the knowledge base, you will need to configure it. Browse to `/common/config.py` and edit the information accordingly. Alternatively, you can create a shell script and `source` it. Keybase will auto-configure from environment variables. If you choose to configure via environment, write a `conf.sh` shell script:
+
+```
+#!/bin/sh
+export DB_SERVICE=127.0.0.1
+export DB_PORT=6379
+export DB_PSW=
+
+export OKTA_BASE=<YOUR_OKTA_DOMAIN>
+export OKTA_CALLBACK_URL=http://<YOUR_WEB_DOMAIN>authorization-code/callback
+export OKTA_CLIENT_ID=...
+export OKTA_CLIENT_SECRET=...
+export OKTA_API_TOKEN=...
+```
+
+And execute it in the session where Keybase will be started:
+
+```
+source conf.py
+```
+
+
 Time to start the platform with:
 
 ```
 ./start.sh
 ```
 
+or directly with `Gunicorn`, suitable for production environments.
+
+```
+gunicorn --workers 1 --bind 0.0.0.0:5000 "wsgi:create_app()"
+```
+
+Or, to redirect logs to some place:
+
+```
+gunicorn --workers 1 --bind 0.0.0.0:5000 --log-file /var/log/keybase/rediskb.log --log-level INFO "wsgi:create_app()"
+```
+
 ### 5. Indexing documents for similarity search
 
-The indexation of documents for Similarity Search is a intensive activity that must be scheduled offline. Schedule a periodic execution of the script `transformer.py` using `cron` or a similar utility. An execution every minute is sufficient to index new documents or update the index of those documents that received an update.
+The indexation of documents for Similarity Search is a intensive activity that must be scheduled offline. Schedule a periodic execution of the script `transformer.py` using `cron` or a similar utility. An execution every minute is sufficient to index new documents or update the index of those documents that received an update. Using `crontab`, the task would look like:
 
-
+* * * * * export PYTHONPATH=/home/<USER>/keybase/; /home/<USER>/keybasevenv/bin/python3 /home/mirko_ortensi/keybase/src/services/transformer.py > /home/<USER>/cron.log 2>&1
+  
+  
 ### 6. Using Keybase in production
 
 Flask has a built-in web server, but it is not recommended for production usage. It is recommended to put Flask behind a web server which communicates with Flask using WSGI. 
@@ -106,7 +124,13 @@ Keybase implements role-based access control. Three roles are implemented at the
 
 - Viewer: can only view and bookmark documents. When you first authenticate with Okta, you are a viewer. Only the admin can assign roles
 - Editor: can create a draft, edit a draft, edit a published document. But you cannot publish a document. When editing a published document, a new review will be created, while locking other editors from creating additional reviews. Only admins can publish reviews
-- Admin: can do everything. And in particular, only the admin can publish documents, create new tags and import/export data
+- Admin: can do everything. And in particular, only the admin can publish documents, create new tags and import/export data. The admin can set privileges to other users.
+
+*Note*: The installation process does not create any super user. The first admin should be set manually in this version by accessing the database, after the first successful Okta authentication:
+  
+```
+HSET keybase:okta:<OKTA_USER_ID> group admin
+```
 
 
 ## Troubleshooting
