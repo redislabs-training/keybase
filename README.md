@@ -1,8 +1,8 @@
 # <img src="src/static/images/keybase.png" height="50px">
 
-## What is Keybase?
+## Keybase, the real-time Knowledge Base
 
-Keybase is an Open Source Knowledge Base featuring smart searches and recommendations based on Redis Stack.
+Keybase is an Open Source Knowledge Base featuring smart searches and recommendations based on [Redis Stack](https://redis.io/docs/stack/about/).
 
 - Create and edit documents using a WYSIWYG Markdown editor
 - Browse, search, and bookmark Knowledge Base articles
