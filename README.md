@@ -102,7 +102,9 @@ gunicorn --workers 1 --bind 0.0.0.0:5000 --log-file /var/log/keybase/rediskb.log
 
 The indexation of documents for Similarity Search is a intensive activity that must be scheduled offline. Schedule a periodic execution of the script `transformer.py` using `cron` or a similar utility. An execution every minute is sufficient to index new documents or update the index of those documents that received an update. Using `crontab`, the task would look like:
 
+```
 * * * * * export PYTHONPATH=/home/<USER>/keybase/; /home/<USER>/keybasevenv/bin/python3 /home/mirko_ortensi/keybase/src/services/transformer.py > /home/<USER>/cron.log 2>&1
+```
   
   
 ### 6. Using Keybase in production
