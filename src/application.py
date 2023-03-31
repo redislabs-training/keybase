@@ -10,9 +10,12 @@ import logging
 from src.common.utils import track_errors, get_db
 
 import redis
+from redis_om import (Migrator, get_redis_connection)
 from redis.commands.search.field import TextField, TagField, VectorField
 from redis.commands.search.indexDefinition import IndexDefinition
 
+from src.document.document import Document, Version, CurrentVersion
+from src.feedback.feedback import Feedback
 
 def create_app():
     app = Flask(__name__, template_folder="templates")
@@ -22,17 +25,34 @@ def create_app():
     app.url_map.strict_slashes = False
     CORS(app)
 
-    if not "user_idx" in get_db().execute_command("FT._LIST"):
+    # Setup gunicorn logging
+    gunicorn_error_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers.extend(gunicorn_error_logger.handlers)
+    app.logger.setLevel(logging.INFO)
+
+    # Reading the list of indexes for eventual creation
+    indexes=get_db().execute_command("FT._LIST")
+
+    if not "document_idx" in indexes:
+        app.logger.info("The index document_idx does not exist, creating it")
+        Migrator().run()
+
+    if not "feedback_idx" in indexes:
+        app.logger.info("The index feedback_idx does not exist, creating it")
+        Migrator().run()
+
+    if not "user_idx" in indexes:
         app.logger.info("The index user_idx does not exist, creating it")
         index_def = IndexDefinition(prefix=["keybase:okta"])
         schema = (TextField("name"), TagField("group"))
         get_db().ft('user_idx').create_index(schema, definition=index_def)
 
-    if not "vss_idx" in get_db().execute_command("FT._LIST"):
+    if not "vss_idx" in indexes:
         app.logger.info("The index vss_idx does not exist, creating it")
         index_def = IndexDefinition(prefix=["keybase:vss"])
         schema = (TagField("state"), TagField("privacy"), VectorField("content_embedding", "HNSW", {"TYPE": "FLOAT32", "DIM": 768, "DISTANCE_METRIC": "L2"}))
         get_db().ft('vss_idx').create_index(schema, definition=index_def)
+
 
     @app.template_filter('ctime')
     def timectime(s):
@@ -74,10 +94,6 @@ def create_app():
 
     # from .auth.routes import auth_bp
     # app.register_blueprint(auth_bp)
-
-    gunicorn_error_logger = logging.getLogger('gunicorn.error')
-    app.logger.handlers.extend(gunicorn_error_logger.handlers)
-    app.logger.setLevel(logging.INFO)
 
     @app.errorhandler(Exception)
     def handle_exception(e):

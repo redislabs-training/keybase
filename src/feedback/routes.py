@@ -25,9 +25,12 @@ def before_request():
 @login_required
 def comment():
     try:
-        document = Document.get(request.form['pk'])
+        Document.get(request.form['pk'])
     except NotFoundError:
         return jsonify(message="The document does not exist"), 404
+
+    if not request.form['desc'] or not request.form['msg']:
+        return jsonify(message="Missing mandatory data"), 400
 
     if len(request.form['desc']) < 10:
         return jsonify(message="The description is too short"), 422
