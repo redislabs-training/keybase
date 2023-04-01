@@ -10,12 +10,14 @@ import logging
 from src.common.utils import track_errors, get_db
 
 import redis
-from redis_om import (Migrator, get_redis_connection)
+from redis_om import (Migrator)
 from redis.commands.search.field import TextField, TagField, VectorField
 from redis.commands.search.indexDefinition import IndexDefinition
 
+# These 2 imports are needed for OM; if removed, OM won't create indexes
 from src.document.document import Document, Version, CurrentVersion
 from src.feedback.feedback import Feedback
+
 
 def create_app():
     app = Flask(__name__, template_folder="templates")
@@ -31,28 +33,29 @@ def create_app():
     app.logger.setLevel(logging.INFO)
 
     # Reading the list of indexes for eventual creation
-    indexes=get_db().execute_command("FT._LIST")
+    indexes = get_db().execute_command("FT._LIST")
 
-    if not "document_idx" in indexes:
+    if "document_idx" not in indexes:
         app.logger.info("The index document_idx does not exist, creating it")
         Migrator().run()
 
-    if not "feedback_idx" in indexes:
+    if "feedback_idx" not in indexes:
         app.logger.info("The index feedback_idx does not exist, creating it")
         Migrator().run()
 
-    if not "user_idx" in indexes:
+    if "user_idx" not in indexes:
         app.logger.info("The index user_idx does not exist, creating it")
         index_def = IndexDefinition(prefix=["keybase:okta"])
         schema = (TextField("name"), TagField("group"))
         get_db().ft('user_idx').create_index(schema, definition=index_def)
 
-    if not "vss_idx" in indexes:
+    if "vss_idx" not in indexes:
         app.logger.info("The index vss_idx does not exist, creating it")
         index_def = IndexDefinition(prefix=["keybase:vss"])
-        schema = (TagField("state"), TagField("privacy"), VectorField("content_embedding", "HNSW", {"TYPE": "FLOAT32", "DIM": 768, "DISTANCE_METRIC": "L2"}))
+        schema = (TagField("state"),
+                  TagField("privacy"),
+                  VectorField("content_embedding", "HNSW", {"TYPE": "FLOAT32", "DIM": 768, "DISTANCE_METRIC": "L2"}))
         get_db().ft('vss_idx').create_index(schema, definition=index_def)
-
 
     @app.template_filter('ctime')
     def timectime(s):
@@ -104,15 +107,12 @@ def create_app():
         track_errors(e)
         # pass through HTTP errors
         if isinstance(e, HTTPException):
-            return render_template('404.html'), 404
+            print(e.code)
+            return render_template('404.html'), e.code
 
         # now you're handling non-HTTP exceptions only
         return render_template('500.html'), 500
 
     app.logger.info('Redis Knowledge Base started!')
+
     return app
-
-
-
-
-

@@ -2,7 +2,7 @@ import json
 
 
 def test_feedback_comment_wrong_document_pk(test_client, user_auth, create_document):
-    doc_id = create_document
+    create_document
     response = test_client.post("/comment", data={'pk': "54g345345",
                                                   'desc': 'my name is...',
                                                   'msg': 'my content is...'})
@@ -44,22 +44,6 @@ def test_feedback_viewer_not_allowed(test_client, user_auth, prepare_db):
     assert response.data == b"Unauthorized"
 
 
-def test_feedback_editor_allowed(test_client, user_auth, create_document, captured_templates):
-    doc_id = create_document
-    response = test_client.post("/comment", data={'pk': doc_id,
-                                                  'desc': 'This is a correct description',
-                                                  'msg': 'This is a correct message'})
-    response = test_client.get("/feedback")
-    assert response.status_code == 200
-
-    assert len(captured_templates) == 1
-    template, context = captured_templates[0]
-    assert template.name == "feedback/view.html"
-    assert "results" in context
-    assert context['results'][0]['description'] == 'This is a correct description'
-    assert context['results'][0]['docid'] == doc_id
-
-
 def test_feedback_non_existing_parameters(test_client, user_auth, create_document, captured_templates):
     doc_id = create_document
     response = test_client.post("/comment", data={'pk': doc_id,
@@ -85,9 +69,9 @@ def test_feedback_detail_wrong_feedback_pk(test_client, user_auth):
 
 def test_feedback_editor_allowed(test_client, user_auth, create_document, captured_templates):
     doc_id = create_document
-    response = test_client.post("/comment", data={'pk': doc_id,
-                                                  'desc': 'This is a correct description',
-                                                  'msg': 'This is a correct message'})
+    test_client.post("/comment", data={'pk': doc_id,
+                                       'desc': 'This is a correct description',
+                                       'msg': 'This is a correct message'})
     response = test_client.get("/feedback")
     assert response.status_code == 200
 
@@ -107,7 +91,7 @@ def test_feedback_editor_allowed(test_client, user_auth, create_document, captur
     assert json.loads(response.data)['state'] == 'open'
 
 
-def test_feedback_response_not_allowed(test_client, user_auth):
+def test_feedback_response_not_authorized(test_client, user_auth):
     user_auth.set_group("viewer")
     response = test_client.post("/response", data={"pk": "54g345345"})
     assert response.status_code == 403
@@ -125,9 +109,9 @@ def test_feedback_response_not_allowed(test_client, user_auth):
 
 def test_feedback_response_wrong_state(test_client, user_auth, create_document, captured_templates):
     doc_id = create_document
-    response = test_client.post("/comment", data={'pk': doc_id,
-                                                  'desc': 'This is a correct description',
-                                                  'msg': 'This is a correct message'})
+    test_client.post("/comment", data={'pk': doc_id,
+                                       'desc': 'This is a correct description',
+                                       'msg': 'This is a correct message'})
     response = test_client.get("/feedback")
     assert response.status_code == 200
 
@@ -148,9 +132,9 @@ def test_feedback_response_wrong_state(test_client, user_auth, create_document, 
 
 def test_feedback_response_success(test_client, user_auth, create_document, captured_templates):
     doc_id = create_document
-    response = test_client.post("/comment", data={'pk': doc_id,
-                                                  'desc': 'This is a correct description',
-                                                  'msg': 'This is a correct message'})
+    test_client.post("/comment", data={'pk': doc_id,
+                                       'desc': 'This is a correct description',
+                                       'msg': 'This is a correct message'})
     response = test_client.get("/feedback")
     assert response.status_code == 200
 

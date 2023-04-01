@@ -1,8 +1,6 @@
-import urllib
-
 import flask
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify
-from flask_login import (current_user, login_required)
+from flask_login import (login_required)
 from flask_paginate import Pagination, get_page_args
 import redis
 from redis.commands.search.query import Query
@@ -34,8 +32,8 @@ conn = redis.StrictRedis(host=REDIS_CFG["host"],
 @login_required
 @requires_access_level(Role.ADMIN)
 def tools():
-    TITLE = "Admin functions"
-    DESC = "Admin functions"
+    title = "Admin functions"
+    desc = "Admin functions"
     key = []
     name = []
     group = []
@@ -46,7 +44,7 @@ def tools():
     if flask.request.method == 'POST':
         if request.form['role']:
             role = request.form['role']
-            if role!="all":
+            if role != "all":
                 rolefilter = " @group:{" + role + "}"
                 queryfilter = ""
 
@@ -65,7 +63,6 @@ def tools():
     pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma',
                             bulma_style='small', prev_label='Previous', next_label='Next page')
 
-
     if (rs is not None) and len(rs.docs):
         for doc in rs.docs:
             key.append(doc.id.split(':')[-1])
@@ -75,30 +72,26 @@ def tools():
 
         users = zip(key, name, group, email)
 
-    return render_template('admin.html', title=TITLE, desc=DESC, users=users, pagination=pagination, role=role)
+    return render_template('admin.html', title=title, desc=desc, users=users, pagination=pagination, role=role)
 
 
 @admin_bp.route('/tags')
 @login_required
 @requires_access_level(Role.ADMIN)
 def tags():
-    TITLE = "Admin functions"
-    DESC = "Admin functions"
-    tags = []
-    categories = []
+    title = "Admin functions"
+    desc = "Admin functions"
 
     # Fetching list of tags and categories
     categories = get_db().hgetall("keybase:categories")
     tags = get_db().hgetall("keybase:tags")
-    return render_template('tags.html', title=TITLE, desc=DESC, tags=tags, categories=categories)
+    return render_template('tags.html', title=title, desc=desc, tags=tags, categories=categories)
 
 
 @admin_bp.route('/tagsearch', methods=['GET'])
 @login_required
 @requires_access_level(Role.EDITOR)
 def tagsearch():
-    TITLE = "Admin functions"
-    DESC = "Admin functions"
     tags = []
 
     # Fetching list of tags
@@ -133,7 +126,7 @@ def createcategory():
         category = {pkcreator.create_pk(): request.form['category']}
         get_db().hset("keybase:categories", mapping=category)
     else:
-        return jsonify(message="Metadata is missing", code="success"),500
+        return jsonify(message="Metadata is missing", code="success"), 500
 
     return redirect(url_for('admin_bp.tags'))
 
@@ -142,57 +135,10 @@ def createcategory():
 @login_required
 @requires_access_level(Role.ADMIN)
 def data():
-    TITLE = "Admin functions"
-    DESC = "Admin functions"
+    title = "Admin functions"
+    desc = "Admin functions"
 
-    return render_template('data.html', title=TITLE, desc=DESC)
-
-
-"""
-# Routines to backup and restore encoding data as UTF-8. Cannot encode binary vector embeddings, so to use vector similarity, I choose base64 encoding
-# These routines could be reused to produce statements such as HSET ..., in a much more readable format
-@admin.route('/backup', methods=['GET'])
-def backup():
-    result = []
-    backup =""
-    cursor=0
-
-    while True:
-        cursor, keys  = conn.scan(cursor, match='keybase*', count=2, _type="HASH")
-        result.extend(keys)
-        for key in keys:
-            hash = conn.hgetall(key)
-            data = ObjDict()
-            data['key'] = key.decode('utf-8')
-            data['type'] = "hash"
-            theValue = ObjDict()
-            for (field, value) in hash.items():
-                if (field.decode('utf-8') == "content_embedding"):
-                #    theValue[field.decode("utf-8")] = str(value)
-                    continue
-                theValue[field.decode("utf-8")] = value.decode("utf-8")
-            data['value'] = theValue
-            backup += json.dumps(data) + "\n"
-
-        if (cursor==0):
-            break
-
-    return jsonify(message="Backup created", backup=backup)
-
-
-@admin.route('/restore', methods=['POST'])
-def restore():
-    print("Starting to restore")
-    uploaded_file = request.files['file']
-    print(uploaded_file.filename)
-    #conn.execute_command("HSET minestra patata \"dieci l'anno\" carote \"sette quasi\" zucchine 8")
-    for line in uploaded_file:
-        data = json.loads(line.decode('utf-8'))
-        if (data['type'] == "hash"):
-            conn.hmset(data['key'], data['value'])
-
-    return jsonify(message="Restore done")
-"""
+    return render_template('data.html', title=title, desc=desc)
 
 
 @admin_bp.route('/backup', methods=['GET'])
@@ -207,17 +153,17 @@ def backup():
         cursor, keys = conn.scan(cursor, match='keybase*', count=20, _type="HASH")
         result.extend(keys)
         for key in keys:
-            hash = conn.hgetall(key)
+            hashdata = conn.hgetall(key)
             data = {}
-            theValue = {}
+            thevalue = {}
             data['key'] = key.decode("utf-8")
-            for (field, value) in hash.items():
-                theValue[base64.b64encode(field).decode('ascii')] = base64.b64encode(value).decode('ascii')
+            for (field, value) in hashdata.items():
+                thevalue[base64.b64encode(field).decode('ascii')] = base64.b64encode(value).decode('ascii')
 
-            data['value'] = theValue
+            data['value'] = thevalue
             backup += json.dumps(data) + "\n"
 
-        if (cursor == 0):
+        if cursor == 0:
             break
 
     return jsonify(message="Backup created", backup=backup)
@@ -232,11 +178,11 @@ def restore():
     print(uploaded_file.filename)
     for line in uploaded_file:
         data = json.loads(line)
-        hash = {}
+        hashdata = {}
         print(data['key'])
         for (field, value) in data['value'].items():
-            hash[base64.b64decode(field.encode('ascii'))] = base64.b64decode(value.encode('ascii'))
-        conn.hmset(data['key'], hash)
+            hashdata[base64.b64decode(field.encode('ascii'))] = base64.b64decode(value.encode('ascii'))
+        conn.hmset(data['key'], hashdata)
 
     return jsonify(message="Restore done")
 

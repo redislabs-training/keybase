@@ -1,4 +1,4 @@
-from typing import Optional, List, Any
+from typing import Optional, List
 from redis_om import (JsonModel, Field)
 from src.common.utils import ShortUuidPk, get_db
 from src.version.version import Version, CurrentVersion

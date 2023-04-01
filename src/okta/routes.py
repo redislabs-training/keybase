@@ -5,7 +5,7 @@ import base64
 import flask
 from flask import flash, Blueprint, render_template, redirect, request, session, url_for
 import flask_login
-from flask_login import (LoginManager,current_user,logout_user,)
+from flask_login import (LoginManager, current_user, logout_user,)
 import json
 from flask import current_app
 
@@ -14,7 +14,7 @@ from src.common.config import okta
 from src.common.utils import get_db
 
 okta_bp = Blueprint('okta_bp', __name__,
-                        template_folder='./templates')
+                    template_folder='./templates')
 
 login_manager = LoginManager()
 
@@ -26,9 +26,11 @@ login_manager = LoginManager()
 def on_load(state):
     login_manager.init_app(state.app)
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return OktaUser.get(user_id)
+
 
 @login_manager.unauthorized_handler
 def unauthorized_callback():
@@ -36,7 +38,7 @@ def unauthorized_callback():
         if request.endpoint == "public_bp.kb" and not current_user.is_authenticated:
             print("post-login doc is " + request.path)
             flash(request.path, 'wanted')
-        return render_template('index.html', next=request.endpoint),401
+        return render_template('index.html', next=request.endpoint), 401
 
 
 @okta_bp.before_request
@@ -48,7 +50,7 @@ def check_valid_login():
 
     # endpoints used for authentication
     endpoint_group = ('static', 'okta_bp.login', 'okta_bp.callback')
-    if not request.endpoint in endpoint_group and not current_user.is_authenticated:
+    if request.endpoint not in endpoint_group and not current_user.is_authenticated:
         return render_template('index.html', next=request.endpoint)
 
 
@@ -94,10 +96,7 @@ def callback():
     code = request.args.get("code")
     app_state = request.args.get("state")
 
-    try:
-        print("Session token has been read")
-    except:
-        print("Cannot read session token")
+    print("Session token has been read")
 
     try:
         if app_state != session['app_state']:
@@ -120,7 +119,6 @@ def callback():
         data=query_params,
         auth=(okta["client_id"], okta["client_secret"]),
     ).json()
-
 
     # Get tokens and validate
     if not exchange.get("token_type"):
@@ -168,14 +166,14 @@ def logout():
     return redirect(url_for('public_bp.landing'))
 
 
-def getUserGroups():
+def getusergroups(unique_id):
     # Get groups
     # https://developer.okta.com/docs/guides/create-an-api-token/main/
     # Tokens are valid for 30 days from creation or last use
     api_token = okta["api_token"]
     usergroups_response = requests.get(okta["groups_uri"].format(unique_id),
-                                        headers={'Accept':'application/json',
-                                                'Content-Type':'application/json',
+                                       headers={'Accept': 'application/json',
+                                                'Content-Type': 'application/json',
                                                 'Authorization': f'SSWS {api_token}'}).json()
 
     print(usergroups_response)

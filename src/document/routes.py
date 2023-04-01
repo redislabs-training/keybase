@@ -4,7 +4,8 @@ from flask_login import (current_user, login_required)
 from flask_paginate import Pagination, get_page_args
 from redis import RedisError
 from datetime import datetime
-import time, urllib.parse, json
+import time
+import urllib.parse
 from redis.commands.search.query import Query
 from .document import Document, Version, CurrentVersion
 from pydantic import ValidationError
@@ -33,10 +34,10 @@ def autocomplete():
     query = parse_query_string(flask.request.args.get('q'))
     query = "@currentversion_name_fts|currentversion_content_fts:'" + query + "'"
     rs = get_db().ft("document_idx")\
-            .search(Query(query + " @state:{published|review}")
-            .return_field("currentversion_name")
-            .sort_by("creation", asc=False)
-            .paging(0, 10))
+                 .search(Query(query + " @state:{published|review}")
+                 .return_field("currentversion_name")
+                 .sort_by("creation", asc=False)
+                 .paging(0, 10))
 
     results = []
 
@@ -52,8 +53,8 @@ def autocomplete():
 @document_bp.route('/browse', methods=['GET', 'POST'])
 @login_required
 def browse():
-    TITLE = "List documents"
-    DESC = "Listing documents"
+    title = "List documents"
+    desc = "Listing documents"
     keys = []
     names = []
     pretty = []
@@ -114,7 +115,7 @@ def browse():
 
         # Get the categories
         categories = get_db().hgetall("keybase:categories")
-        return render_template('browse.html', title=TITLE, desc=DESC, categories=categories, keydocument=keydocument, page=page,
+        return render_template('browse.html', title=title, desc=desc, categories=categories, keydocument=keydocument, page=page,
                                per_page=per_page, pagination=pagination, category=category, asc=asc, privacy=prv)
     except RedisError as err:
         print(err)
@@ -210,7 +211,7 @@ def addmetadata():
     try:
         document = Document.get(request.form['id'])
     except NotFoundError:
-        return jsonify(message="The document does not exist", code="error"),404
+        return jsonify(message="The document does not exist", code="error"), 404
 
     if len(request.form['keyword']) > 160:
         return jsonify(message="Keywords too long: max is 160 chars", code="error"), 500
@@ -221,7 +222,7 @@ def addmetadata():
     document.keyword = request.form['keyword']
     document.description = request.form['description']
     document.save()
-    return jsonify(message="The metadata has been saved", code="success"),200
+    return jsonify(message="The metadata has been saved", code="success"), 200
 
 
 @document_bp.route('/addtag', methods=['POST'])
@@ -233,7 +234,7 @@ def addtag():
     try:
         document = Document.get(request.form['id'])
     except NotFoundError:
-        return jsonify(message="The document does not exist", code="error"),404
+        return jsonify(message="The document does not exist", code="error"), 404
 
     # Make sure the tag exists and is valid
     if not get_db().hexists("keybase:tags", request.form['tag']):
@@ -261,7 +262,7 @@ def addcategory():
     try:
         document = Document.get(request.form['id'])
     except NotFoundError:
-        return jsonify(message="The document does not exist", code="error"),404
+        return jsonify(message="The document does not exist", code="error"), 404
 
     # Make sure the category exists
     if not get_db().hexists("keybase:categories", request.form['cat']) and len(request.form['cat']):
@@ -271,6 +272,7 @@ def addcategory():
     document.save()
     return jsonify(message="The category has been changed", code="success")
 
+
 @document_bp.route('/setprivacy', methods=['POST'])
 @login_required
 @requires_access_level(Role.ADMIN)
@@ -278,14 +280,14 @@ def setprivacy():
     try:
         document = Document.get(request.form['id'])
     except NotFoundError:
-        return jsonify(message="The document does not exist", code="error"),404
+        return jsonify(message="The document does not exist", code="error"), 404
 
     # Make sure the privacy is correct
     if not (request.form['privacy'] == 'internal') and not (request.form['privacy'] == 'public'):
-        return jsonify(message="The privacy setting not exist", code="error"),500
+        return jsonify(message="The privacy setting not exist", code="error"), 500
 
     # Do not recommend
-    privacy = { "privacy" : request.form['privacy']}
+    privacy = {"privacy": request.form['privacy']}
     get_db().hset("keybase:vss:{}".format(request.form['id']), mapping=privacy)
 
     document.privacy = request.form['privacy']
@@ -302,7 +304,7 @@ def deltag():
     try:
         document = Document.get(request.form['id'])
     except NotFoundError:
-        return jsonify(message="The document does not exist", code="error"),404
+        return jsonify(message="The document does not exist", code="error"), 404
 
     # Get tags for this document
     if (document.tags is not None) and (len(document.tags) > 0):
@@ -336,15 +338,15 @@ def update():
     return jsonify(message="Document saved as review")
 
 
-@document_bp.route('/edit/<id>')
+@document_bp.route('/edit/<pk>')
 @login_required
 @requires_access_level(Role.EDITOR)
-def edit(id):
-    TITLE = "Edit Document"
-    DESC = "Edit Document"
+def edit(pk):
+    title = "Edit Document"
+    desc = "Edit Document"
 
     try:
-        document = Document.get(id)
+        document = Document.get(pk)
     except NotFoundError:
         return redirect(url_for('document_bp.browse')), 404
 
@@ -359,44 +361,44 @@ def edit(id):
     document.editorversion.content = urllib.parse.quote(document.editorversion.content)
 
     return render_template('edit.html',
-                           title=TITLE,
-                           desc=DESC,
+                           title=title,
+                           desc=desc,
                            document=document,
                            categories=categories,
                            pretty=pretty_title(urllib.parse.unquote(document.editorversion.name)))
 
 
-@document_bp.route('/delete/<id>')
+@document_bp.route('/delete/<pk>')
 @login_required
 @requires_access_level(Role.ADMIN)
-def delete(id):
+def delete(pk):
     try:
-        Document.delete(id)
-        get_db().delete("keybase:vss:{}".format(id))
+        Document.delete(pk)
+        get_db().delete("keybase:vss:{}".format(pk))
     except NotFoundError:
         return redirect(url_for('document_bp.browse')), 404
 
     return redirect(url_for('document_bp.browse')), 302
 
 
-@document_bp.route('/doc/<id>', defaults={'prettyurl': None})
-@document_bp.route('/doc/<id>/<prettyurl>')
+@document_bp.route('/doc/<pk>', defaults={'prettyurl': None})
+@document_bp.route('/doc/<pk>/<prettyurl>')
 @login_required
-def doc(id, prettyurl):
-    TITLE = "Read Document"
-    DESC = "Read Document"
+def doc(pk, prettyurl):
+    title = "Read Document"
+    desc = "Read Document"
     keys = []
     names = []
     pretty = []
     suggestlist = None
 
     try:
-        document = Document.get(id)
+        document = Document.get(pk)
     except NotFoundError:
         return redirect(url_for('document_bp.browse')), 404
 
     # Check if the document is bookmarked
-    bookmarked = get_db().hexists("keybase:bookmark:{}".format(current_user.id), id)
+    bookmarked = get_db().hexists("keybase:bookmark:{}".format(current_user.id), pk)
 
     # If it is a draft, make sure the user is not a viewer
     if document.state == 'draft' and current_user.is_viewer():
@@ -411,25 +413,19 @@ def doc(id, prettyurl):
     document.currentversion.content = urllib.parse.quote(document.currentversion.content)
 
     # The document can be rendered, count the visit
-    get_db().ts().add("keybase:docview:{}".format(id), "*", 1, duplicate_policy='first')
+    get_db().ts().add("keybase:docview:{}".format(pk), "*", 1, duplicate_policy='first')
 
     # Only the admin can see document visits
     analytics = None
     if current_user.is_admin():
-        analytics = get_analytics("keybase:docview:{}".format(id), 86400000, 2592000000)
+        analytics = get_analytics("keybase:docview:{}".format(pk), 86400000, 2592000000)
 
-    # Fetch recommendations using LUA and avoid sending vector embeddings back an forth
+    # Fetch recommendations using LUA and avoid sending vector embeddings back and forth
     # The first element in the returned list is the number of keys returned, start iterator from [1:]
     # Then, iterate the results in pairs, because the key name is alternated with the returned fields
 
-    # With register_script
-    # luascript = conn.register_script("local vector = redis.call('hmget',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','document_idx','*=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres")
-    # pipe = conn.pipeline()
-    # luascript(keys=["keybase:kb:{}".format(request.args.get('id'))], client=pipe)
-    # r = pipe.execute()
-
-    if get_db().hexists("keybase:vss:{}".format(id), "content_embedding"):
-        keys_and_args = ["keybase:vss:{}".format(id)]
+    if get_db().hexists("keybase:vss:{}".format(pk), "content_embedding"):
+        keys_and_args = ["keybase:vss:{}".format(pk)]
         res = get_db().eval(
             "local vector = redis.call('HMGET',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','vss_idx','@state:{published|review}=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres",
             1, *keys_and_args)
@@ -437,21 +433,27 @@ def doc(id, prettyurl):
         it = iter(res[1:])
         for x in it:
             keys.append(str(x.split(':')[-1]))
-            docName = str(next(it)[3])
-            names.append(docName)
-            pretty.append(pretty_title(docName))
+            docname = str(next(it)[3])
+            names.append(docname)
+            pretty.append(pretty_title(docname))
         suggestlist = zip(keys, names, pretty)
 
-    return render_template('view.html', title=TITLE, desc=DESC, docid=id, bookmarked=bookmarked, document=document,
-                           suggestlist=suggestlist, analytics=analytics)
+    return render_template('view.html',
+                           title=title,
+                           desc=desc,
+                           docid=pk,
+                           bookmarked=bookmarked,
+                           document=document,
+                           suggestlist=suggestlist,
+                           analytics=analytics)
 
 
 @document_bp.route('/new/<doc>')
 @login_required
 @requires_access_level(Role.EDITOR)
 def new(doc):
-    TITLE = "New Document"
-    DESC = "New Document"
+    title = "New Document"
+    desc = "New Document"
     template = ""
 
     if doc == 'case':
@@ -469,4 +471,4 @@ def new(doc):
     elif doc == 'qa':
         template = urllib.parse.quote(
             "## Applies to:\n\n\n<br>\n## Question \n\n\n<br>\n<br>\n<br>\n## Answer \n\n\n<br>\n<br>\n<br>\n## References")
-    return render_template('new.html', title=TITLE, desc=DESC, template=template)
+    return render_template('new.html', title=title, desc=desc, template=template)

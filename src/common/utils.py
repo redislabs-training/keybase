@@ -18,15 +18,15 @@ import re
 def get_db():
     try:
         return redis.StrictRedis(host=REDIS_CFG["host"],
-                                port=REDIS_CFG["port"],
-                                password=REDIS_CFG["password"],
-                                db=0,
-                                ssl=REDIS_CFG["ssl"],
-                                ssl_keyfile=REDIS_CFG["ssl_keyfile"],
-                                ssl_certfile=REDIS_CFG["ssl_certfile"],
-                                ssl_ca_certs=REDIS_CFG["ssl_ca_certs"],
-                                ssl_cert_reqs=REDIS_CFG["ssl_cert_reqs"],
-                                decode_responses=True)
+                                 port=REDIS_CFG["port"],
+                                 password=REDIS_CFG["password"],
+                                 db=0,
+                                 ssl=REDIS_CFG["ssl"],
+                                 ssl_keyfile=REDIS_CFG["ssl_keyfile"],
+                                 ssl_certfile=REDIS_CFG["ssl_certfile"],
+                                 ssl_ca_certs=REDIS_CFG["ssl_ca_certs"],
+                                 ssl_cert_reqs=REDIS_CFG["ssl_cert_reqs"],
+                                 decode_responses=True)
     except redis.exceptions.ConnectionError:
         return redirect(url_for("main_bp.error-page"))
 
@@ -50,8 +50,10 @@ def parse_query_string(q):
         query = "*" + query + "*"
     return query
 
+
 class ShortUuidPk:
-    def create_pk(self) -> str:
+    @staticmethod
+    def create_pk() -> str:
         shortuuid.set_alphabet('123456789abcdefghijkmnopqrstuvwxyz')
         return shortuuid.uuid()[:10]
 

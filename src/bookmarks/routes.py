@@ -26,7 +26,7 @@ def bookmark():
         return jsonify(message="Document does not exist", hasbookmark=0), 404
 
     bookmarked = get_db().hexists("keybase:bookmark:{}".format(current_user.id), request.form['docid'])
-    if (not bookmarked):
+    if not bookmarked:
         get_db().hset("keybase:bookmark:{}".format(current_user.id), mapping={request.form['docid']: ""})
         return jsonify(message="Bookmark created", hasbookmark=1)
     else:

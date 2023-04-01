@@ -8,7 +8,8 @@ from src.document.document import Document
 from src.common.utils import requires_access_level, Role, get_db
 
 version_bp = Blueprint('version_bp', __name__,
-                        template_folder='./templates')
+                       template_folder='./templates')
+
 
 @version_bp.route('/version', methods=['GET'])
 @login_required

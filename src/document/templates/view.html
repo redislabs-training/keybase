@@ -27,7 +27,7 @@
                 <h4 class="title is-6  mb-2" style="margin-bottom:0em;">Recommendations</h4>
                 {% if suggestlist is not none %}
                     {% for key, name, pretty in suggestlist %}
-                    <a style="display:block;" class="is-size-6" href="{{ url_for('document_bp.doc',id=key,prettyurl=pretty) }}">
+                    <a style="display:block;" class="is-size-6" href="{{ url_for('document_bp.doc',pk=key,prettyurl=pretty) }}">
                         {{name}}
                     </a>
                     {% endfor %}
@@ -102,7 +102,7 @@
                 <h4 class="title is-6 mb-2" style="margin-bottom:0em;">Actions</h4>
                     {% if current_user.is_editor() %}
                     <p>
-                        <a class="is-size-6" style="display:inline;" href="{{ url_for('document_bp.edit',id=docid) }}">Edit the document</a>
+                        <a class="is-size-6" style="display:inline;" href="{{ url_for('document_bp.edit',pk=docid) }}">Edit the document</a>
                     </p>
                     {% endif %}
                     <p>

@@ -1,6 +1,7 @@
-from flask import Flask, flash, Blueprint, g, render_template, redirect, request, session, url_for
+from flask import flash, Blueprint, render_template, redirect, request, session, url_for
 from flask_login import (LoginManager, current_user, login_required)
-import hashlib, time
+import hashlib
+import time
 
 from src.auth.authuser import AuthUser
 from src.common.utils import get_db
@@ -16,9 +17,11 @@ login_manager.login_view = "okta_bp.login"
 def on_load(state):
     login_manager.init_app(state.app)
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return AuthUser.get(user_id)
+
 
 @login_manager.unauthorized_handler
 def unauthorized_callback():
@@ -26,7 +29,7 @@ def unauthorized_callback():
         if request.endpoint == "document_bp.doc" and not current_user.is_authenticated:
             print("post-login doc is " + request.path)
             flash(request.path, 'wanted')
-        return render_template('index.html', next=request.endpoint),401
+        return render_template('index.html', next=request.endpoint), 401
 
 
 @auth_bp.before_request
@@ -38,7 +41,7 @@ def check_valid_login():
 
     # endpoints used for authentication
     endpoint_group = ('static', 'okta_bp.login', 'okta_bp.callback')
-    if not request.endpoint in endpoint_group and not current_user.is_authenticated:
+    if request.endpoint not in endpoint_group and not current_user.is_authenticated:
         return render_template('index.html', next=request.endpoint)
 
 
@@ -84,13 +87,13 @@ def signup():
 @login_required
 def update():
     currentpsw = get_db().hget("keybase:user:{}".format(session['username']), "password")
-    if (currentpsw != hashlib.sha256(request.form.get('currentpassword').encode()).hexdigest()):
+    if currentpsw != hashlib.sha256(request.form.get('currentpassword').encode()).hexdigest():
         flash('Your current password is incorrect', 'error')
-    elif ((not len(request.form.get('newpassword'))) or (not len(request.form.get('repeatpassword')))):
+    elif (not len(request.form.get('newpassword'))) or (not len(request.form.get('repeatpassword'))):
         flash('Empty password', 'error')
-    elif (request.form.get('newpassword') != request.form.get('repeatpassword')):
+    elif request.form.get('newpassword') != request.form.get('repeatpassword'):
         flash('Passwords are different', 'error')
-    elif (len(request.form.get('newpassword')) < 8):
+    elif len(request.form.get('newpassword')) < 8:
         flash('Password is too short (>8)', 'error')
     else:
         newpassword = hashlib.sha256(request.form.get('newpassword').encode()).hexdigest()
@@ -109,24 +112,24 @@ def signup_post():
     # ...
 
     # Check username not too short
-    if (len(name) < 7):
+    if len(name) < 7:
         flash('Username is too short')
         return redirect(url_for('auth.signup'))
 
     # Check password not too short
-    if (len(request.form.get('password')) < 8):
+    if len(request.form.get('password')) < 8:
         flash('Password is too short')
         return redirect(url_for('auth.signup'))
 
     # Check username does not exist
     user = get_db().hgetall("keybase:user:{}".format(name))
-    if (user):
+    if user:
         flash('Username already exists')
         return redirect(url_for('auth.signup'))
 
     # Check username does not exist
     mail = get_db().zrank("keybase:mails", email)
-    if (mail == 0):
+    if mail == 0:
         flash('Email already exists')
         return redirect(url_for('auth.signup'))
 

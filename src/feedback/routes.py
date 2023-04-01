@@ -59,10 +59,10 @@ def feedback():
     results = []
     state = None
 
-    if request.args.get('state') is not None:
-        if request.args.get('state') in ['open', 'implemented', 'rejected']:
-            entries = Feedback.find(Feedback.state == request.args.get('state')).sort_by("-creation").all()
-            state = request.args.get('state')
+    if request.args.get('state') is not None and \
+            request.args.get('state') in ['open', 'implemented', 'rejected']:
+        entries = Feedback.find(Feedback.state == request.args.get('state')).sort_by("-creation").all()
+        state = request.args.get('state')
     else:
         entries = Feedback.find().sort_by("-creation").all()
         state = None

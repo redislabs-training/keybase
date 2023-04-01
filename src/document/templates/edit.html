@@ -10,8 +10,8 @@
 			<button id="save" class="button is-info is-light" type="button">save</button>
 			<button id="close" class="button is-info is-light" type="button">close</button>
 			{% if current_user.is_admin() %}
-			<a id="publish" class="{% if document.state != 'draft' and document.state != 'review' %} is-hidden {% endif%} button is-warning is-light" href="{{ url_for('document_bp.publish',id=document.pk) }}">publish</a>
-			<a id="delete" class="button is-danger is-light" href="{{ url_for('document_bp.delete',id=document.pk) }}">delete</a>
+			<a id="publish" class="{% if document.state != 'draft' and document.state != 'review' %} is-hidden {% endif%} button is-warning is-light" href="{{ url_for('document_bp.publish',pk=document.pk) }}">publish</a>
+			<a id="delete" class="button is-danger is-light" href="{{ url_for('document_bp.delete',pk=document.pk) }}">delete</a>
 			{% endif %}
 		</p>
 	</div>
@@ -86,7 +86,7 @@
 	  
 
 	  closeBtn.addEventListener("mousedown", function(e) {
-		window.location.replace("{{ url_for('document_bp.doc',id=document.pk,prettyurl=pretty) }}");
+		window.location.replace("{{ url_for('document_bp.doc',pk=document.pk,prettyurl=pretty) }}");
 	  }, true);
 
 	  $("#delete").click(function() {

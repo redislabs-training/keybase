@@ -18,7 +18,7 @@
             {% for key, name, pretty, updated in keydocument %}
             <tr>
                 <td>
-                    <a style="display:block;" class="is-size-6" href="{{ url_for('public_bp.kb',id=key,prettyurl=pretty) }}">
+                    <a style="display:block;" class="is-size-6" href="{{ url_for('public_bp.kb',pk=key,prettyurl=pretty) }}">
                         {{name}}
                     </a>
                 </td>

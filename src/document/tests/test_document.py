@@ -1,5 +1,6 @@
 from src.okta.user import OktaUser
-import json, flask_login
+import json
+import flask_login
 from src.common.config import REDIS_CFG
 
 
@@ -162,7 +163,7 @@ def test_document_add_tag_retag_document(test_client, user_auth, create_document
     user_auth.set_group("admin")
 
     # create the tag
-    test_client.post("/tag", data={'tag': 'oss', 'description':''})
+    test_client.post("/tag", data={'tag': 'oss', 'description': ''})
     test_client.post("/tag", data={'tag': 'troubleshooting', 'description': ''})
 
     # tag the document
@@ -192,7 +193,10 @@ def test_document_autocomplete_authenticated_index_created(test_client, user_aut
 
     response = test_client.get("/autocomplete", query_string={"q": "content"})
     assert response.status_code == 200
-    assert json.loads(response.data)['matching_results'][0] ==  {'id': doc_id, 'label': 'my name is...', 'pretty': 'my-name-is', 'value': 'my name is...'}
+    assert json.loads(response.data)['matching_results'][0] == {'id': doc_id,
+                                                                'label': 'my name is...',
+                                                                'pretty': 'my-name-is',
+                                                                'value': 'my name is...'}
 
 
 def test_document_save_authenticated_index_created(test_client, user_auth, prepare_db, captured_templates):
@@ -208,7 +212,6 @@ def test_document_save_authenticated_index_created(test_client, user_auth, prepa
     template, context = captured_templates[0]
     assert template.name == "browse.html"
     assert "keydocument" in context
-    #keys,names,pretty,creations = zip(*context['keydocument'])
 
 
 def test_document_not_existing(test_client, user_auth, prepare_db):
@@ -236,13 +239,19 @@ def test_document_save_delete_authorized(test_client, user_auth, create_document
 
 def test_document_update_name_content_success(test_client, user_auth, create_document):
     doc_id = create_document
-    response = test_client.post("/update", data={'id': doc_id, 'name': 'new name is...', 'content': 'new content is...'})
+    response = test_client.post("/update", data={'id': doc_id,
+                                                 'name': 'new name is...',
+                                                 'content': 'new content is...'})
+    assert response.status_code == 200
 
 
 def test_document_update_name_content_user_not_authorized(test_client, user_auth, create_document):
     user_auth.set_group("viewer")
     doc_id = create_document
-    response = test_client.post("/update", data={'id': doc_id, 'name': 'new name is...', 'content': 'new content is...'})
+    response = test_client.post("/update", data={'id': doc_id,
+                                                 'name': 'new name is...',
+                                                 'content':
+                                                 'new content is...'})
     assert response.status_code == 403
     assert response.data == b"Unauthorized"
 
@@ -271,6 +280,7 @@ def test_document_privacy_document_missing(test_client, user_auth, create_docume
     response = test_client.post("/setprivacy", data={'id': '42f43f23f', 'privacy': 'internal'})
     assert response.status_code == 404
 
+
 def test_document_privacy_forbidden(test_client, create_document, user_auth):
     doc_id = create_document
     response = test_client.post("/setprivacy", data={'id': doc_id, 'privacy': 'internal'})
@@ -278,6 +288,7 @@ def test_document_privacy_forbidden(test_client, create_document, user_auth):
     user_auth.set_group("viewer")
     response = test_client.post("/setprivacy", data={'id': doc_id, 'privacy': 'internal'})
     assert response.status_code == 403
+
 
 def test_document_privacy_allowed(test_client, create_document, user_auth):
     doc_id = create_document
@@ -287,50 +298,41 @@ def test_document_privacy_allowed(test_client, create_document, user_auth):
     response = test_client.post("/setprivacy", data={'id': doc_id, 'privacy': 'public'})
     assert response.status_code == 200
 
+
 def test_document_privacy_wrong_class(test_client, create_document, user_auth):
     doc_id = create_document
     user_auth.set_group("admin")
     response = test_client.post("/setprivacy", data={'id': doc_id, 'privacy': 'wrongvalue'})
     assert response.status_code == 500
 
+
 def test_document_metadata_description_exceeding(test_client, create_document):
     doc_id = create_document
     response = test_client.post("/addmetadata", data={'id': doc_id,
-                                                        'keyword': 'redis,real-time',
+                                                      'keyword': 'redis,real-time',
                                                       'description': 'Welcome to the Redis Knowledge Base! In this portal, you will find troubleshooting guides, articles, tutorials, and more for all the Redis solutions and clients. But too long!'})
     assert response.status_code == 500
+
 
 def test_document_metadata_keywords_exceeding(test_client, create_document):
     doc_id = create_document
     response = test_client.post("/addmetadata", data={'id': doc_id,
-                                                        'keyword': 'redis,database,real-time,microservices,timeseries,graph,capabilities,cache,caching,probabilistic,in-memory,persistent,service,sentinel,replication,high-availability',
+                                                      'keyword': 'redis,database,real-time,microservices,timeseries,graph,capabilities,cache,caching,probabilistic,in-memory,persistent,service,sentinel,replication,high-availability',
                                                       'description': 'Welcome to the Redis Knowledge Base! In this portal, you will find guides, articles, tutorials, and more for all the Redis solutions and clients!'})
     assert response.status_code == 500
 
 
 def test_document_metadata_document_missing(test_client, create_document):
-    doc_id = create_document
+    create_document
     response = test_client.post("/addmetadata", data={'id': 'f3f4234f2',
-                                                        'keyword': 'redis,real-time',
+                                                      'keyword': 'redis,real-time',
                                                       'description': 'Welcome to the Redis Knowledge Base! In this portal, you will find guides, articles, tutorials, and more for all the Redis solutions and clients.'})
     assert response.status_code == 404
+
 
 def test_document_metadata_allowed(test_client, create_document):
     doc_id = create_document
     response = test_client.post("/addmetadata", data={'id': doc_id,
-                                                        'keyword': 'redis,real-time',
+                                                      'keyword': 'redis,real-time',
                                                       'description': 'Welcome to the Redis Knowledge Base! In this portal, you will find guides, articles, tutorials, and more for all the Redis solutions and clients.'})
     assert response.status_code == 200
-
-
-
-
-# def test_document_category_not_existing
-# def test_document_category_forbidden
-# def test_document_category_allowed
-
-
-
-#flask_app.config['LOGIN_DISABLED'] = True
-#flask_app.config['DEBUG'] = True
-#flask_app.config['TESTING'] = True

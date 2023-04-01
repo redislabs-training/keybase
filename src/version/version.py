@@ -5,6 +5,7 @@ from src.common.utils import get_db
 # Note. Redis OM EmbeddedJsonModel timestamps cannot have ints.
 # "In this Preview release, list and tuple fields can only contain strings"
 
+
 class Version(EmbeddedJsonModel):
     name: str
     content: str
@@ -14,6 +15,7 @@ class Version(EmbeddedJsonModel):
     class Meta:
         database = get_db()
         embedded = True
+
 
 class CurrentVersion(EmbeddedJsonModel):
     name: str = Field(index=True, full_text_search=True)

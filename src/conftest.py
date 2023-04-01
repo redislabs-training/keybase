@@ -3,8 +3,11 @@ from src.application import create_app
 from redis_om import (Migrator)
 from src.common.config import REDIS_CFG
 from src.common.utils import get_db
-import pytest, json, flask_login
+import pytest
+import json
+import flask_login
 from src.okta.user import OktaUser
+
 
 @pytest.fixture
 def create_flask_app():
@@ -48,7 +51,7 @@ def create_token():
 
 @pytest.fixture
 def prepare_db():
-    #get_db().execute_command('FT.CREATE document_idx ON JSON PREFIX 1 keybase:json SCHEMA $.name TEXT $.content TEXT $.creation NUMERIC SORTABLE $.update NUMERIC SORTABLE $.privacy AS privacy TAG $.state AS state TAG $.owner AS owner TEXT $.processable AS processable TAG $.tags AS tags TAG $.category AS category TAG')
+    # get_db().execute_command('FT.CREATE document_idx ON JSON PREFIX 1 keybase:json SCHEMA $.name TEXT $.content TEXT $.creation NUMERIC SORTABLE $.update NUMERIC SORTABLE $.privacy AS privacy TAG $.state AS state TAG $.owner AS owner TEXT $.processable AS processable TAG $.tags AS tags TAG $.category AS category TAG')
     get_db().execute_command('FT.CREATE vss_idx ON HASH PREFIX 1 keybase:vss SCHEMA state AS state TAG privacy AS privacy TAG content_embedding VECTOR HNSW 6 TYPE FLOAT32 DIM 768 DISTANCE_METRIC COSINE')
     get_db().execute_command('FT.CREATE user_idx ON HASH PREFIX 1 keybase:okta SCHEMA name TEXT group TAG')
     Migrator().run()
@@ -61,7 +64,6 @@ def user_auth():
     user = OktaUser.create("00000000000000000000", "test_name", "test_username", "test_mail")
     flask_login.login_user(user)
     yield user
-    #get_db().delete("keybase:okta:00000000000000000000")
 
 
 @pytest.fixture

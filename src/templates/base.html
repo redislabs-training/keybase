@@ -10,7 +10,7 @@
         <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
         <link rel="stylesheet" href="https://bulma.io/vendor/fontawesome-free-5.15.2-web/css/all.min.css">
         <link rel="stylesheet" href="https://bulma.io/css/bulma-docs.min.css?v=202108281054">
-        <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css"></link>
+        <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta2/css/all.min.css" integrity="sha512-YWzhKL2whUzgiheMoBFwW8CKV4qpHQAEuvilg9FAn5VJUDwKZZxkJNuGM4XkWuk94WCrrwslk8yWNGmY1EduTA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
         <link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}" type="text/css" media="all">
         <link rel="canonical" href="https://keybase.redislabs-training.redislabs.com">
@@ -45,12 +45,12 @@
                         <div class="navbar-start"> <!--is_logged_in()-->
                             {% if current_user.is_authenticated %}
                             <a href="{{ url_for('document_bp.browse') }}" class="navbar-item">
-                                <span {% if "browse" == active_page %} class="has-background-info-light" style="padding:6px; border-radius:4px;" {% endif%}>Search</span>
+                                <span {% if active_page=="browse" %} class="has-background-info-light" style="padding:6px; border-radius:4px;" {% endif%}>Search</span>
                             </a>
                             {% if current_user.is_editor() %}
                             <div class="navbar-item has-dropdown is-hoverable">
                                 <a class="navbar-link">
-                                    <span {% if "new" == active_page %} class="has-background-info-light" style="padding:6px; border-radius:4px;"{% endif%}>New</span>
+                                    <span {% if active_page=="new" %} class="has-background-info-light" style="padding:6px; border-radius:4px;"{% endif%}>New</span>
                                 </a>
                                 <div class="navbar-dropdown">
                                     <a href="{{ url_for('document_bp.new',doc='case') }}" class="navbar-item">
@@ -72,16 +72,16 @@
                             </div>
 
                             <a href="{{ url_for('drafts_bp.drafts') }}" class="navbar-item">
-                                <span {% if "draft" == active_page %} class="has-background-info-light" style="padding:6px; border-radius:4px;"{% endif%}>Drafts</span>
+                                <span {% if active_page=="draft" %} class="has-background-info-light" style="padding:6px; border-radius:4px;"{% endif%}>Drafts</span>
                             </a>
                             {% endif %}
                             {% if current_user.is_admin() %}
                             <a href="{{ url_for('analytics_bp.analytics') }}" class="navbar-item">
-                                <span {% if "analytics" == active_page %} class="has-background-info-light" style="padding:6px; border-radius:4px;"{% endif%}>Analytics</span>
+                                <span {% if active_page=="analytics" %} class="has-background-info-light" style="padding:6px; border-radius:4px;"{% endif%}>Analytics</span>
                             </a>
                             {% endif %}
                             <a href="{{ url_for('main_bp.about') }}" class="navbar-item">
-                                <span {% if "about" == active_page %} class="has-background-info-light" style="padding:6px; border-radius:4px;"{% endif%}>About</span>
+                                <span {% if active_page=="about" %} class="has-background-info-light" style="padding:6px; border-radius:4px;"{% endif%}>About</span>
                             </a>
                             {% endif %}
                         </div>

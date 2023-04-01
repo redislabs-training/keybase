@@ -2,7 +2,7 @@ import json
 
 
 def test_document_draft_document_not_existing(test_client, user_auth, create_document):
-    doc_id = create_document
+    create_document
     response = test_client.get("/version", query_string={"q": "content"})
     assert response.status_code == 404
     assert json.loads(response.data)['message'] == "The document does not exist"
@@ -19,8 +19,8 @@ def test_document_draft_document_draft_has_version_wrong_id(test_client, user_au
     doc_id = create_document
     user_auth.set_group("admin")
     test_client.post("/publish", data={'id': doc_id,
-                                      'name': 'my name is...',
-                                      'content': 'my content is...'})
+                                       'name': 'my name is...',
+                                       'content': 'my content is...'})
     response = test_client.get("/version", query_string={"pk": doc_id, "vpk": "u34iu4ib4i4"})
     assert response.status_code == 404
     assert json.loads(response.data)['message'] == "The version does not exist"
@@ -31,8 +31,8 @@ def test_document_draft_document_draft_has_version(test_client, user_auth, creat
     user_auth.set_group("admin")
     test_client.get("/version", query_string={"pk": doc_id})
     test_client.post("/publish", data={'id': doc_id,
-                                      'name': 'my name is...',
-                                      'content': 'my content is...'})
+                                       'name': 'my name is...',
+                                       'content': 'my content is...'})
 
     test_client.get("/edit/{}".format(doc_id))
 

@@ -1,5 +1,4 @@
 import json
-import time
 
 
 def test_api_api_key_not_sent(test_client, create_token):
@@ -20,20 +19,13 @@ def test_api_wrong_tokens(test_client, create_token):
 
 def test_api_all_events_no_data(test_client, create_token):
     tokens = create_token
-    response = test_client.get("/api/events", headers=tokens)
-    assert response.status_code == 200
-    json.loads(response.data)['events'] == []
-
-
-def test_api_all_events_no_data(test_client, create_token):
-    tokens = create_token
     response = test_client.get("/api/events", headers=tokens, query_string={"min": "-", "max": "+"})
     assert response.status_code == 200
     json.loads(response.data)['events'] == []
 
 
 def test_api_all_events_incomplete_request(test_client, user_auth, prepare_db, create_token, create_document):
-    doc_id = create_document
+    create_document
     tokens = create_token
     response = test_client.get("/api/events", headers=tokens)
     assert response.status_code == 422
@@ -44,7 +36,7 @@ def test_api_all_events_incomplete_request(test_client, user_auth, prepare_db, c
 
 
 def test_api_all_events_all_data(test_client, user_auth, prepare_db, create_token, create_document):
-    doc_id = create_document
+    create_document
     tokens = create_token
     response = test_client.get("/api/events", headers=tokens, query_string={"min": "-", "max": "+"})
     assert response.status_code == 200

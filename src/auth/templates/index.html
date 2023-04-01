@@ -14,19 +14,20 @@
 
        <form action="{{ url_for('auth_bp.login_post') }}" method="post">
             <div class="form-group">
-            <div class="field">
-                <div class="control">
-                    <input id="username" class="input" name="username" placeholder="Username" required="" type="text" autofocus="">
+                <div class="field">
+                    <div class="control">
+                        <input id="username" class="input" name="username" placeholder="Username" required="" type="text" autofocus="">
+                    </div>
                 </div>
-            </div>
-            <div class="field">
-                <div class="control">
-                    <input id="password" class="input" name="password" placeholder="Password" type="password" autocomplete="off">
+                <div class="field">
+                    <div class="control">
+                        <input id="password" class="input" name="password" placeholder="Password" type="password" autocomplete="off">
+                    </div>
                 </div>
-            </div>
 
             {% if next %}<input type="hidden" name="next" value="{{next}}">{% endif %}
-            </form>
+            </div>
+       </form>
            <!--<input type="submit" value="Send">-->
            <button class="button is-block is-info is-fullwidth">Login</button>
        </form>

@@ -6,10 +6,10 @@
 
     <div class="select is-small mb-3">
         <select id="state">
-            <option value="all" {% if state is none %} selected="selected"{% endif %}>All</option>
-            <option value="open" {% if state=="open" %} selected="selected"{% endif %}>Open</option>
-            <option value="implemented" {% if state=="implemented" %} selected="selected"{% endif %}>Implemented</option>
-            <option value="rejected" {% if state=="rejected" %} selected="selected"{% endif %}>Rejected</option>
+            <option value="all" {% if state is none %} selected="selected" {% endif %}>All</option>
+            <option value="open" {% if state=="open" %} selected="selected" {% endif %}>Open</option>
+            <option value="implemented" {% if state=="implemented" %} selected="selected" {% endif %}>Implemented</option>
+            <option value="rejected" {% if state=="rejected" %} selected="selected" {% endif %}>Rejected</option>
         </select>
     </div>
 
@@ -28,7 +28,7 @@
     {% endif %}
 
     <span class="is-size-7 has-text-weight-light has-text-grey">created: {{doc.creation}} | </span>
-    <a target="_blank" style="display:inline;" class="is-underlined is-size-7 has-text-weight-light has-text-grey" href="{{ url_for('document_bp.doc',id=doc.docid) }}">open document</a>
+    <a target="_blank" style="display:inline;" class="is-underlined is-size-7 has-text-weight-light has-text-grey" href="{{ url_for('document_bp.doc',pk=doc.docid) }}">open document</a>
     <div class="mt-1" style="border-top: .05rem solid #dbdbdb;"></div>
   {% endfor %}
   {% else %}

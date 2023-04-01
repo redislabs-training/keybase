@@ -11,6 +11,7 @@ from src.document.document import Document
 drafts_bp = Blueprint('drafts_bp', __name__,
                       template_folder='./templates')
 
+
 @drafts_bp.before_request
 def before_request():
     # Track the request in a Redis Stream

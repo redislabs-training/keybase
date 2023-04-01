@@ -10,8 +10,7 @@ def token_required(req):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            print(req.headers)
-            if not "X-Api-Key" in req.headers or not "X-Api-Secret-Key" in req.headers:
+            if "X-Api-Key" not in req.headers or "X-Api-Secret-Key" not in req.headers:
                 return Response(response="Missing tokens", status=401)
             secret_token = get_db().hget("keybase:api:token", str(req.headers.get("X-Api-Key")))
             if req.headers.get("X-Api-Secret-Key") != secret_token:
