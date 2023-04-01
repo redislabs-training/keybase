@@ -109,7 +109,7 @@ def callback():
 
     query_params = {'grant_type': 'authorization_code',
                     'code': code,
-                    'redirect_uri': request.base_url,
+                    'redirect_uri': okta["redirect_uri"],
                     'code_verifier': session['code_verifier'],
                     }
     query_params = requests.compat.urlencode(query_params)
