@@ -175,7 +175,7 @@ def kb(pk, prettyurl):
     documents = get_db().json().get('keybase:json:{}'.format(pk), '$.currentversion', '$.keyword', '$.description',
                                     '$.privacy', '$.state', '$.tags', '$.updated', '$.category')
     if documents is None:
-        return redirect(url_for('public_bp.landing')), 404
+        return render_template('404.html'), 404
 
     # Check the document is public and review or published
     if not ((documents['$.state'][0] == 'published' or documents['$.state'][0] == 'review') and documents['$.privacy'][0] == 'public'):

@@ -395,7 +395,7 @@ def doc(pk, prettyurl):
     try:
         document = Document.get(pk)
     except NotFoundError:
-        return redirect(url_for('document_bp.browse')), 404
+        return render_template('404.html'), 404
 
     # Check if the document is bookmarked
     bookmarked = get_db().hexists("keybase:bookmark:{}".format(current_user.id), pk)
