@@ -53,10 +53,10 @@
                     </div>
                     {% endif %}
 
-                    <div class="navbar-end" style="flex: 0 0 30%;">
+                    <div class="navbar-end" style="flex: 0 0 35%;">
                         {% if current_user.is_authenticated %}
                         <a href="{{ url_for('document_bp.browse') }}" class="navbar-item">
-                            Go to Admin portal
+                            Admin portal
                         </a>
                         {% endif %}
                         <a class="try-cloud-link" target="" href="https://redis.com/try-free/">

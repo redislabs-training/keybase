@@ -201,6 +201,10 @@ def publish():
     document.updated = unixtime
     document.save()
 
+    data = {'type': 'publish',
+            'id': request.form['id']}
+    get_db().xadd("keybase:events", data)
+
     return jsonify(message="Document published")
 
 
@@ -327,15 +331,18 @@ def update():
 
     unixtime = int(time.time())
 
+    # If the document has never been published, on saving, it should not become a review
+    if document.state != "draft":
+        document.state = "review"
+
     # Save the document, which becomes a current review
     document.editorversion.content = urllib.parse.unquote(request.form['content'])
     document.editorversion.name = urllib.parse.unquote(request.form['name'])
     document.editorversion.last = unixtime
     document.editorversion.owner = current_user.id
-    document.state = "review"
     document.save()
 
-    return jsonify(message="Document saved as review")
+    return jsonify(message="Document saved as {}".format(document.state))
 
 
 @document_bp.route('/edit/<pk>')

@@ -32,6 +32,11 @@ def create_app():
     app.logger.handlers.extend(gunicorn_error_logger.handlers)
     app.logger.setLevel(logging.INFO)
 
+    # Create the configuration Hash
+    if not get_db().exists("keybase:configuration"):
+        data = {"vss-update": 0}
+        get_db().hset("keybase:configuration", mapping=data)
+
     # Reading the list of indexes for eventual creation
     indexes = get_db().execute_command("FT._LIST")
 
@@ -104,13 +109,13 @@ def create_app():
         if isinstance(e, redis.exceptions.ConnectionError):
             return render_template('61.html'), 500
 
-        track_errors(e)
         # pass through HTTP errors
         if isinstance(e, HTTPException):
             print(e.code)
             return render_template('404.html'), e.code
 
         # now you're handling non-HTTP exceptions only
+        track_errors(e)
         return render_template('500.html'), 500
 
     app.logger.info('Redis Knowledge Base started!')
