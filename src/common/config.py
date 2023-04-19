@@ -1,12 +1,14 @@
 import os
+from dotenv import load_dotenv
 
+load_dotenv()
 
 CFG_THEME = os.getenv('CFG_THEME', 'redis')
-CFG_VSS_WITH_LUA = os.getenv('CFG_VSS_WITH_LUA', False)
+CFG_VSS_WITH_LUA = os.getenv('CFG_VSS_WITH_LUA').lower() in ('true', '1', 't')
 
 # Redis
 REDIS_CFG = {"host": os.getenv('DB_SERVICE', '127.0.0.1'),
-             "port": int(os.getenv('DB_PORT',6379)),
+             "port": int(os.getenv('DB_PORT')),
              "password": os.getenv('DB_PWD',''),
              "ssl": os.getenv('DB_SSL', False),
              "ssl_keyfile": os.getenv('DB_SSL_KEYFILE', ''),

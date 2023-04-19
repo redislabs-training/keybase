@@ -430,7 +430,6 @@ def doc(pk, prettyurl):
     # Fetch recommendations using LUA and avoid sending vector embeddings back and forth
     # The first element in the returned list is the number of keys returned, start iterator from [1:]
     # Then, iterate the results in pairs, because the key name is alternated with the returned fields
-
     if get_db().hexists("keybase:vss:{}".format(pk), "content_embedding"):
         if CFG_VSS_WITH_LUA:
             keys_and_args = ["keybase:vss:{}".format(pk)]
