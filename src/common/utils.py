@@ -15,7 +15,7 @@ from src.common.config import REDIS_CFG
 import re
 
 
-def get_db():
+def get_db(decode=True):
     try:
         return redis.StrictRedis(host=REDIS_CFG["host"],
                                  port=REDIS_CFG["port"],
@@ -26,7 +26,7 @@ def get_db():
                                  ssl_certfile=REDIS_CFG["ssl_certfile"],
                                  ssl_ca_certs=REDIS_CFG["ssl_ca_certs"],
                                  ssl_cert_reqs=REDIS_CFG["ssl_cert_reqs"],
-                                 decode_responses=True)
+                                 decode_responses=decode)
     except redis.exceptions.ConnectionError:
         return redirect(url_for("main_bp.error-page"))
 

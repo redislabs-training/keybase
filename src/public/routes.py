@@ -7,13 +7,13 @@ import urllib.parse
 from redis.commands.search.query import Query
 from flask_login import (current_user, login_required)
 
-from src.common.config import THEME
+from src.common.config import CFG_THEME, CFG_VSS_WITH_LUA
 from src.common.utils import get_db, pretty_title, parse_query_string
 from flask_breadcrumbs import register_breadcrumb, default_breadcrumb_root
 
 public_bp = Blueprint('public_bp', __name__,
-                      template_folder='./themes/'+THEME+'/templates',
-                      static_folder='./themes/'+THEME+'/static',
+                      template_folder='./themes/'+CFG_THEME+'/templates',
+                      static_folder='./themes/'+CFG_THEME+'/static',
                       static_url_path='/theme')
 
 default_breadcrumb_root(public_bp, '.')
@@ -202,17 +202,33 @@ def kb(pk, prettyurl):
     get_db().ts().add("keybase:docview:{}".format(pk), "*", 1, duplicate_policy='first')
 
     if get_db().hexists("keybase:vss:{}".format(pk), "content_embedding"):
-        keys_and_args = ["keybase:vss:{}".format(pk)]
-        res = get_db().eval(
-            "local vector = redis.call('HMGET',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','vss_idx','(@state:{published|review} @privacy:{public})=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres",
-            1, *keys_and_args)
-        it = iter(res[1:])
-        for x in it:
-            keys.append(str(x.split(':')[-1]))
-            docname = str(next(it)[3])
-            names.append(docname)
-            pretty.append(pretty_title(docname))
-        suggestlist = zip(keys, names, pretty)
+        if CFG_VSS_WITH_LUA:
+            keys_and_args = ["keybase:vss:{}".format(pk)]
+            res = get_db().eval(
+                "local vector = redis.call('HMGET',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','vss_idx','(@state:{published|review} @privacy:{public})=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres",
+                1, *keys_and_args)
+            it = iter(res[1:])
+            for x in it:
+                keys.append(str(x.split(':')[-1]))
+                docname = str(next(it)[3])
+                names.append(docname)
+                pretty.append(pretty_title(docname))
+            suggestlist = zip(keys, names, pretty)
+        else:
+            embedding = get_db(decode=False).hget("keybase:vss:{}".format(pk), "content_embedding")
+            q = Query("(@state:{published|review} @privacy:{public})=>[KNN 6 @content_embedding $B AS score]")\
+                .return_field("score")\
+                .return_field("name")\
+                .sort_by("score", asc=True)\
+                .dialect(2)\
+                .paging(1, 6)
+            res = get_db().ft("vss_idx").search(q, query_params={"B": embedding})
+            it = iter(res.docs[0:])
+            for x in it:
+                keys.append(str(x['id'].split(':')[-1]))
+                names.append(str(x['name']))
+                pretty.append(pretty_title(str(x['name'])))
+            suggestlist = zip(keys, names, pretty)
 
     return render_template('kb.html',
                            title=title,

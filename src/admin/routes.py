@@ -16,18 +16,6 @@ admin_bp = Blueprint('admin_bp', __name__,
                      template_folder='./templates')
 
 
-conn = redis.StrictRedis(host=REDIS_CFG["host"],
-                         port=REDIS_CFG["port"],
-                         password=REDIS_CFG["password"],
-                         db=0,
-                         ssl=REDIS_CFG["ssl"],
-                         ssl_keyfile=REDIS_CFG["ssl_keyfile"],
-                         ssl_certfile=REDIS_CFG["ssl_certfile"],
-                         ssl_ca_certs=REDIS_CFG["ssl_ca_certs"],
-                         ssl_cert_reqs=REDIS_CFG["ssl_cert_reqs"],
-                         decode_responses=False)
-
-
 @admin_bp.route('/tools', methods=['GET', 'POST'])
 @login_required
 @requires_access_level(Role.ADMIN)
@@ -150,10 +138,10 @@ def backup():
     cursor = 0
 
     while True:
-        cursor, keys = conn.scan(cursor, match='keybase*', count=20, _type="HASH")
+        cursor, keys = get_db(decode=False).scan(cursor, match='keybase*', count=20, _type="HASH")
         result.extend(keys)
         for key in keys:
-            hashdata = conn.hgetall(key)
+            hashdata = get_db(decode=False).hgetall(key)
             data = {}
             thevalue = {}
             data['key'] = key.decode("utf-8")
@@ -182,7 +170,7 @@ def restore():
         print(data['key'])
         for (field, value) in data['value'].items():
             hashdata[base64.b64decode(field.encode('ascii'))] = base64.b64decode(value.encode('ascii'))
-        conn.hmset(data['key'], hashdata)
+        get_db(decode=False).hmset(data['key'], hashdata)
 
     return jsonify(message="Restore done")
 

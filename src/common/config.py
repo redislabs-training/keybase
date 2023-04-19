@@ -1,7 +1,8 @@
 import os
 
 
-THEME = os.getenv('THEME', 'redis')
+CFG_THEME = os.getenv('CFG_THEME', 'redis')
+CFG_VSS_WITH_LUA = os.getenv('CFG_VSS_WITH_LUA', False)
 
 # Redis
 REDIS_CFG = {"host": os.getenv('DB_SERVICE', '127.0.0.1'),
@@ -30,5 +31,5 @@ okta = {
     "issuer": "https://{}".format(OKTA_BASE),
     "userinfo_uri": "https://{}/oauth2/v1/userinfo".format(OKTA_BASE),
     "redirect_uri": OKTA_CALLBACK_URL,
-    "groups_uri": "https://" + OKTA_BASE + "/api/v1/users/{}/groups"
+    "groups_uri": "https://{}/api/v1/users/".format(OKTA_BASE)
 }

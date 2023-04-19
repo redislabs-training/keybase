@@ -106,7 +106,6 @@ def create_app():
 
         # pass through HTTP errors
         if isinstance(e, HTTPException):
-            print(e.code)
             return render_template('404.html'), e.code
 
         # now you're handling non-HTTP exceptions only

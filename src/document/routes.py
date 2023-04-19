@@ -8,6 +8,7 @@ import time
 import urllib.parse
 from redis.commands.search.query import Query
 from .document import Document, Version, CurrentVersion
+from src.common.config import CFG_VSS_WITH_LUA
 from pydantic import ValidationError
 from redis_om import NotFoundError
 
@@ -118,7 +119,6 @@ def browse():
         return render_template('browse.html', title=title, desc=desc, categories=categories, keydocument=keydocument, page=page,
                                per_page=per_page, pagination=pagination, category=category, asc=asc, privacy=prv)
     except RedisError as err:
-        print(err)
         return redirect(url_for("document_bp.browse"))
 
 
@@ -432,18 +432,33 @@ def doc(pk, prettyurl):
     # Then, iterate the results in pairs, because the key name is alternated with the returned fields
 
     if get_db().hexists("keybase:vss:{}".format(pk), "content_embedding"):
-        keys_and_args = ["keybase:vss:{}".format(pk)]
-        res = get_db().eval(
-            "local vector = redis.call('HMGET',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','vss_idx','@state:{published|review}=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres",
-            1, *keys_and_args)
-
-        it = iter(res[1:])
-        for x in it:
-            keys.append(str(x.split(':')[-1]))
-            docname = str(next(it)[3])
-            names.append(docname)
-            pretty.append(pretty_title(docname))
-        suggestlist = zip(keys, names, pretty)
+        if CFG_VSS_WITH_LUA:
+            keys_and_args = ["keybase:vss:{}".format(pk)]
+            res = get_db().eval(
+                "local vector = redis.call('HMGET',KEYS[1], 'content_embedding') local searchres = redis.call('FT.SEARCH','vss_idx','(@state:{published|review})=>[KNN 6 @content_embedding $B AS score]','PARAMS','2','B',vector[1], 'SORTBY', 'score', 'ASC', 'LIMIT', 1, 6,'RETURN',2,'score','name','DIALECT',2) return searchres",
+                1, *keys_and_args)
+            it = iter(res[1:])
+            for x in it:
+                keys.append(str(x.split(':')[-1]))
+                docname = str(next(it)[3])
+                names.append(docname)
+                pretty.append(pretty_title(docname))
+            suggestlist = zip(keys, names, pretty)
+        else:
+            embedding = get_db(decode=False).hget("keybase:vss:{}".format(pk), "content_embedding")
+            q = Query("(@state:{published|review})=>[KNN 6 @content_embedding $B AS score]")\
+                .return_field("score")\
+                .return_field("name")\
+                .sort_by("score", asc=True)\
+                .dialect(2)\
+                .paging(1, 6)
+            res = get_db().ft("vss_idx").search(q, query_params={"B": embedding})
+            it = iter(res.docs[0:])
+            for x in it:
+                keys.append(str(x['id'].split(':')[-1]))
+                names.append(str(x['name']))
+                pretty.append(pretty_title(str(x['name'])))
+            suggestlist = zip(keys, names, pretty)
 
     return render_template('view.html',
                            title=title,
