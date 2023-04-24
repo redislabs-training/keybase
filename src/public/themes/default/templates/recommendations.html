@@ -1,0 +1,12 @@
+<div class="widget box">
+    <p class="is-size-5 mb-4 has-text-centered" style="margin-bottom:0em;">Recommendations</p>
+    {% if suggestlist is not none %}
+        {% for key, name, pretty in suggestlist %}
+        <a style="display:block;" class="is-size-6 mb-3 is-underlined" href="{{ url_for('public_bp.kb',pk=key,prettyurl=pretty) }}">
+            {{name}}
+        </a>
+        {% endfor %}
+    {% else %}
+        <p class="is-size-6">creating recommendations...</p>
+    {% endif %}
+</div>

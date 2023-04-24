@@ -1,0 +1,39 @@
+{% extends "theme.html" %}
+{% set active_page = "landing" %}
+{% block content %}
+
+<div class="columns">
+    <div class="column"></div>
+    <div class="column is-three-fifths">
+    {% include 'searchbar.html' %}
+    </div>
+    <div class="column"></div>
+</div>
+
+<section class="hero">
+    <div class="hero-body has-text-centered">
+        <div class="container has-text-grey has-text-weight-medium">
+            {% if noresultmsg is not none %}
+            <p class="is-size-4">You searched for {{noresultmsg}}</p>
+            {% endif %}
+            <p class="is-size-3">No result</p>
+        </div>
+    </div>
+</section>
+<footer class="footer">
+    <div class="content has-text-centered is-size-5 has-text-grey-light">
+        <p>
+            <div class="divider">Try to search by product</div>
+        </p>
+        {% if categories|length > 0 %}
+        <div class="tile is-ancestor pt-5">
+            {% for catid, catname in categories.items() %}
+            <div class="tile">
+                <a class="has-text-centered is-size-6 has-text-grey-dark" href="{{ url_for('public_bp.public',q='', cat=catid) }}">{{catname}}</a>
+            </div>
+            {% endfor %}
+        {% endif %}
+        </div>
+    </div>
+</footer>
+{% endblock %}

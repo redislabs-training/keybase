@@ -7,11 +7,9 @@ USERS_DB = {}
 
 
 class AuthUser(UserMixin):
-    def __init__(self, id_, given_name, name, email, access_level):
+    def __init__(self, id_, name, access_level):
         self.id = id_
-        self.given_name = given_name
         self.name = name
-        self.email = email
         self.access_level = access_level
 
     def claims(self):
@@ -28,30 +26,11 @@ class AuthUser(UserMixin):
         return get_db().exists("keybase:auth:{}".format(user_id))
 
     @staticmethod
-    def create(user_id, given_name, name, email):
-        get_db().hset("keybase:auth:{}".format(user_id), mapping={
-            'name': name,
-            'given_name': given_name,
-            'email': email,
-            'group': 'viewer',
-            'signup': time.time(),
-            'login': time.time()})
-
-        USERS_DB[user_id] = AuthUser(user_id, given_name, name, email, Role.VIEWER)
-        return USERS_DB[user_id]
-
-    @staticmethod
-    def update(user_id, given_name, name, email):
-        get_db().hset("keybase:auth:{}".format(user_id), mapping={
-            'name': name,
-            'given_name': given_name,
-            'email': email,
-            'signup': time.time(),
-            'login': time.time()})
-
-        access_level = Role.group2role(get_db().hmget("keybase:auth:{}".format(user_id), ['group'])[0])
-        USERS_DB[user_id] = AuthUser(user_id, given_name, name, email, access_level)
-        return USERS_DB[user_id]
+    def get(username):
+        user = get_db().hgetall("keybase:auth:{}".format(username))
+        access_level = Role.group2role(user['group'])
+        USERS_DB[username] = AuthUser(username, user['name'], access_level)
+        return USERS_DB[username]
 
     def set_role(self, access_level):
         self.access_level = access_level

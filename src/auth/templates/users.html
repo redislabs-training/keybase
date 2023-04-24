@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="columns">
+    <div class="column">
+        <form class="mb-4" method="post" action="{{ url_for('auth_bp.users') }}">
+            <div class="field has-addons">
+                <div class="control has-icons-left is-expanded">
+                    <input name="q" class="input" type="text" placeholder="Find users">
+                    <span class="icon is-small is-left">
+                      <i class="fas fa-search"></i>
+                    </span>
+                </div>
+                <p class="control">
+                    <span class="select">
+                        <select name="role" style="width:150px;">
+                              <option {% if role=="all" %} selected{% endif %} value="all">all roles</option>
+                              <option {% if role=="viewer" %} selected{% endif %} value="viewer">viewers</option>
+                              <option {% if role=="editor" %} selected{% endif %} value="editor">editors</option>
+                              <option {% if role=="admin" %} selected{% endif %} value="admin">admins</option>
+                        </select>
+                    </span>
+                </p>
+                <div class="control">
+                    <button type="submit" class="button is-info">Search</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="column is-1">
+        <div class="field" style="display:inline;">
+            <a id="adduser" class="button" href="{{ url_for('auth_bp.adduser') }}">Add user</a>
+        </div>
+    </div>
+</div>
+
+
+  {% if users is not none %}
+  {% for key, name, group, email in users %}
+  <div class="columns">
+    <div class="column">{{email}}</div>
+    <div class="column">
+
+      <div class="select is-small">
+        <select id="{{key}}">
+          <option value="admin"{% if group=='admin' %} selected{% endif %}>Admin</option>
+          <option value="editor"{% if group=='editor' %} selected{% endif %}>Editor</option>
+          <option value="viewer"{% if group=='viewer' %} selected{% endif %}>Viewer</option>
+        </select>
+      </div>
+
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+      No users in the system
+  {% endif %}
+
+  {% if pagination is not none %}
+  <div class="mt-4 mb-6">
+      {{ pagination.links }}
+  </div>
+  {% endif %}
+
+
+  <script>
+    $( "select" )
+      .change(function () {
+	      $.ajax({
+	        type: "POST",
+	        url: "{{ url_for('auth_bp.authgroup')}}",
+	        data : {id:$( this ).attr("id"), group:$(this).children("option:selected").val()},
+	        success: function(data) {
+	        console.log(data);
+            $.notify("Role updated", "success");
+	        }});
+      })
+    </script>
+
+{% endblock %}
+

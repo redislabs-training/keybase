@@ -3,17 +3,19 @@ import secrets
 import requests
 import base64
 import flask
-from flask import flash, Blueprint, render_template, redirect, request, session, url_for
+from flask import flash, Blueprint, render_template, redirect, request, session, url_for, jsonify
 import flask_login
-from flask_login import (LoginManager, current_user, logout_user,)
+from flask_login import (LoginManager, current_user, logout_user, login_required, )
 import json
 from flask import current_app
+from flask_paginate import get_page_args, Pagination
 
+from redis.commands.search.query import Query
 from src.okta.user import OktaUser
 from src.common.config import okta
-from src.common.utils import get_db
+from src.common.utils import get_db, requires_access_level, Role, parse_query_string
 
-okta_bp = Blueprint('okta_bp', __name__,
+auth_bp = Blueprint('auth_bp', __name__,
                     template_folder='./templates')
 
 login_manager = LoginManager()
@@ -22,7 +24,54 @@ login_manager = LoginManager()
 # login_manager.login_view = "okta_bp.login"
 
 
-@okta_bp.record_once
+@auth_bp.route('/users', methods=['GET', 'POST'])
+@login_required
+@requires_access_level(Role.ADMIN)
+def users():
+    title = "Admin functions"
+    desc = "Admin functions"
+    key = []
+    name = []
+    group = []
+    email = []
+    users = None
+    role, rolefilter, queryfilter = "all", "", "*"
+
+    if flask.request.method == 'POST':
+        if request.form['role']:
+            role = request.form['role']
+            if role != "all":
+                rolefilter = " @group:{" + role + "}"
+                queryfilter = ""
+
+        if request.form['q']:
+            queryfilter = parse_query_string(request.form['q'])
+
+    page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
+    rs = get_db().ft("user_idx").search(
+        Query(queryfilter + rolefilter)
+        .return_field("name")
+        .return_field("group")
+        .return_field("email")
+        .sort_by("name", asc=True)
+        .paging(offset, per_page))
+
+    pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma',
+                            bulma_style='small', prev_label='Previous', next_label='Next page')
+
+    if (rs is not None) and len(rs.docs):
+        for doc in rs.docs:
+            key.append(doc.id.split(':')[-1])
+            name.append(doc.name)
+            group.append(doc.group)
+            email.append(doc.email)
+
+        users = zip(key, name, group, email)
+
+    return render_template('users.html', title=title, desc=desc, users=users, pagination=pagination, role=role)
+
+
+@auth_bp.record_once
 def on_load(state):
     login_manager.init_app(state.app)
 
@@ -41,7 +90,7 @@ def unauthorized_callback():
         return render_template('index.html', next=request.endpoint), 401
 
 
-@okta_bp.before_request
+@auth_bp.before_request
 def check_valid_login():
     # save wanted url if not authenticated
     if request.endpoint == "public_bp.kb" and not current_user.is_authenticated:
@@ -49,12 +98,12 @@ def check_valid_login():
         flash(request.path, 'wanted')
 
     # endpoints used for authentication
-    endpoint_group = ('static', 'okta_bp.login', 'okta_bp.callback')
+    endpoint_group = ('static', 'auth_bp.login', 'auth_bp.callback')
     if request.endpoint not in endpoint_group and not current_user.is_authenticated:
         return render_template('index.html', next=request.endpoint)
 
 
-@okta_bp.route("/login")
+@auth_bp.route("/login")
 def login():
     # store app state and code verifier in session
     session['app_state'] = secrets.token_urlsafe(64)
@@ -85,12 +134,12 @@ def login():
     return redirect(request_uri)
 
 
-@okta_bp.errorhandler(404)
+@auth_bp.errorhandler(404)
 def page_not_found(error):
     return redirect(url_for('main_bp.index'))
 
 
-@okta_bp.route("/authorization-code/callback")
+@auth_bp.route("/authorization-code/callback")
 def callback():
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
     code = request.args.get("code")
@@ -159,7 +208,7 @@ def callback():
     return redirect(url_for("document_bp.browse"))
 
 
-@okta_bp.route("/logout", methods=["GET", "POST"])
+@auth_bp.route("/logout", methods=["GET", "POST"])
 def logout():
     current_app.logger.info('User logged out: {}'.format(current_user.id))
     logout_user()
@@ -177,3 +226,20 @@ def getusergroups(unique_id):
                                                 'Authorization': f'SSWS {api_token}'}).json()
 
     print(usergroups_response)
+
+
+@auth_bp.route('/group', methods=['POST'])
+@login_required
+@requires_access_level(Role.ADMIN)
+def oktagroup():
+    # TODO Check the user exists and the role is valid
+    print("Setting role of " + request.form['id'] + " to " + request.form['group'])
+    get_db().hmset("keybase:okta:{}".format(request.form['id']), {"group": request.form['group']})
+    return jsonify(message="Role updated")
+
+
+@auth_bp.route("/logout", methods=["GET", "POST"])
+def oktalogout():
+    current_app.logger.info('User logged out: {}'.format(current_user.id))
+    logout_user()
+    return redirect(url_for('public_bp.landing'))

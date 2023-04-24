@@ -1,16 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <div class="tabs is-toggle is-centered">
-    <ul>
-      <li class="is-active"><a>Users</a></li>
-      <li><a href="{{ url_for('admin_bp.tags') }}">Misc</a></li>
-      <li><a href="{{ url_for('admin_bp.data') }}">Backup</a></li>
-    </ul>
-  </div>
-
-
-    <form class="mb-4" method="post" action="{{ url_for('admin_bp.tools') }}">
+    <form class="mb-4" method="post" action="{{ url_for('auth_bp.users') }}">
         <div class="field has-addons">
             <div class="control has-icons-left is-expanded">
                 <input name="q" class="input" type="text" placeholder="Find users">
@@ -69,7 +60,7 @@
       .change(function () {
 	      $.ajax({
 	        type: "POST",
-	        url: "{{ url_for('admin_bp.group')}}",
+	        url: "{{ url_for('auth_bp.oktagroup')}}",
 	        data : {id:$( this ).attr("id"), group:$(this).children("option:selected").val()},
 	        success: function(data) {
 	        console.log(data);

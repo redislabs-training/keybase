@@ -1,0 +1,60 @@
+{% extends "theme.html" %}
+{% set active_page = "landing" %}
+
+{% block content %}
+
+<div class="columns">
+    <div class="column"></div>
+    <div class="column is-three-fifths">
+    {% include 'searchbar.html' %}
+    </div>
+    <div class="column"></div>
+</div>
+
+
+<script type="text/javascript">
+    function send_query(){
+        var qs = {
+            q    : encodeURIComponent($("input").val()),
+            cat  : $('select[name="cat"]').val(),
+            asc  : $('select[name="asc"]').val()
+        };
+        window.location.replace("{{ url_for('public_bp.public') }}?" + $.param(qs));
+        return false;
+    }
+
+    $(".button").click(function() {
+        return send_query();
+    })
+
+    $(".input").on('keyup', function (e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            return send_query();
+        }
+    });
+
+    $(window).resize(function() {
+        $( ".input" ).autocomplete( "close" );
+    });
+
+    $(function() {
+        $(".input").autocomplete({
+            source:function(request, response) {
+                $.getJSON("{{url_for('public_bp.search')}}",{
+                    q: encodeURIComponent(request.term),
+                }, function(data) {
+                    response(data.matching_results);
+                });
+            },
+            minLength: 3,
+            select: function(event, ui) {
+                console.log(ui.item.id);
+                window.location.replace("/kb/" + ui.item.id + "/" + ui.item.pretty);
+            }
+        });
+    })
+</script>
+
+{% endblock %}
+
+

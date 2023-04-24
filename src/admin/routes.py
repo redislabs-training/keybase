@@ -1,66 +1,14 @@
-import flask
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify
 from flask_login import (login_required)
-from flask_paginate import Pagination, get_page_args
-import redis
-from redis.commands.search.query import Query
 import json
 import base64
 
-from src.common.utils import ShortUuidPk, parse_query_string
+from src.common.utils import ShortUuidPk
 from src.document.document import Document
 from src.common.utils import requires_access_level, Role, get_db
-from src.common.config import REDIS_CFG
 
 admin_bp = Blueprint('admin_bp', __name__,
                      template_folder='./templates')
-
-
-@admin_bp.route('/tools', methods=['GET', 'POST'])
-@login_required
-@requires_access_level(Role.ADMIN)
-def tools():
-    title = "Admin functions"
-    desc = "Admin functions"
-    key = []
-    name = []
-    group = []
-    email = []
-    users = None
-    role, rolefilter, queryfilter = "all", "", "*"
-
-    if flask.request.method == 'POST':
-        if request.form['role']:
-            role = request.form['role']
-            if role != "all":
-                rolefilter = " @group:{" + role + "}"
-                queryfilter = ""
-
-        if request.form['q']:
-            queryfilter = parse_query_string(request.form['q'])
-
-    page, per_page, offset = get_page_args(page_parameter='page', per_page_parameter='per_page')
-    rs = get_db().ft("user_idx").search(
-        Query(queryfilter + rolefilter)
-        .return_field("name")
-        .return_field("group")
-        .return_field("email")
-        .sort_by("name", asc=True)
-        .paging(offset, per_page))
-
-    pagination = Pagination(page=page, per_page=per_page, total=rs.total, css_framework='bulma',
-                            bulma_style='small', prev_label='Previous', next_label='Next page')
-
-    if (rs is not None) and len(rs.docs):
-        for doc in rs.docs:
-            key.append(doc.id.split(':')[-1])
-            name.append(doc.name)
-            group.append(doc.group)
-            email.append(doc.email)
-
-        users = zip(key, name, group, email)
-
-    return render_template('admin.html', title=title, desc=desc, users=users, pagination=pagination, role=role)
 
 
 @admin_bp.route('/tags')
@@ -226,13 +174,3 @@ def jimport():
             doc.save()
 
     return jsonify(message="Restore done")
-
-
-@admin_bp.route('/group', methods=['POST'])
-@login_required
-@requires_access_level(Role.ADMIN)
-def group():
-    # TODO Check the user exists and the role is valid
-    print("Setting role of " + request.form['id'] + " to " + request.form['group'])
-    get_db().hmset("keybase:okta:{}".format(request.form['id']), {"group": request.form['group']})
-    return jsonify(message="Role updated")

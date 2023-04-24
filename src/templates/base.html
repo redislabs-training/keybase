@@ -97,8 +97,11 @@
                                 </a>
                                 <div class="navbar-dropdown">
                                     {% if current_user.is_admin() %}
-                                    <a href="{{ url_for('admin_bp.tools') }}" class="navbar-item">
-                                        Admin
+                                    <a href="{{ url_for('auth_bp.users') }}" class="navbar-item">
+                                        Users
+                                    </a>
+                                    <a href="{{ url_for('admin_bp.tags') }}" class="navbar-item">
+                                        Taxonomy
                                     </a>
                                     {% endif %}
                                     {% if current_user.is_editor() %}
@@ -110,7 +113,7 @@
                                         Bookmarks
                                     </a>
                                     <hr class="navbar-divider">
-                                    <a href="{{ url_for('okta_bp.logout') }}" class="navbar-item">
+                                    <a href="{{ url_for('auth_bp.logout') }}" class="navbar-item">
                                         Logout
                                     </a>
                                 </div>

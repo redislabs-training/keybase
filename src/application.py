@@ -5,11 +5,12 @@ from flask_cors import CORS
 from datetime import datetime
 from flask_breadcrumbs import Breadcrumbs
 from werkzeug.exceptions import HTTPException
-
 import logging
+import redis
+
+from src.common.config import CFG_AUTHENTICATOR
 from src.common.utils import track_errors, get_db
 
-import redis
 from redis_om import (Migrator)
 from redis.commands.search.field import TextField, TagField, VectorField
 from redis.commands.search.indexDefinition import IndexDefinition
@@ -26,6 +27,43 @@ def create_app():
     app.config.update({'SECRET_KEY': secrets.token_hex(64)})
     app.url_map.strict_slashes = False
     CORS(app)
+
+    from .main import main_bp
+    app.register_blueprint(main_bp)
+
+    from .api.routes import api_bp
+    app.register_blueprint(api_bp)
+
+    from .bookmarks.routes import bookmarks_bp
+    app.register_blueprint(bookmarks_bp)
+
+    from .drafts.routes import drafts_bp
+    app.register_blueprint(drafts_bp)
+
+    from .analytics.routes import analytics_bp
+    app.register_blueprint(analytics_bp)
+
+    from .admin.routes import admin_bp
+    app.register_blueprint(admin_bp)
+
+    from .document.routes import document_bp
+    app.register_blueprint(document_bp)
+
+    from .version.routes import version_bp
+    app.register_blueprint(version_bp)
+
+    from .feedback.routes import feedback_bp
+    app.register_blueprint(feedback_bp)
+
+    from .public.routes import public_bp
+    app.register_blueprint(public_bp)
+
+    if CFG_AUTHENTICATOR == 'auth':
+        from .auth.routes import auth_bp
+        app.register_blueprint(auth_bp)
+    else:
+        from .okta.routes import auth_bp
+        app.register_blueprint(auth_bp)
 
     # Setup gunicorn logging
     gunicorn_error_logger = logging.getLogger('gunicorn.error')
@@ -61,42 +99,6 @@ def create_app():
     def timectime(s):
         date_time = datetime.fromtimestamp(s)
         return date_time.strftime("%B %d %Y, %H:%M")
-
-    from .main import main_bp
-    app.register_blueprint(main_bp)
-
-    from .api.routes import api_bp
-    app.register_blueprint(api_bp)
-
-    from .bookmarks.routes import bookmarks_bp
-    app.register_blueprint(bookmarks_bp)
-
-    from .drafts.routes import drafts_bp
-    app.register_blueprint(drafts_bp)
-
-    from .analytics.routes import analytics_bp
-    app.register_blueprint(analytics_bp)
-
-    from .admin.routes import admin_bp
-    app.register_blueprint(admin_bp)
-
-    from .document.routes import document_bp
-    app.register_blueprint(document_bp)
-
-    from .version.routes import version_bp
-    app.register_blueprint(version_bp)
-
-    from .feedback.routes import feedback_bp
-    app.register_blueprint(feedback_bp)
-
-    from .public.routes import public_bp
-    app.register_blueprint(public_bp)
-
-    from .okta.routes import okta_bp
-    app.register_blueprint(okta_bp)
-
-    # from .auth.routes import auth_bp
-    # app.register_blueprint(auth_bp)
 
     @app.errorhandler(Exception)
     def handle_exception(e):

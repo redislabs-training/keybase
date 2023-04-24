@@ -1,0 +1,9 @@
+
+{% if document.tags is not none and document.tags|length > 0 %}
+<div class="mb-1">
+    {% set tags = document.tags.split('|') %}
+    {% for tag in tags %}
+    <a class="tag has-text-black" style="background-color:#A6EEF0" href="{{ url_for('public_bp.public',tag=tag) }}">{{tag}}</a>
+    {% endfor %}
+</div>
+{% endif %}

@@ -30,6 +30,7 @@ Pillow==9.5.0
 pptree==3.1
 pycparser==2.21
 pydantic==1.10.7
+python-dotenv==1.0.0
 python-ulid==1.1.0
 PyYAML==6.0
 redis==4.5.4

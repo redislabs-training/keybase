@@ -4,7 +4,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 CFG_THEME = os.getenv('CFG_THEME', 'redis')
+CFG_AUTHENTICATOR = os.getenv('CFG_AUTHENTICATOR', 'okta')
 CFG_VSS_WITH_LUA = os.getenv('CFG_VSS_WITH_LUA',"False").lower() in ('true', '1', 't')
+CFG_PRIVATE = os.getenv('CFG_PRIVATE',"False").lower() in ('true', '1', 't')
 
 # Redis
 REDIS_CFG = {"host": os.getenv('DB_SERVICE', '127.0.0.1'),

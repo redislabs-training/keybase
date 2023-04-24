@@ -1,0 +1,87 @@
+{% extends "theme.html" %}
+{% set active_page = "browse" %}
+{% block content %}
+
+{% include 'breadcrumb.html' %}
+
+<div>
+    {% if keydocument is not none %}
+
+    <table class="table is-fullwidth is-hoverable">
+        <thead>
+            <tr>
+                <th>Document</th>
+                <th>Updated</th>
+        </tr>
+        </thead>
+        <tbody>
+            {% for key, name, pretty, updated in keydocument %}
+            <tr>
+                <td>
+                    <a style="display:block;" class="is-size-6" href="{{ url_for('public_bp.kb',pk=key,prettyurl=pretty) }}">
+                        {{name}}
+                    </a>
+                </td>
+                <td>
+                    {{updated}}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if pagination is not none %}
+    <div class="mt-4 mb-6">
+        {{ pagination.links }}
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+
+<script type="text/javascript">
+    function send_query(){
+        var qs = {
+            q    : encodeURIComponent($("input").val()),
+            cat  : $('select[name="cat"]').val(),
+            asc  : $('select[name="asc"]').val()
+        };
+        window.location.replace("{{ url_for('public_bp.public') }}?" + $.param(qs));
+        return false;
+    }
+
+    $(".button").click(function() {
+        return send_query();
+    })
+
+    $(".input").on('keyup', function (e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            return send_query();
+        }
+    });
+
+    $(function() {
+        $(".input").autocomplete({
+            source:function(request, response) {
+                $.getJSON("{{url_for('public_bp.search')}}",{
+                    q: encodeURIComponent(request.term),
+                }, function(data) {
+                    response(data.matching_results);
+                });
+            },
+            minLength: 3,
+            delay: 500,
+            select: function(event, ui) {
+                console.log(ui.item.id);
+                window.location.replace("/kb/" + ui.item.id + "/" + ui.item.pretty);
+            }
+        });
+    })
+
+    $(window).resize(function() {
+        $( ".input" ).autocomplete( "close" );
+    });
+</script>
+
+{% endblock %}
+
+

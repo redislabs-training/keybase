@@ -12,8 +12,7 @@
         {% endif %}
         {% endwith %}   
 
-       <form action="{{ url_for('auth_bp.login_post') }}" method="post">
-            <div class="form-group">
+       <form action="{{ url_for('auth_bp.authenticate') }}" method="post">
                 <div class="field">
                     <div class="control">
                         <input id="username" class="input" name="username" placeholder="Username" required="" type="text" autofocus="">
@@ -24,12 +23,7 @@
                         <input id="password" class="input" name="password" placeholder="Password" type="password" autocomplete="off">
                     </div>
                 </div>
-
-            {% if next %}<input type="hidden" name="next" value="{{next}}">{% endif %}
-            </div>
-       </form>
-           <!--<input type="submit" value="Send">-->
-           <button class="button is-block is-info is-fullwidth">Login</button>
+           <button type="submit" class="button is-block is-info is-fullwidth">Login</button>
        </form>
     </div>
 </div>

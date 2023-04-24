@@ -1,27 +1,26 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="column is-4 is-offset-4">
-    <h3 class="title">Sign Up</h3>
-    <div class="box">
+
+    <h3 class="title">Create a new user</h3>
+    <div>
         {% with messages = get_flashed_messages() %}
         {% if messages %}
             <div class="notification is-danger">
-                {{ messages[0] }}. Go to <a href="{{ url_for('auth.login') }}">login page</a>.
+                {{ messages[0] }}
             </div>
         {% endif %}
         {% endwith %}
-        {% if method != "okta" %}
-        <form method="POST" action="/signup">
+        <form method="POST" action="{{ url_for('auth_bp.createuser') }}">
             <div class="field">
                 <div class="control">
-                    <input class="input" type="email" name="email" placeholder="Email" autocomplete="off">
+                    <input class="input" type="text" name="username" placeholder="Username" autocomplete="off">
                 </div>
             </div>
 
             <div class="field">
                 <div class="control">
-                    <input class="input" type="text" name="name" placeholder="Name" autocomplete="off">
+                    <input class="input" type="text" name="name" placeholder="Display name" autocomplete="off">
                 </div>
             </div>
 
@@ -31,12 +30,8 @@
                 </div>
             </div>
 
-            <button class="button is-block is-info is-fullwidth">Sign Up</button>
+            <button class="button is-block is-info">Create</button>
         </form>
-        {% endif %}
-        {% if method == "okta" %}
-            okta authentication coming soon
-        {% endif %}
     </div>
-</div>
+
 {% endblock %}
