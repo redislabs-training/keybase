@@ -104,7 +104,7 @@ docker run -d --cap-add sys_resource --env DB_SERVICE=<database_host> --env DB_P
 ```
 
 
-### Recommendations based on Vector Similarity Search (VSS)
+## Recommendations based on Vector Similarity Search (VSS)
 
 Recommendations of semantically similar documents are proposed, the feature uses [Vector Similarity Search](https://redis.io/docs/stack/search/reference/vectors/). 
 VSS is based on the generation and storage of vector embeddings. Provided vector generation from the content is an intensive activity, the generation must be scheduled offline. 
@@ -120,7 +120,7 @@ It is also possible to subscribe to the Redis Stream `keybase:events` to capture
 Currently, an event is published when a document is added or updated, then it needs the vector embedding to
   
   
-### Using Keybase in production
+## Using Keybase in production
 
 Flask has a built-in web server, but it is not recommended for production usage. It is recommended to put Flask behind a web server which communicates with Flask using WSGI. 
 
