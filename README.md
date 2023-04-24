@@ -7,33 +7,19 @@ Keybase is an Open Source Knowledge Base featuring smart searches and recommenda
 - Create and edit documents using a WYSIWYG Markdown editor
 - Browse, search, and bookmark Knowledge Base articles
 - Get recommendations for similar documents
-- Organize and research content using labels
-- Okta authentication integrated
+- Organize and research content using labels and categories
+- Password-based and Okta-based authentication integrated
 - Role-Based Access Control
+- Public view and custom templates
 
 
-## Installation
+## Quickstart
 
-In order to install Keybase, please pay attention to the following sections.
+In order to install and run the knowledge base, please pay attention to the following instructions.
 
-### 1. Python environment
+### 1. The Redis database
 
-prepare your Python setup, create a virtual environment:
-
-```
-python3 -m venv keybasevenv
-source keybasevenv/bin/activate
-python3 -m pip install --upgrade pip
-```
-Then, install the requirements:
-
-```
-pip3 install -r requirements.txt
-```
-
-### 2. The Redis database
-
-**RediSearch** 2.4 introduces the [Vector Similarity Search](https://redis.io/docs/stack/search/reference/vectors/) feature, which supports indexing and searching unstructured data (images, audio, videos, text etc.). Review the [release notes](https://github.com/RediSearch/RediSearch/releases/tag/v2.4.3). Keybase takes advantage of this feature to index the documents and propose recommendations, in addition to the classical RediSearch features to perform full-text searches. Analytics are managed using the **RedisTimeSeries** module, for data collection, aggregation and analysis. You can setup a Redis Stack Docker image, which includes these modules, as follows:
+Keybase is backed by a Redis Stack database. You can set up a Redis Stack Docker image as follows:
 
 ```
 docker run -p 6379:6379 redis/redis-stack
@@ -41,31 +27,48 @@ docker run -p 6379:6379 redis/redis-stack
 
 > **Redis Stack Server** combines open source Redis with RediSearch, RedisJSON, RedisGraph, RedisTimeSeries, and RedisBloom. Redis Stack also includes RedisInsight, a visualization tool for understanding and optimizing Redis data.
 
+### 2. Installation
+
+prepare your Python setup, create a virtual environment:
+
+```
+python3 -m venv kvenv
+source kvenv/bin/activate
+python3 -m pip install --upgrade pip
+```
+
+Then, install the software
+
+```
+git clone https://github.com/redislabs-training/keybase.git
+cd keybase
+pip install -e .
+```
+
+Now configure the environment and run using `gunicorn`. 
+
+```commandline
+export DB_SERVICE="localhost" DB_PORT=6379 DB_PWD="" CFG_AUTHENTICATOR="auth" CFG_THEME="default"
+gunicorn --workers 1 --bind 0.0.0.0:5000 --log-level debug --capture-output --error-logfile ./gunicorn.log "wsgi:create_app()"
+```
+
+Connect to a Redis database and create the first administrator:
+
+```commandline
+HSET keybase:auth:admin username admin password 8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918 status enabled group admin given_name "Administrator" name "Administrator"
+```
+
+Finally, point your browser to the knowledge base:
+
+```commandline
+http://localhost:5000/
+```
 
 ### 3. Okta Authentication
 
-Authentication relies on Okta. Users are cached into the Redis database in Hashes using the prefix:
+You can configure the authentication to use Okta. Just set `CFG_AUTHENTICATOR="okta"`, and configure Okta's secret and token in a `.env` file under `src/common` or via system environment variables.
 
-```
-keybase:okta:
-```
-
-Configure Okta's secret and token in the `config.py` file.
-
-You can test the Okta integration with a [Okta Developer Edition](https://developer.okta.com/signup/).
-
-> Note, additional basic username-password authentication method is in the works
-
-### 4. Keybase execution
-
-Before starting the knowledge base, you will need to configure it. Browse to `/common/config.py` and edit the information accordingly. Alternatively, you can create a shell script and `source` it. Keybase will auto-configure from environment variables. If you choose to configure via environment, write a `conf.sh` shell script:
-
-```
-#!/bin/sh
-export DB_SERVICE=127.0.0.1
-export DB_PORT=6379
-export DB_PSW=
-
+```commandline
 export OKTA_BASE=<YOUR_OKTA_DOMAIN>
 export OKTA_CALLBACK_URL=http://<YOUR_WEB_DOMAIN>authorization-code/callback
 export OKTA_CLIENT_ID=...
@@ -73,45 +76,55 @@ export OKTA_CLIENT_SECRET=...
 export OKTA_API_TOKEN=...
 ```
 
-And execute it in the session where Keybase will be started:
+Okta users are cached into the Redis database in Hashes using the prefix:
 
 ```
-source conf.py
+keybase:okta:
+```
+
+You can test the Okta integration with a [Okta Developer Edition](https://developer.okta.com/signup/).
+
+> Note, additional basic username-password authentication method is in the works
+
+
+## Keybase execution in a Docker container
+
+This repository comes with a Dockerfile you can use to generate an image and start it. Use the following commands.
+
+Build image from Dockerfile
+
+```
+docker build -t keybase:v1 .
+```
+
+Start the knowledge base
+
+```commandline
+docker run -d --cap-add sys_resource --env DB_SERVICE=<database_host> --env DB_PORT=<database_port> --env DB_PWD=<default_user_password> --env CFG_AUTHENTICATOR="auth" --env CFG_THEME="default" --name kb -p 5000:8000 keybase:v1
 ```
 
 
-Time to start the platform with:
+### Recommendations based on Vector Similarity Search (VSS)
 
-```
-./start.sh
-```
+Recommendations of semantically similar documents are proposed, the feature uses [Vector Similarity Search](https://redis.io/docs/stack/search/reference/vectors/). 
+VSS is based on the generation and storage of vector embeddings. Provided vector generation from the content is an intensive activity, the generation must be scheduled offline. 
 
-or directly with `Gunicorn`, suitable for production environments.
-
-```
-gunicorn --workers 1 --bind 0.0.0.0:5000 "wsgi:create_app()"
-```
-
-Or, to redirect logs to some place:
-
-```
-gunicorn --workers 1 --bind 0.0.0.0:5000 --log-file /var/log/keybase/rediskb.log --log-level INFO "wsgi:create_app()"
-```
-
-### 5. Indexing documents for similarity search
-
-The indexation of documents for Similarity Search is a intensive activity that must be scheduled offline. Schedule a periodic execution of the script `transformer.py` using `cron` or a similar utility. An execution every minute is sufficient to index new documents or update the index of those documents that received an update. Using `crontab`, the task would look like:
+Schedule a periodic execution of the script `transformer.py` using `cron` or a similar utility. An execution every minute is sufficient to index new documents or update the index of those documents that received an update. 
+Using `crontab`, the task would look like:
 
 ```
 * * * * * export PYTHONPATH=/home/<USER>/keybase/; /home/<USER>/keybasevenv/bin/python3 /home/<USER>/keybase/src/services/transformer.py > /home/<USER>/cron.log 2>&1
 ```
+
+It is also possible to subscribe to the Redis Stream `keybase:events` to capture events published by the knowledge base.
+Currently, an event is published when a document is added or updated, then it needs the vector embedding to
   
   
-### 6. Using Keybase in production
+### Using Keybase in production
 
 Flask has a built-in web server, but it is not recommended for production usage. It is recommended to put Flask behind a web server which communicates with Flask using WSGI. 
 
-A valid option would be to deploy Keybase together with Nginx as the web server and Gunicorn, which implements the Web Server Gateway Interface. Therefore it is possible to test Gunicorn as follows. 
+A valid option would be to deploy Keybase together with Nginx as the web server and Gunicorn, which implements the Web Server Gateway Interface. Therefore, it is possible to test Gunicorn as follows. 
 
 ```
 gunicorn --workers 1 --bind 0.0.0.0:5000 "wsgi:create_app()"
