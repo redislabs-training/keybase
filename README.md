@@ -117,9 +117,26 @@ Using `crontab`, the task would look like:
 ```
 
 It is also possible to subscribe to the Redis Stream `keybase:events` to capture events published by the knowledge base.
-Currently, an event is published when a document is added or updated, then it needs the vector embedding to
-  
-  
+Currently, an event is published when a document is added or updated, so a client application that detects a relevant event, can recalculate the vector embedding and store it.
+
+You can create a consumer group:
+
+```commandline
+XGROUP CREATE keybase:events vss_readers $
+```
+
+And then use your favorite client to read from the stream the newest events with `XREADGROUP` and manage the stream as usual, with `XACK`, `XPENDING` and `XCLAIM`.
+
+```commandline
+XREADGROUP GROUP vss_readers default COUNT 1 STREAMS keybase:events >
+1) 1) "keybase:events"
+   2) 1) 1) "1682327824341-0"
+         2) 1) "type"
+            2) "publish"
+            3) "id"
+            4) "ih98h98w89"
+```
+
 ## Using Keybase in production
 
 Flask has a built-in web server, but it is not recommended for production usage. It is recommended to put Flask behind a web server which communicates with Flask using WSGI. 
