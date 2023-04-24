@@ -10,7 +10,9 @@ Keybase is an Open Source Knowledge Base featuring smart searches and recommenda
 - Organize and research content using labels and categories
 - Password-based and Okta-based authentication integrated
 - Role-Based Access Control
-- Public view and custom templates
+- Public portal with custom templates and admin view
+
+<img src="src/static/images/keybase-screenshot.png">
 
 
 ## Quickstart
