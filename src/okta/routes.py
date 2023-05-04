@@ -205,7 +205,7 @@ def callback():
     if len(wanted):
         return redirect(wanted[0])
 
-    return redirect(url_for("document_bp.browse"))
+    return redirect(url_for("public_bp.landing"))
 
 
 @auth_bp.route("/logout", methods=["GET", "POST"])

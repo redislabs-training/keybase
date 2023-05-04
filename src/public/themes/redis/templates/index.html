@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html class="has-navbar-fixed-top">
+    <head>
+        <meta charset="utf-8">
+        <link rel="shortcut icon" href="{{ url_for('public_bp.static',filename='images/favicon-32x32.png') }}" type="image/x-icon" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="keywords" content="Redis, knowledge, documentation, issue, problem, how-to, instructions, tutorial">
+        <meta name="description" content="Welcome to the Redis Knowledge Base! In this portal, you will find troubleshooting articles, tutorials and more for all the Redis solutions and client libraries">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+        <link rel="stylesheet" href="{{ url_for('public_bp.static',filename='css/style.css') }}" type="text/css" media="all">
+    </head>
+
+    <body>
+        <section class="hero is-medium">
+            <div class="hero-body">
+                <div class="container has-text-centered" style="width:300px;">
+                    <div class="box">
+                        <p class="centeredbox">
+                            <img width="200px" src="{{ url_for('public_bp.static',filename='images/logo-redis-3.svg') }}">
+                        </p>
+                        <h1 class="mt-3 mb-3 is-size-4 has-text-weight-medium has-text-centered">
+                            Knowledge Base
+                        </h1>
+                        <a class="centeredbox mt-5" href="{{ url_for('auth_bp.login') }}">
+                            <img width="160px" src="{{ url_for('static',filename='images/okta.png') }}">
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </body>
+</html>

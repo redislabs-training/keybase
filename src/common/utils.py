@@ -26,7 +26,7 @@ def get_db(decode=True):
                                  ssl_certfile=REDIS_CFG["ssl_certfile"],
                                  ssl_ca_certs=REDIS_CFG["ssl_ca_certs"],
                                  ssl_cert_reqs=REDIS_CFG["ssl_cert_reqs"],
-                                 decode_responses=decode)
+                                     decode_responses=decode)
     except redis.exceptions.ConnectionError:
         return redirect(url_for("main_bp.error-page"))
 

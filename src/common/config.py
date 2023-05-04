@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+#app.config.from_prefixed_env(prefix="KB")
 
 CFG_THEME = os.getenv('CFG_THEME', 'redis')
 CFG_AUTHENTICATOR = os.getenv('CFG_AUTHENTICATOR', 'okta')
