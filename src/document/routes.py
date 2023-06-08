@@ -51,7 +51,7 @@ def autocomplete():
     return jsonify(matching_results=results)
 
 
-@document_bp.route('/browse', methods=['GET', 'POST'])
+@document_bp.route('/kb-admin', methods=['GET', 'POST'])
 @login_required
 def browse():
     title = "List documents"

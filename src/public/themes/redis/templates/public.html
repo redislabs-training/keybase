@@ -2,7 +2,19 @@
 {% set active_page = "browse" %}
 {% block content %}
 
-{% include 'breadcrumb.html' %}
+<div class="columns">
+  <div class="column is-half">
+      {% include 'breadcrumb.html' %}
+  </div>
+  <div class="column">
+      {% if "landing" != active_page %}
+        <!--Three values: flex-grow | flex-shrink | flex-basis -->
+        <div class="navbar-search" style="flex: 2 1 35%;">
+            {% include 'smallsearchbar.html' %}
+        </div>
+      {% endif %}
+  </div>
+</div>
 
 <div>
     {% if keydocument is not none %}

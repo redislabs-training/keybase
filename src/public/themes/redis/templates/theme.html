@@ -32,7 +32,7 @@
         <section> <!--is-primary-->
             <nav class="p-1 mb-2 navbar is-transparent is-fixed-top" role="navigation" aria-label="main navigation">
                 <div class="navbar-brand">
-                    <a href="{{ url_for('public_bp.landing') }}" class="navbar-item">
+                    <a href="https://staging.learn.redis.com/" class="navbar-item">
                         <img alt="White Redis Logo" width="117px" height="40px" src="{{ url_for('public_bp.static',filename='images/logo-redis-3.svg') }}">
                     </a>
                     <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" style="margin:0 0 0 auto">
@@ -43,25 +43,32 @@
                 </div>
 
                 <div id="navbarBasicExample" class="navbar-menu is-expanded">
-                    <div class="navbar-start" style="flex: 0 0 20%;">
+                    <div class="navbar-start" style="flex: 0 0 50%;">
+                        <a href="https://university.redis.com/" class="navbar-item">
+                                <span style="padding:6px;">UNIVERSITY</span>
+                        </a>
+                        <a href="https://www.redis.io" class="navbar-item">
+                            <span style="padding:6px;">DEVELOPERS</span>
+                        </a>
+                        <a href="https://www.redis.com" class="navbar-item">
+                            <span style="padding:6px;">OPERATORS</span>
+                        </a>
+                        <a href="{{ url_for('public_bp.landing') }}" class="navbar-item">
+                            <span style="padding:6px;">KNOWLEDGE BASE</span>
+                        </a>
                     </div>
 
-                    {% if "landing" != active_page %}
-                    <!--Three values: flex-grow | flex-shrink | flex-basis -->
-                    <div class="navbar-search" style="flex: 2 1 35%;">
-                        {% include 'smallsearchbar.html' %}
-                    </div>
-                    {% endif %}
-
-                    <div class="navbar-end" style="flex: 0 0 35%;">
+                    <div class="navbar-end" style="flex: 0 0 15%;">
                         {% if current_user.is_authenticated %}
                         <a href="{{ url_for('document_bp.browse') }}" class="navbar-item">
                             Admin portal
                         </a>
                         {% endif %}
+
                         <a class="try-cloud-link" target="" href="https://redis.com/try-free/">
                             Try Redis Cloud
                         </a>
+
                         <!--
                         <a href="https://redis.com/try-free/" class="navbar-item">
                             <span style="font-weight: 500;font-size: .875rem;">Try Redis Cloud</span>

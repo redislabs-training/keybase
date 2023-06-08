@@ -2,7 +2,19 @@
 {% set active_page = "document" %}
 {% block content %}
 
-{% include 'breadcrumb.html' %}
+<div class="columns">
+  <div class="column is-half">
+      {% include 'breadcrumb.html' %}
+  </div>
+  <div class="column">
+      {% if "landing" != active_page %}
+        <!--Three values: flex-grow | flex-shrink | flex-basis -->
+        <div class="navbar-search">
+            {% include 'smallsearchbar.html' %}
+        </div>
+      {% endif %}
+  </div>
+</div>
 
 <div class="columns" style="mt-0">
     <div class="column is-8">

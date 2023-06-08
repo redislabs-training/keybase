@@ -5,7 +5,6 @@ from redis import RedisError
 from datetime import datetime
 import urllib.parse
 from redis.commands.search.query import Query
-from flask_login import (current_user, login_required)
 
 from src.common.config import CFG_THEME, CFG_VSS_WITH_LUA
 from src.common.utils import get_db, pretty_title, parse_query_string
@@ -49,15 +48,11 @@ def get_bread_path(*args, **kwargs):
 
 @public_bp.route('/', methods=['GET'])
 def landing():
-    if not current_user.is_authenticated:
-        return render_template('index.html')
-
     categories = get_db().hgetall("keybase:categories")
     return render_template('landing.html', categories=categories)
 
 
 @public_bp.route('/search', methods=['GET'])
-@login_required
 def search():
     # Sanitize input for RediSearch
     queryfilter = parse_query_string(flask.request.args.get('q'))
@@ -81,7 +76,6 @@ def search():
 
 @public_bp.route('/public', methods=['GET'])
 @register_breadcrumb(public_bp, '.', '', dynamic_list_constructor=get_bread_path)
-@login_required
 def public():
     title = "List documents"
     desc = "Listing documents"
@@ -167,7 +161,6 @@ def public():
 @public_bp.route('/kb/<pk>', defaults={'prettyurl': None})
 @public_bp.route('/kb/<pk>/<prettyurl>')
 @register_breadcrumb(public_bp, '.', '', dynamic_list_constructor=get_bread_path)
-@login_required
 def kb(pk, prettyurl):
     keys = []
     names = []
