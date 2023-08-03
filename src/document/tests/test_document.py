@@ -13,17 +13,17 @@ def user2_auth():
 
 
 def test_document_browse_not_authenticated(test_client):
-    response = test_client.get("/browse")
+    response = test_client.get("/kb-admin")
     assert response.status_code == 401
 
 
 def test_document_browse_authenticated_no_index(test_client, user_auth):
-    response = test_client.get("/browse")
+    response = test_client.get("/kb-admin")
     assert response.status_code == 302
 
 
 def test_document_browse_authenticated_index_created(test_client, user_auth, prepare_db):
-    response = test_client.get("/browse")
+    response = test_client.get("/kb-admin")
     assert response.status_code == 200
 
 
@@ -206,7 +206,7 @@ def test_document_save_authenticated_index_created(test_client, user_auth, prepa
     doc_id = json.loads(response.data)['id']
     test_client.post("/publish", data=dict(id=doc_id, name='my name is...', content='my content is...'))
 
-    response = test_client.get("/browse", query_string={"q": "content"})
+    response = test_client.get("/kb-admin", query_string={"q": "content"})
     assert response.status_code == 200
     assert len(captured_templates) == 1
     template, context = captured_templates[0]
