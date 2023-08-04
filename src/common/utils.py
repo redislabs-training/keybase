@@ -47,7 +47,7 @@ def track_errors(e):
 def parse_query_string(q):
     query = urllib.parse.unquote(q).translate(str.maketrans('', '', "\"@!{}()|-=<>[];.'")).strip()
     if len(query) > 0:
-        query = "*" + query + "*"
+        query = query + "*"
     return query
 
 

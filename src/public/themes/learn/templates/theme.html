@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html class="has-navbar-fixed-top">
+    <head>
+        <meta charset="utf-8">
+        <link rel="shortcut icon" href="{{ url_for('public_bp.static',filename='images/favicon-32x32.png') }}" type="image/x-icon" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {% if "document" == active_page %}
+        <link rel="canonical" href="{{ request.url }}" />
+        <meta name="keywords" content="{{document['keyword']}}">
+        <meta name="description" content="{{document['description']}}">
+        <title>{{title}}</title>
+        {% else %}
+        <meta name="keywords" content="Redis, knowledge, documentation, issue, problem, how-to, instructions, tutorial">
+        <meta name="description" content="Welcome to the Redis Knowledge Base! In this portal, you will find troubleshooting articles, tutorials and more for all the Redis solutions and client libraries">
+        <title>Redis - Knowledge Base</title>
+        {% endif%}
+        <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+        <link rel="stylesheet" href="{{ url_for('static',filename='css/bulma-divider.min.css') }}" type="text/css" media="all">
+        <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css">
+        <link rel="stylesheet" href="{{ url_for('public_bp.static',filename='css/prettydropdowns.css') }}">
+        <link rel="stylesheet" href="{{ url_for('public_bp.static',filename='css/style.css') }}" type="text/css" media="all">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta2/css/all.min.css" integrity="sha512-YWzhKL2whUzgiheMoBFwW8CKV4qpHQAEuvilg9FAn5VJUDwKZZxkJNuGM4XkWuk94WCrrwslk8yWNGmY1EduTA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <link rel="apple-touch-icon" href="{{ url_for('public_bp.static',filename='images/redisicon.png') }}" />
+        <link rel="apple-touch-icon-precomposed" href="{{ url_for('public_bp.static',filename='images/redisicon.png') }}" />
+        <link rel="apple-touch-startup-image" href="{{ url_for('public_bp.static',filename='images/redisicon.png') }}">
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+        <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js" ></script>
+        <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+        <script src="{{ url_for('public_bp.static',filename='js/jquery.prettydropdowns.js') }}"></script>
+    </head>
+
+    <body>
+        <section> <!--is-primary-->
+            <nav class="p-1 mb-2 navbar is-transparent is-fixed-top" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand mr-6">
+                    <a href="https://staging.learn.redis.com/" class="navbar-item">
+                        <img alt="White Redis Logo" width="117px" height="40px" src="{{ url_for('public_bp.static',filename='images/logo-redis-3.svg') }}">
+                    </a>
+                    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" style="margin:0 0 0 auto">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+
+                <div id="navbarBasicExample" class="navbar-menu is-expanded">
+                    <div class="navbar-start" style="flex: 0 0 50%;">
+                        <a href="https://university.redis.com/" class="navbar-item">
+                                <span style="padding:6px;">UNIVERSITY</span>
+                        </a>
+                        <a href="https://www.redis.io" class="navbar-item">
+                            <span style="padding:6px;">DEVELOPERS</span>
+                        </a>
+                        <a href="https://www.redis.com" class="navbar-item">
+                            <span style="padding:6px;">OPERATORS</span>
+                        </a>
+                        <a href="{{ url_for('public_bp.landing') }}" class="navbar-item">
+                            <span class="has-text-grey-lighter" style="padding:6px;">KNOWLEDGE BASE</span>
+                        </a>
+                    </div>
+
+                    <div class="navbar-end" style="flex: 0 0 15%;">
+                        {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('document_bp.browse') }}" class="navbar-item">
+                            Admin portal
+                        </a>
+                        {% endif %}
+
+                        <a class="try-cloud-link" target="" href="https://redis.com/try-free/">
+                            Try Free
+                        </a>
+
+                        <!--
+                        <a href="https://redis.com/try-free/" class="navbar-item">
+                            <span style="font-weight: 500;font-size: .875rem;">Try Redis Cloud</span>
+                        </a>
+                        -->
+                    </div>
+              </div>
+            </nav>
+
+            <div class="container pt-6 pb-6" style="padding-left:20px; padding-right:20px;">
+               {% block content %}
+               {% endblock %}
+            </div>
+        </section>
+
+        {% include 'footer.html' %}
+
+        <script>
+            $(document).ready(function() {
+                $('select').prettyDropdown({
+                    height: 40,
+                    classic:true,
+                    customClass:"arrow re-select",
+                    selectedMarker:'<i class="fa-solid fa-check" style="color: #5961f6;"></i>'
+                });
+            });
+
+            $(document).ready(function() {
+            // Check for click events on the navbar burger icon
+            $(".navbar-burger").click(function() {
+
+                // Toggle the "is-active" class on both the "navbar-burger" and the "navbar-menu"
+                $(".navbar-burger").toggleClass("is-active");
+                $(".navbar-menu").toggleClass("is-active");
+            });
+            });
+
+            function send_query(){
+                var qs = {
+                    q    : encodeURIComponent($("input").val()),
+                    cat  : $('select[name="cat"]').val()
+                };
+                window.location.replace("{{ url_for('public_bp.public') }}?" + $.param(qs));
+                return false;
+            }
+
+            $(".button").click(function() {
+                return send_query();
+            })
+
+            $(".input").on('keyup', function (e) {
+                if (e.key === 'Enter' || e.keyCode === 13) {
+                    return send_query();
+                }
+            });
+
+            $(window).resize(function() {
+                $( ".input" ).autocomplete( "close" );
+            });
+
+            $(function() {
+                $(".input").autocomplete({
+                    source:function(request, response) {
+                        $.getJSON("{{url_for('public_bp.search')}}",{
+                            q: encodeURIComponent(request.term),
+                        }, function(data) {
+                            response(data.matching_results);
+                        });
+                    },
+                    minLength: 3,
+                    select: function(event, ui) {
+                        console.log(ui.item.id);
+                        window.location.replace("/kb/" + ui.item.id + "/" + ui.item.pretty);
+                    }
+                });
+            })
+        </script>
+    </body>
+</html>

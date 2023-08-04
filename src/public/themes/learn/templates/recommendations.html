@@ -1,0 +1,16 @@
+<div class="widget">
+    <p class="is-size-5 mb-4 has-text-centered has-text-weight-semibold" style="margin-bottom:0em;">Recommendations</p>
+    {% if suggestlist is not none %}
+        {% for key, name, pretty in suggestlist %}
+            <span class="icon-text" style="display:block;">
+            <a style="display:block;" class="is-size-6 mb-3 has-text-black" href="{{ url_for('public_bp.kb',pk=key,prettyurl=pretty) }}">
+                {{name}}
+                <i class="fas fa-arrow-right" style="color: #5961f6;"></i>
+            </span>
+        </a>
+
+        {% endfor %}
+    {% else %}
+        <p class="is-size-6">creating recommendations...</p>
+    {% endif %}
+</div>

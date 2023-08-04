@@ -1,0 +1,26 @@
+<form class="mt-6 mb-6" method="post" action="{{ url_for('public_bp.public') }}">
+    <div class="field has-addons">
+        {% if categories|length > 0 %}
+        <p class="control is-hidden-mobile">
+            <span>
+                <select name="cat">
+                      <option value="all">All categories</option>
+                      {% for catid, catname in categories.items() %}
+                      <option {% if category == catid %} selected{% endif %} value="{{catid}}">{{catname}}</option>
+                      {% endfor %}
+                </select>
+            </span>
+            &nbsp;&nbsp;
+        </p>
+        {% endif %}
+
+        <div class="control is-expanded">
+            <input name="q" class="input searchbar" type="text" placeholder="Search the knowledge base">
+        </div>
+
+        <div class="control has-icons-left">
+            <button type="submit" class="button"></button>
+        </div>
+    </div>
+
+</form>
