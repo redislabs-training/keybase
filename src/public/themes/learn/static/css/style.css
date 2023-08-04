@@ -190,8 +190,8 @@ font-size: 14px;
     border-radius: 0%;
     border-color: #000000;
     color: #000000;
-    padding: 0px 20px;
-    font-size: 18px;
+    padding: 0px 15px;
+    font-size: 14px;
     font-weight: 500;
 }
 
@@ -270,15 +270,15 @@ font-size: 14px;
     width: 1px;
 }
 
-.myfooter a {
+.re-footer a {
   color: #bfc2c4;
 }
 
-.myfooter a:hover {
+.re-footer a:hover {
   color: #FFFFFF;
 }
 
-.myfooter {
+.re-footer {
   background-color: #161f31;
   color: #bfc2c4;
 }

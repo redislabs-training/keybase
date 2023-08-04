@@ -25,25 +25,25 @@ def get_bread_path(*args, **kwargs):
         # make sure the document has a category
         if cat[0] is not None:
             catname = get_db().hget('keybase:categories', cat[0])
-            return [{'text': 'home', 'url': url_for("public_bp.landing")},
+            return [{'text': 'Home', 'url': url_for("public_bp.landing")},
                     {'text': catname, 'url': url_for("public_bp.public", cat=cat[0])}]
 
     # Search can come with a category, but let's consider a pure search to define the breadcrumb
     if flask.request.args.get('q'):
-        return [{'text': 'home', 'url': url_for("public_bp.landing")},
+        return [{'text': 'Home', 'url': url_for("public_bp.landing")},
                 {'text': 'search: "' + urllib.parse.unquote(flask.request.args.get('q')) + '"', 'url': ''}]
 
     if flask.request.args.get('cat'):
         catname = get_db().hget("keybase:categories", flask.request.args.get('cat'))
         catnamelabel = catname if catname is not None else 'all categories'
-        return [{'text': 'home', 'url': url_for("public_bp.landing")},
+        return [{'text': 'Home', 'url': url_for("public_bp.landing")},
                 {'text': catnamelabel}]
 
     if flask.request.args.get('tag'):
-        return [{'text': 'home', 'url': url_for("public_bp.landing")},
+        return [{'text': 'Home', 'url': url_for("public_bp.landing")},
                 {'text': flask.request.args.get('tag')}]
 
-    return [{'text': 'home', 'url': url_for("public_bp.landing")}]
+    return [{'text': 'Home', 'url': url_for("public_bp.landing")}]
 
 
 @public_bp.route('/', methods=['GET'])
