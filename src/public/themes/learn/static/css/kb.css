@@ -13,11 +13,11 @@
     font-weight: 700;
     line-height: 18px;
     font-size: 20px;
-    margin: 18px 0 2px;
+    margin: 18px 0 8px;
 }
 
 #editor p{
-    margin: 10px 0;
+    margin: 14px 0;
     box-sizing: border-box;
     color: rgb(78, 84, 91);
     font-family: "Graphik Web", Helvetica, Arial, sans-serif;
@@ -30,7 +30,7 @@
 }
 
 #editor ul{
-    margin: 10px 0;
+    margin: 14px 0;
 }
 
 #editor ul {
