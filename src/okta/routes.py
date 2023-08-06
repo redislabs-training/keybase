@@ -136,7 +136,7 @@ def login():
 
 @auth_bp.errorhandler(404)
 def page_not_found(error):
-    return redirect(url_for('main_bp.index'))
+    return redirect(url_for('document_bp.kb-admin'))
 
 
 @auth_bp.route("/authorization-code/callback")
@@ -154,7 +154,7 @@ def callback():
             return "The code was not returned or is not accessible", 403
     except KeyError:
         print("KeyError error: app_state missing")
-        return redirect(url_for('main_bp.index'))
+        return redirect(url_for('document_bp.kb-admin'))
 
     query_params = {'grant_type': 'authorization_code',
                     'code': code,

@@ -25,3 +25,24 @@
     </div>
 
 </form>
+
+<script>
+    function send_query(){
+        var qs = {
+            q    : encodeURIComponent($("input").val()),
+            cat  : $('select[name="cat"]').val()
+        };
+        window.location.replace("{{ url_for('public_bp.public') }}?" + $.param(qs));
+        return false;
+    }
+
+    $(".button").click(function() {
+        return send_query();
+    })
+
+    $(".input").on('keyup', function (e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            return send_query();
+        }
+    });
+</script>

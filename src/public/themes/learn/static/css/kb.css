@@ -1,0 +1,62 @@
+#editor h2{
+    color:#000000;
+    font-weight: 500;
+    border-bottom: 1px solid #dbdbdb;
+    font-size: 22px;
+    line-height: 23px;
+    margin: 20px 0 13px;
+    padding-bottom: 7px;
+}
+
+#editor h3{
+    color: #222;
+    font-weight: 700;
+    line-height: 18px;
+    font-size: 20px;
+    margin: 18px 0 2px;
+}
+
+#editor p{
+    margin: 10px 0;
+    box-sizing: border-box;
+    color: rgb(78, 84, 91);
+    font-family: "Graphik Web", Helvetica, Arial, sans-serif;
+    font-size: 18px;
+    font-stretch: 100%;
+    font-style: normal;
+    font-weight: 400;
+    letter-spacing: -0.2px;
+    line-height: 25.9167px
+}
+
+#editor ul{
+    margin: 10px 0;
+}
+
+#editor ul {
+  list-style: none;
+  list-style-type: disc;
+}
+
+#editor code{
+    background-color: #E9EBFB;
+    font-family: Courier New,Courier,Lucida Sans Typewriter,Lucida Typewriter,monospace;
+    font-size: 1em;
+    font-weight: 500;
+    letter-spacing: -0.2px;
+    color: #4E545B;
+}
+
+#editor p a{
+    color: #5866F6;
+}
+
+#editor p a:hover{
+    color: #3728BA;
+}
+
+#editor pre code{
+    color: #000000;
+    font-size: 16px;
+    background-color: #F5F5F5;
+}

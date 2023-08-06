@@ -100,6 +100,7 @@ def create_app():
         date_time = datetime.fromtimestamp(s)
         return date_time.strftime("%B %d %Y, %H:%M")
 
+    """
     @app.errorhandler(Exception)
     def handle_exception(e):
         # database error
@@ -115,5 +116,5 @@ def create_app():
         return render_template('500.html'), 500
 
     app.logger.info('Redis Knowledge Base started!')
-
+    """
     return app

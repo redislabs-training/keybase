@@ -5,6 +5,7 @@ from redis import RedisError
 from datetime import datetime
 import urllib.parse
 from redis.commands.search.query import Query
+from markdown import markdown
 
 from src.common.config import CFG_THEME, CFG_VSS_WITH_LUA
 from src.common.utils import get_db, pretty_title, parse_query_string
@@ -181,8 +182,13 @@ def kb(pk, prettyurl):
 
     document = documents['$.currentversion'][0]
     title = document['name']
-    document['name'] = urllib.parse.quote(document['name'])
-    document['content'] = urllib.parse.quote(document['content'])
+    #document['name'] = urllib.parse.quote(document['name'])
+    #document['content'] = urllib.parse.quote(document['content'])
+
+    document['name'] = markdown(document['name'], extensions=['fenced_code'])
+    document['content'] = markdown(document['content'], extensions=['fenced_code'])
+
+
     document['keyword'] = documents['$.keyword'][0]
     document['tags'] = documents['$.tags'][0]
     document['description'] = documents['$.description'][0]
