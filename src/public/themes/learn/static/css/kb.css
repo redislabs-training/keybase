@@ -62,6 +62,6 @@
 }
 
 #editor blockquote{
-border-left: 4px solid #CCC;
-padding-left: 1em;
+    border-left: 4px solid #CCC;
+    padding-left: 1em;
 }
